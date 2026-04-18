@@ -1,0 +1,67 @@
+<!-- src/app/app.html -->
+<div class="app-container">
+  <!-- Header -->
+  <app-header></app-header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+     <!-- <app-install-prompt></app-install-prompt> -->
+  </main>
+
+  <!-- Footer -->
+  <!-- <app-footer></app-footer> -->
+
+  <!-- Global Loading Spinner -->
+  @if (isLoading$ | async) {
+    <app-loading-spinner
+      [fullScreen]="true"
+      [message]="'Chargement...'"
+    ></app-loading-spinner>
+  }
+
+  <!-- Global Error Modal -->
+  @if (globalError$ | async; as error) {
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header border-0 bg-danger text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Erreur
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="clearError()"></button>
+          </div>
+          <div class="modal-body py-4">
+            <div class="text-center">
+              <i class="fas fa-bug fa-3x text-danger mb-3"></i>
+              <h5 class="text-danger mb-3">Une erreur est survenue</h5>
+              <p class="text-muted mb-0">{{ error.message }}</p>
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-secondary" (click)="clearError()">
+              Fermer
+            </button>
+            <button type="button" class="btn btn-primary" (click)="reloadPage()">
+              <i class="fas fa-redo me-2"></i>
+              Recharger la page
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Network Status Indicator -->
+  <div class="position-fixed top-0 start-50 translate-middle-x mt-2" style="z-index: 1070;">
+    @if (!(isOnline$ | async)) {
+      <div class="alert alert-warning alert-dismissible fade show shadow-sm mb-0" role="alert">
+        <i class="fas fa-wifi me-2"></i>
+        <strong>Hors ligne</strong> - Certaines fonctionnalités peuvent être limitées
+        <button type="button" class="btn-close" (click)="dismissOfflineWarning()"></button>
+      </div>
+    }
+  </div>
+</div>

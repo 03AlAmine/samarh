@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "tandem-immo"
+  },
+  "targets": {
+    "tandem-immo": {
+      "hosting": {
+        "tandem-immo": [
+          "tandem-immo"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

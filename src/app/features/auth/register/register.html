@@ -1,0 +1,133 @@
+<!-- ─── REGISTER ──────────────────────────────────────────────────────────── -->
+<div class="auth-page">
+  <div class="auth-card wide">
+
+    <div class="auth-logo">
+      <div class="logo-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7l10 5 10-5-10-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span><strong>Sama</strong>RH</span>
+    </div>
+
+    <div class="auth-header">
+      <div>
+        <h1>Créer un compte</h1>
+        <p>Rejoignez SamaRH pour gérer votre équipe</p>
+      </div>
+    </div>
+
+    <!-- Type selector -->
+    <div class="type-toggle">
+      <button
+        type="button"
+        class="type-btn"
+        [class.active]="userType() === 'individual'"
+        (click)="setUserType('individual')"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/></svg>
+        Particulier
+      </button>
+      <button
+        type="button"
+        class="type-btn"
+        [class.active]="userType() === 'company'"
+        (click)="setUserType('company')"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 21h18M3 7v14M21 7v14M6 7V3h12v4M9 21v-4h6v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Entreprise
+      </button>
+    </div>
+
+    @if (error()) {
+      <div class="auth-alert">{{ error() }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <!-- Nom / Prénom -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Prénom</label>
+          <input class="form-control" type="text" formControlName="firstName" placeholder="Jean"
+            [class.invalid]="f['firstName'].invalid && f['firstName'].touched"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom</label>
+          <input class="form-control" type="text" formControlName="lastName" placeholder="Dupont"
+            [class.invalid]="f['lastName'].invalid && f['lastName'].touched"/>
+        </div>
+      </div>
+
+      <!-- Entreprise (conditionnel) -->
+      @if (userType() === 'company') {
+        <div class="form-group">
+          <label class="form-label">Nom de l'entreprise</label>
+          <input class="form-control" type="text" formControlName="companyName" placeholder="Ma Société SARL"
+            [class.invalid]="f['companyName'].invalid && f['companyName'].touched"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Secteur d'activité</label>
+          <input class="form-control" type="text" formControlName="industry" placeholder="Technologie, Commerce…"/>
+        </div>
+      }
+
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-control" type="email" formControlName="email" placeholder="votre@email.com"
+          [class.invalid]="f['email'].invalid && f['email'].touched"/>
+        @if (f['email'].invalid && f['email'].touched) {
+          <small class="form-error">Email invalide</small>
+        }
+      </div>
+
+      <!-- Téléphone -->
+      <div class="form-group">
+        <label class="form-label">Téléphone</label>
+        <input class="form-control" type="tel" formControlName="phone" placeholder="+221 77 000 00 00"
+          [class.invalid]="f['phone'].invalid && f['phone'].touched"/>
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="form-group">
+        <label class="form-label">Mot de passe</label>
+        <div class="input-with-action">
+          <input class="form-control" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
+            placeholder="Minimum 6 caractères" [class.invalid]="f['password'].invalid && f['password'].touched"/>
+          <button type="button" class="input-action" (click)="togglePassword()">
+            @if (showPassword()) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg>
+            }
+          </button>
+        </div>
+        @if (f['password'].invalid && f['password'].touched) {
+          <small class="form-error">Minimum 6 caractères</small>
+        }
+      </div>
+
+      <!-- CGU -->
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="terms"/>
+          <span>J'accepte les <a href="#" target="_blank">conditions d'utilisation</a></span>
+        </label>
+        @if (f['terms'].invalid && f['terms'].touched) {
+          <small class="form-error">Vous devez accepter les conditions</small>
+        }
+      </div>
+
+      <button type="submit" class="btn btn--primary btn--full" [disabled]="loading()">
+        @if (loading()) { <span class="spinner sm"></span> }
+        Créer mon compte
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      Déjà un compte ? <a routerLink="/login">Se connecter</a>
+    </p>
+  </div>
+</div>

@@ -1,0 +1,260 @@
+// ─── AUTH PAGES — styles partagés login / register / pending ─────────────────
+// Importé par login, register, register-pending via leur propre .scss
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f6fa;
+  padding: 20px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid #e8eaf0;
+  border-radius: 16px;
+  padding: 36px 32px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+
+  @media (max-width: 480px) {
+    padding: 28px 20px;
+    border-radius: 12px;
+  }
+}
+
+// Logo
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 28px;
+
+  .logo-mark {
+    width: 34px;
+    height: 34px;
+    background: #4f7df3;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+  }
+
+  span {
+    font-size: 17px;
+    color: #111827;
+    strong { font-weight: 700; }
+  }
+}
+
+// Header
+.auth-header {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.3px;
+    margin: 0 0 4px;
+  }
+
+  p {
+    font-size: 13.5px;
+    color: #6b7280;
+    margin: 0;
+  }
+}
+
+// Back button
+.back-btn {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #e8eaf0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  margin-top: 2px;
+  transition: background 0.15s;
+
+  &:hover { background: #f5f6fa; }
+}
+
+// Alert
+.auth-alert {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 13px;
+  padding: 10px 13px;
+  margin-bottom: 18px;
+}
+
+// Form
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 9px 13px;
+  border: 1.5px solid #e8eaf0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #111827;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+
+  &::placeholder { color: #9ca3af; }
+  &:focus {
+    border-color: #4f7df3;
+    box-shadow: 0 0 0 3px rgba(79,125,243,0.12);
+  }
+  &.invalid {
+    border-color: #dc2626;
+  }
+}
+
+.form-hint {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 5px;
+
+  code {
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #4f7df3;
+  }
+}
+
+.form-error {
+  display: block;
+  font-size: 12px;
+  color: #dc2626;
+  margin-top: 4px;
+}
+
+// Input avec bouton intégré
+.input-with-action {
+  position: relative;
+
+  .form-control { padding-right: 40px; }
+
+  .input-action {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+
+    &:hover { color: #6b7280; }
+  }
+}
+
+// Options (remember me, etc.)
+.form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+
+  input[type="checkbox"] { accent-color: #4f7df3; }
+}
+
+// Bouton full-width
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  font-family: inherit;
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  &--primary {
+    background: #4f7df3;
+    color: #fff;
+    &:hover:not(:disabled) { background: #2f5bd0; }
+  }
+
+  &--full { width: 100%; }
+}
+
+// Spinner inline
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+
+  &.sm { width: 14px; height: 14px; }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// Footer
+.auth-footer {
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 22px;
+
+  a {
+    color: #4f7df3;
+    font-weight: 600;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+}

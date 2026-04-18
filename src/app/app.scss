@@ -1,0 +1,82 @@
+// src/app/app.scss
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  min-height: calc(100vh - 76px - 200px); // Hauteur totale - header - footer
+}
+
+// Styles pour les modaux globaux
+.modal-backdrop {
+  z-index: 1040;
+}
+
+.modal {
+  z-index: 1050;
+}
+
+// Styles pour les toasts et notifications
+.toast {
+  min-width: 300px;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .main-content {
+    min-height: calc(100vh - 76px - 250px);
+  }
+}
+
+// Animation pour le chargement
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-content {
+  animation: fadeIn 0.3s ease;
+}
+
+// Amélioration de l'accessibilité
+@media (prefers-reduced-motion: reduce) {
+  .modal-content {
+    animation: none;
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  // .app-container {
+  //   background-color: #1a1a1a;
+  //   // color: #ffffff;
+  // }
+}
+
+// Impression
+@media print {
+  .app-header,
+  .app-footer,
+  .modal-backdrop,
+  .modal,
+  .toast,
+  .alert {
+    display: none !important;
+  }
+  app-header{
+    display: none !important;
+  }
+  .main-content {
+    min-height: auto;
+  }
+}

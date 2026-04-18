@@ -1,0 +1,129 @@
+<!-- ─── LOGIN ─────────────────────────────────────────────────────────────── -->
+<div class="auth-page">
+  <div class="auth-card">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="logo-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7l10 5 10-5-10-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span><strong>Sama</strong>RH</span>
+    </div>
+
+    <!-- Étape 1 : Code d'accès -->
+    @if (step() === 'code') {
+      <div class="auth-header">
+        <h1>Connexion</h1>
+        <p>Entrez votre code d'accès ou identifiant communauté</p>
+      </div>
+
+      @if (error()) {
+        <div class="auth-alert">{{ error() }}</div>
+      }
+
+      <form [formGroup]="codeForm" (ngSubmit)="validateCode()">
+        <div class="form-group">
+          <label class="form-label">Code d'accès</label>
+          <input
+            class="form-control"
+            type="text"
+            formControlName="code"
+            placeholder="Code admin ou ID communauté"
+            autocomplete="off"
+            [class.invalid]="fc['code'].invalid && fc['code'].touched"
+          />
+          <small class="form-hint">Administrateurs : tapez <code>ADMIN</code></small>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn--primary btn--full"
+          [disabled]="loading() || codeForm.invalid"
+        >
+          @if (loading()) { <span class="spinner sm"></span> }
+          Continuer
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </form>
+
+      <p class="auth-footer">
+        Pas encore de compte ? <a routerLink="/register">S'inscrire</a>
+      </p>
+    }
+
+    <!-- Étape 2 : Identifiants -->
+    @if (step() === 'login') {
+      <div class="auth-header">
+        <button class="back-btn" (click)="back()" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <h1>{{ mode() === 'admin' ? 'Espace admin' : communaute()?.nom }}</h1>
+          <p>{{ mode() === 'admin' ? 'Connexion administrateur' : 'Connexion employé' }}</p>
+        </div>
+      </div>
+
+      @if (error()) {
+        <div class="auth-alert">{{ error() }}</div>
+      }
+
+      <form [formGroup]="loginForm" (ngSubmit)="submit()">
+        <div class="form-group">
+          <label class="form-label">
+            {{ mode() === 'admin' ? 'Email' : 'Nom d\'utilisateur' }}
+          </label>
+          <input
+            class="form-control"
+            [type]="mode() === 'admin' ? 'email' : 'text'"
+            formControlName="login"
+            [placeholder]="mode() === 'admin' ? 'votre@email.com' : 'Votre login'"
+            [class.invalid]="f['login'].invalid && f['login'].touched"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <div class="input-with-action">
+            <input
+              class="form-control"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="••••••••"
+              [class.invalid]="f['password'].invalid && f['password'].touched"
+            />
+            <button type="button" class="input-action" (click)="togglePassword()">
+              @if (showPassword()) {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              } @else {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg>
+              }
+            </button>
+          </div>
+          @if (f['password'].invalid && f['password'].touched) {
+            <small class="form-error">Minimum 4 caractères</small>
+          }
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="rememberMe" />
+            <span>Se souvenir de moi</span>
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn--primary btn--full"
+          [disabled]="loading() || loginForm.invalid"
+        >
+          @if (loading()) { <span class="spinner sm"></span> }
+          Se connecter
+        </button>
+      </form>
+    }
+
+  </div>
+</div>

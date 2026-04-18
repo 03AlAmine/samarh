@@ -1,0 +1,149 @@
+.cell-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mini-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4f7df3, #7c3aed);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.user-name { display: block; font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
+.user-sub  { display: block; font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+
+.btn-view {
+  border: 1.5px solid var(--border);
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: background 0.15s;
+  &:hover { background: var(--bg); }
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal-box {
+  background: var(--surface);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  animation: slideUp 0.2s ease;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; }
+}
+
+.modal-close {
+  width: 30px; height: 30px;
+  border: none; background: transparent; cursor: pointer;
+  border-radius: 7px; display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); transition: background 0.15s;
+  &:hover { background: var(--bg); }
+}
+
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+
+.user-profile { display: flex; align-items: center; gap: 14px; }
+
+.big-avatar {
+  width: 50px; height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4f7df3, #7c3aed);
+  color: #fff; font-size: 18px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.profile-name { font-size: 17px; font-weight: 700; color: var(--text-primary); margin: 0 0 3px; }
+.profile-role { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+.info-grid { display: flex; flex-direction: column; }
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid #f5f6fa;
+  font-size: 13.5px;
+  gap: 12px;
+  &:last-child { border-bottom: none; }
+  .info-key { color: var(--text-secondary); flex-shrink: 0; }
+}
+
+.reject-section { display: flex; flex-direction: column; gap: 6px; }
+
+.form-label { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-primary);
+  outline: none;
+  resize: vertical;
+  background: var(--surface);
+  transition: border-color 0.15s;
+  &:focus { border-color: var(--accent); }
+}
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: 8px; font-size: 14px;
+  font-weight: 600; border: none; cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &--success { background: #16a34a; color: #fff; &:hover:not(:disabled) { background: #15803d; } }
+  &--danger  { background: var(--danger); color: #fff; &:hover:not(:disabled) { background: #b91c1c; } }
+}
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }

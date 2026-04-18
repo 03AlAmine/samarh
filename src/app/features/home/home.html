@@ -1,0 +1,477 @@
+<!-- components/home/home.component.html -->
+<div class="samarh-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-pattern"></div>
+    <div class="container hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">
+          <span class="hero-highlight">samaRH</span><br>
+          La solution RH 100% sénégalaise pour une gestion optimisée
+        </h1>
+
+        <p class="hero-subtitle">
+          Plateforme tout-en-un pour la gestion du personnel, la paie, les congés, le pointage et la productivité.
+          Sécurisée, intuitive et adaptée aux entreprises sénégalaises.
+        </p>
+
+        <div class="hero-stats">
+          <div class="stat-card">
+            <div class="stat-number">+250</div>
+            <div class="stat-label">Entreprises</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">+50k</div>
+            <div class="stat-label">Utilisateurs</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">99.9%</div>
+            <div class="stat-label">Disponibilité</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">100%</div>
+            <div class="stat-label">Sénégalais</div>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <button class="btn btn-primary" routerLink="/demo">
+            <i class="fas fa-play-circle"></i> Démo gratuite
+          </button>
+          <button class="btn btn-secondary" routerLink="/contact">
+            <i class="fas fa-comments"></i> Contact commercial
+          </button>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="visual-card">
+          <div class="visual-content">
+            <img src="assets/samarh-dashboard.png" alt="Dashboard SamaRH">
+            <div class="visual-overlay">
+              <div class="overlay-text">
+                <h3>Gestion RH 360°</h3>
+                <p>Tous vos outils RH dans une seule plateforme</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section section-padding">
+    <div class="container">
+      <h2 class="section-title">Modules complets RH</h2>
+      <p class="section-subtitle">Découvrez notre suite complète de solutions pour une gestion RH optimale</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-users-cog"></i>
+          </div>
+          <h3>Gestion du personnel</h3>
+          <p>Fiches employés complètes, contrats, documents administratifs, historiques et suivi des carrières.</p>
+          <div class="feature-tags">
+            <span class="tag">Fiches employés</span>
+            <span class="tag">Contrats</span>
+            <span class="tag">Documents</span>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+          <h3>Gestion des congés</h3>
+          <p>Planning des absences, demande et validation en ligne, soldes, congés payés et maladies.</p>
+          <div class="feature-tags">
+            <span class="tag">Planning</span>
+            <span class="tag">Validation</span>
+            <span class="tag">Soldes</span>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-fingerprint"></i>
+          </div>
+          <h3>Pointage & Présence</h3>
+          <p>Badgeuse numérique, géolocalisation, gestion des horaires, heures supplémentaires et absences.</p>
+          <div class="feature-tags">
+            <span class="tag">Badgeuse</span>
+            <span class="tag">Géolocalisation</span>
+            <span class="tag">Horaires</span>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-file-invoice-dollar"></i>
+          </div>
+          <h3>Gestion de la paie</h3>
+          <p>Calcul automatique des salaires, bulletins de paie, déclarations sociales, charges et taxes.</p>
+          <div class="feature-tags">
+            <span class="tag">Salaires</span>
+            <span class="tag">Bulletins</span>
+            <span class="tag">Déclarations</span>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-tasks"></i>
+          </div>
+          <h3>Suivi des tâches</h3>
+          <p>Assignation de tâches, suivi de la productivité, évaluation des performances et reporting.</p>
+          <div class="feature-tags">
+            <span class="tag">Productivité</span>
+            <span class="tag">Performances</span>
+            <span class="tag">Reporting</span>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3>Tableaux de bord</h3>
+          <p>Statistiques RH en temps réel, indicateurs de performance, analyses et rapports personnalisés.</p>
+          <div class="feature-tags">
+            <span class="tag">Statistiques</span>
+            <span class="tag">KPI</span>
+            <span class="tag">Analyses</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section class="about-section section-padding">
+    <div class="container">
+      <h2 class="section-title">Pourquoi choisir samaRH ?</h2>
+
+      <div class="about-content">
+        <div class="about-text">
+          <h3>La solution RH tout-en-un made in Senegal</h3>
+          <p class="lead">
+            Développée par des experts sénégalais pour répondre aux besoins spécifiques des entreprises locales,
+            samaRH combine innovation technologique et connaissance du terrain.
+          </p>
+
+          <div class="advantages-list">
+            <div class="advantage">
+              <i class="fas fa-shield-alt"></i>
+              <div>
+                <h4>Sécurité maximale</h4>
+                <p>Données hébergées localement avec cryptage de niveau bancaire</p>
+              </div>
+            </div>
+
+            <div class="advantage">
+              <i class="fas fa-mobile-alt"></i>
+              <div>
+                <h4>Accessible partout</h4>
+                <p>Application web et mobile responsive, disponible 24h/24</p>
+              </div>
+            </div>
+
+            <div class="advantage">
+              <i class="fas fa-cogs"></i>
+              <div>
+                <h4>Conforme à la législation</h4>
+                <p>Mise à jour automatique selon la réglementation sénégalaise</p>
+              </div>
+            </div>
+
+            <div class="advantage">
+              <i class="fas fa-headset"></i>
+              <div>
+                <h4>Support local</h4>
+                <p>Équipe de support basée à Dakar, disponible en français et wolof</p>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary mt-3">
+            <i class="fas fa-play-circle"></i> Voir la vidéo de présentation
+          </button>
+        </div>
+
+        <div class="about-image">
+          <div class="image-frame">
+            <img src="assets/samarh-team.png" alt="Équipe SamaRH">
+            <div class="image-badge">
+              <span>100% Sénégalais</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard Preview -->
+  <section class="dashboard-section section-padding">
+    <div class="container">
+      <h2 class="section-title">Tableau de bord intuitif</h2>
+      <p class="section-subtitle">Visualisez toutes vos données RH en un coup d'œil</p>
+
+      <div class="dashboard-preview">
+        <div class="dashboard-stats">
+          <div class="dashboard-stat">
+            <div class="stat-value">247</div>
+            <div class="stat-label">Employés actifs</div>
+          </div>
+          <div class="dashboard-stat">
+            <div class="stat-value">15</div>
+            <div class="stat-label">Congés en cours</div>
+          </div>
+          <div class="dashboard-stat">
+            <div class="stat-value">98%</div>
+            <div class="stat-label">Présence aujourd'hui</div>
+          </div>
+          <div class="dashboard-stat">
+            <div class="stat-value">3j</div>
+            <div class="stat-label">Paie dans</div>
+          </div>
+        </div>
+
+        <div class="dashboard-visual">
+          <div class="dashboard-card">
+            <div class="dashboard-header">
+              <h3>Vue d'ensemble RH</h3>
+              <span class="date">Aujourd'hui</span>
+            </div>
+            <div class="dashboard-content">
+              <div class="chart-placeholder">
+                <!-- Visualisation de graphique -->
+                <div class="chart-bar" style="height: 80%;" data-label="Présence"></div>
+                <div class="chart-bar" style="height: 60%;" data-label="Congés"></div>
+                <div class="chart-bar" style="height: 90%;" data-label="Productivité"></div>
+                <div class="chart-bar" style="height: 70%;" data-label="Formation"></div>
+              </div>
+              <div class="dashboard-list">
+                <div class="list-item">
+                  <span class="item-title">Tâches en attente</span>
+                  <span class="item-value">12</span>
+                </div>
+                <div class="list-item">
+                  <span class="item-title">Contrats à renouveler</span>
+                  <span class="item-value">3</span>
+                </div>
+                <div class="list-item">
+                  <span class="item-title">Evaluations à faire</span>
+                  <span class="item-value">8</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security Section -->
+  <section class="security-section section-padding">
+    <div class="container">
+      <h2 class="section-title">Sécurité et confidentialité</h2>
+
+      <div class="security-grid">
+        <div class="security-card">
+          <div class="security-icon">
+            <i class="fas fa-database"></i>
+          </div>
+          <h3>Hébergement local</h3>
+          <p>Serveurs physiquement situés au Sénégal, soumis à la législation locale</p>
+        </div>
+
+        <div class="security-card">
+          <div class="security-icon">
+            <i class="fas fa-lock"></i>
+          </div>
+          <h3>Cryptage avancé</h3>
+          <p>Données cryptées AES-256, conformes aux standards bancaires internationaux</p>
+        </div>
+
+        <div class="security-card">
+          <div class="security-icon">
+            <i class="fas fa-user-shield"></i>
+          </div>
+          <h3>Contrôle d'accès</h3>
+          <p>Permissions granulaires, authentification à deux facteurs, traçabilité complète</p>
+        </div>
+
+        <div class="security-card">
+          <div class="security-icon">
+            <i class="fas fa-history"></i>
+          </div>
+          <h3>Sauvegarde automatique</h3>
+          <p>Sauvegardes quotidiennes avec restauration possible à tout moment</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials-section section-padding">
+    <div class="container">
+      <h2 class="section-title">Ils nous font confiance</h2>
+
+      <div class="testimonials-slider">
+        <div class="testimonial-card">
+          <div class="testimonial-icon">"</div>
+          <p class="testimonial-text">
+            samaRH a révolutionné notre gestion RH. La plateforme est intuitive et particulièrement adaptée au contexte sénégalais.
+          </p>
+          <div class="testimonial-author">
+            <div class="author-avatar">
+              <img src="assets/avatar1.png" alt="Directeur RH">
+            </div>
+            <div class="author-info">
+              <h4>M. Diallo</h4>
+              <p>Directeur RH, Groupe SONATEL</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-icon">"</div>
+          <p class="testimonial-text">
+            La gestion des paies est devenue un jeu d'enfant. Les déclarations sociales sont générées automatiquement.
+          </p>
+          <div class="testimonial-author">
+            <div class="author-avatar">
+              <img src="assets/avatar2.png" alt="Responsable Paie">
+            </div>
+            <div class="author-info">
+              <h4>Mme Ndiaye</h4>
+              <p>Responsable Paie, Banque de l'Habitat</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-icon">"</div>
+          <p class="testimonial-text">
+            Le support est réactif et comprend nos besoins spécifiques. Une vraie solution locale pour les entreprises locales.
+          </p>
+          <div class="testimonial-author">
+            <div class="author-avatar">
+              <img src="assets/avatar3.png" alt="CEO">
+            </div>
+            <div class="author-info">
+              <h4>M. Sarr</h4>
+              <p>CEO, AgroBusiness Sénégal</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing-section section-padding">
+    <div class="container">
+      <h2 class="section-title">Des tarifs adaptés</h2>
+      <p class="section-subtitle">Choisissez l'offre qui correspond à vos besoins</p>
+
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3>Startup</h3>
+            <div class="price">
+              <span class="amount">25,000</span>
+              <span class="period">FCFA/mois</span>
+            </div>
+            <p>Pour les petites entreprises</p>
+          </div>
+          <div class="pricing-features">
+            <div class="feature"><i class="fas fa-check"></i> Jusqu'à 50 employés</div>
+            <div class="feature"><i class="fas fa-check"></i> Gestion du personnel</div>
+            <div class="feature"><i class="fas fa-check"></i> Congés et absences</div>
+            <div class="feature"><i class="fas fa-check"></i> Pointage mobile</div>
+            <div class="feature"><i class="fas fa-times"></i> Gestion de paie</div>
+          </div>
+          <button class="btn btn-secondary">Démarrer</button>
+        </div>
+
+        <div class="pricing-card featured">
+          <div class="pricing-badge">Populaire</div>
+          <div class="pricing-header">
+            <h3>Business</h3>
+            <div class="price">
+              <span class="amount">75,000</span>
+              <span class="period">FCFA/mois</span>
+            </div>
+            <p>Pour les PME</p>
+          </div>
+          <div class="pricing-features">
+            <div class="feature"><i class="fas fa-check"></i> Jusqu'à 200 employés</div>
+            <div class="feature"><i class="fas fa-check"></i> Tous les modules RH</div>
+            <div class="feature"><i class="fas fa-check"></i> Gestion complète de paie</div>
+            <div class="feature"><i class="fas fa-check"></i> Tableaux de bord avancés</div>
+            <div class="feature"><i class="fas fa-check"></i> Support prioritaire</div>
+          </div>
+          <button class="btn btn-primary">Choisir cette offre</button>
+        </div>
+
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3>Enterprise</h3>
+            <div class="price">
+              <span class="amount">Contactez-nous</span>
+            </div>
+            <p>Pour les grands groupes</p>
+          </div>
+          <div class="pricing-features">
+            <div class="feature"><i class="fas fa-check"></i> Nombre illimité d'employés</div>
+            <div class="feature"><i class="fas fa-check"></i> Personnalisation complète</div>
+            <div class="feature"><i class="fas fa-check"></i> API et intégrations</div>
+            <div class="feature"><i class="fas fa-check"></i> Hébergement dédié</div>
+            <div class="feature"><i class="fas fa-check"></i> Manager dédié</div>
+          </div>
+          <button class="btn btn-secondary">Nous contacter</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section section-padding">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Prêt à transformer votre gestion RH ?</h2>
+        <p class="cta-subtitle">
+          Rejoignez les centaines d'entreprises sénégalaises qui ont choisi la solution locale,
+          sécurisée et complète pour leur gestion des ressources humaines.
+        </p>
+
+        <div class="cta-actions">
+          <button class="btn btn-primary btn-large">
+            <i class="fas fa-rocket"></i> Essai gratuit 14 jours
+          </button>
+          <button class="btn btn-secondary btn-large">
+            <i class="fas fa-phone-alt"></i> Demander une démo
+          </button>
+        </div>
+
+        <div class="cta-features">
+          <div class="feature">
+            <i class="fas fa-clock"></i>
+            <span>Mise en place en 48h</span>
+          </div>
+          <div class="feature">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Formation incluse</span>
+          </div>
+          <div class="feature">
+            <i class="fas fa-sync-alt"></i>
+            <span>Migration gratuite</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

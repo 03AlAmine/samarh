@@ -1,0 +1,234 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Mon profil</h1>
+    <p class="page-subtitle">Gérez vos informations personnelles</p>
+  </div>
+</div>
+
+<div class="profil-layout">
+
+  <!-- ── Carte identité ──────────────────────────────────────────────────── -->
+  <aside class="identity-card card">
+    <div class="avatar-wrap">
+      <div class="big-avatar">{{ initials() }}</div>
+    </div>
+    <h2 class="id-name">{{ displayName() }}</h2>
+    <p class="id-role">{{ roleLabel() }}</p>
+
+    @if (communauteNom()) {
+      <div class="id-badge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+        {{ communauteNom() }}
+      </div>
+    }
+
+    @if (matricule()) {
+      <div class="id-badge secondary">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/>
+          <path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/>
+        </svg>
+        {{ matricule() }}
+      </div>
+    }
+
+    <div class="id-divider"></div>
+
+    <div class="id-meta">
+      @if (user?.email) {
+        <div class="meta-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          <span>{{ user?.email }}</span>
+        </div>
+      }
+      @if (user?.phone || user?.telephone) {
+        <div class="meta-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.42 19a19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2 4.18 2 2 0 0 1 3.98 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          <span>{{ user?.phone || user?.telephone }}</span>
+        </div>
+      }
+      @if (createdAt()) {
+        <div class="meta-row muted">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/>
+            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.7"/>
+          </svg>
+          <span>Depuis le {{ createdAt() }}</span>
+        </div>
+      }
+    </div>
+
+    <button class="btn-logout" (click)="logout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      Se déconnecter
+    </button>
+  </aside>
+
+  <!-- ── Contenu onglets ─────────────────────────────────────────────────── -->
+  <div class="profil-content">
+
+    <!-- Onglets -->
+    <div class="tabs card" style="padding:0;margin-bottom:20px">
+      <button class="tab-btn" [class.active]="activeTab() === 'infos'" (click)="setTab('infos')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/>
+        </svg>
+        Informations
+      </button>
+      @if (isFirebaseUser) {
+        <button class="tab-btn" [class.active]="activeTab() === 'securite'" (click)="setTab('securite')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          Sécurité
+        </button>
+      }
+    </div>
+
+    <!-- Onglet infos ──────────────────────────────────────────────────────── -->
+    @if (activeTab() === 'infos') {
+      <div class="card">
+        <h2 class="section-title">Informations personnelles</h2>
+        <form [formGroup]="infoForm" (ngSubmit)="saveInfos()" class="profil-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Prénom *</label>
+              <input class="form-control" formControlName="firstName" placeholder="Prénom"
+                [class.invalid]="fi['firstName'].invalid && fi['firstName'].touched"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nom *</label>
+              <input class="form-control" formControlName="lastName" placeholder="Nom"
+                [class.invalid]="fi['lastName'].invalid && fi['lastName'].touched"/>
+            </div>
+            <div class="form-group full-col">
+              <label class="form-label">Téléphone</label>
+              <input class="form-control" formControlName="phone" type="tel" placeholder="+221 77 000 00 00"/>
+            </div>
+          </div>
+
+          <!-- Infos en lecture seule -->
+          <div class="readonly-section">
+            @if (user?.email) {
+              <div class="readonly-row">
+                <span class="readonly-label">Email</span>
+                <span class="readonly-value">{{ user?.email }}</span>
+                <span class="readonly-hint">Non modifiable</span>
+              </div>
+            }
+            @if (matricule()) {
+              <div class="readonly-row">
+                <span class="readonly-label">Matricule</span>
+                <code class="readonly-value mono">{{ matricule() }}</code>
+                <span class="readonly-hint">Attribué par l'admin</span>
+              </div>
+            }
+            @if (communauteNom()) {
+              <div class="readonly-row">
+                <span class="readonly-label">Communauté</span>
+                <span class="readonly-value">{{ communauteNom() }}</span>
+                <span class="readonly-hint">Non modifiable</span>
+              </div>
+            }
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" [disabled]="savingInfos()">
+              @if (savingInfos()) { <span class="spinner sm"></span> }
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Onglet sécurité ──────────────────────────────────────────────────── -->
+    @if (activeTab() === 'securite' && isFirebaseUser) {
+      <div class="card">
+        <h2 class="section-title">Changer le mot de passe</h2>
+        <p class="section-desc">Vous devrez vous reconnecter après le changement.</p>
+
+        <form [formGroup]="pwdForm" (ngSubmit)="changePassword()" class="profil-form">
+          <div class="form-group">
+            <label class="form-label">Mot de passe actuel *</label>
+            <div class="input-password">
+              <input class="form-control" formControlName="currentPassword"
+                [type]="showCurrentPwd() ? 'text' : 'password'"
+                placeholder="Votre mot de passe actuel"
+                [class.invalid]="fp['currentPassword'].invalid && fp['currentPassword'].touched"/>
+              <button type="button" class="pwd-toggle" (click)="toggleCurrentPwd()">
+                @if (showCurrentPwd()) {
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                } @else {
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg>
+                }
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nouveau mot de passe *</label>
+            <div class="input-password">
+              <input class="form-control" formControlName="newPassword"
+                [type]="showNewPwd() ? 'text' : 'password'"
+                placeholder="Minimum 6 caractères"
+                [class.invalid]="fp['newPassword'].invalid && fp['newPassword'].touched"/>
+              <button type="button" class="pwd-toggle" (click)="toggleNewPwd()">
+                @if (showNewPwd()) {
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                } @else {
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg>
+                }
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Confirmer le nouveau mot de passe *</label>
+            <input class="form-control" formControlName="confirmPassword"
+              type="password" placeholder="Répétez le nouveau mot de passe"
+              [class.invalid]="(fp['confirmPassword'].touched || fp['newPassword'].touched) && pwdForm.hasError('mismatch')"/>
+            @if (pwdForm.hasError('mismatch') && fp['confirmPassword'].touched) {
+              <span class="field-error">Les mots de passe ne correspondent pas.</span>
+            }
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" [disabled]="savingPassword()">
+              @if (savingPassword()) { <span class="spinner sm"></span> }
+              Modifier le mot de passe
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Info employé communauté -->
+      @if (isCommunauteUser) {
+        <div class="card info-card">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          <p>Pour modifier votre mot de passe d'accès à l'application, contactez votre administrateur.</p>
+        </div>
+      }
+    }
+
+  </div>
+</div>

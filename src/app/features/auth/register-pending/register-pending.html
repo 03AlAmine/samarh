@@ -1,0 +1,72 @@
+<!-- ─── REGISTER PENDING ──────────────────────────────────────────────────── -->
+<div class="auth-page">
+  <div class="auth-card pending-card">
+
+    <!-- Icône -->
+    <div class="pending-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="#d97706" stroke-width="1.7"/>
+        <path d="M12 7v5l3 3" stroke="#d97706" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Titre -->
+    <h1>Demande en attente</h1>
+
+    @if (firstName) {
+      <p class="greeting">Bonjour <strong>{{ firstName }}</strong>,</p>
+    }
+
+    <p class="message">
+      Votre demande d'inscription est en cours d'examen par notre équipe.
+      @if (email) {
+        Vous serez notifié à <strong>{{ email }}</strong> dès qu'elle sera traitée.
+      }
+    </p>
+
+    <!-- Stepper -->
+    <div class="stepper">
+      <div class="step done">
+        <div class="step-circle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="step-label">Compte créé</span>
+      </div>
+      <div class="step-line done"></div>
+
+      <div class="step active">
+        <div class="step-circle">
+          <span class="dot-pulse"></span>
+        </div>
+        <span class="step-label">Vérification</span>
+      </div>
+      <div class="step-line"></div>
+
+      <div class="step">
+        <div class="step-circle"></div>
+        <span class="step-label">Accès accordé</span>
+      </div>
+    </div>
+
+    <!-- Info délai -->
+    <div class="info-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      <p>Le délai de traitement est généralement de <strong>24 à 48h</strong> ouvrées. Cette page se rafraîchit automatiquement.</p>
+    </div>
+
+    <!-- Actions -->
+    <button class="btn-logout" (click)="logout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      Se déconnecter
+    </button>
+
+  </div>
+</div>

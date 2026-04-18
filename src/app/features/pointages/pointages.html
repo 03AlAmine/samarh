@@ -1,0 +1,254 @@
+<!-- ─── POINTAGES ─────────────────────────────────────────────────────────── -->
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Pointages</h1>
+    <p class="page-subtitle">
+      {{ lignesFiltrees().length }} employé{{ lignesFiltrees().length > 1 ? 's' : '' }}
+    </p>
+  </div>
+  <button
+    class="btn btn--secondary btn--sm"
+    (click)="exportCSV()"
+    [disabled]="lignesFiltrees().length === 0"
+  >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+      />
+    </svg>
+    Exporter CSV
+  </button>
+</div>
+
+<!-- Filtres -->
+<div class="filters-row card" style="padding: 12px 16px; margin-bottom: 20px">
+  <!-- Périodes rapides -->
+  <div class="periodes-rapides">
+    @for (p of [
+      {key:'today', label:"Aujourd'hui"},
+      {key:'yesterday', label:'Hier'},
+      {key:'week', label:'Semaine'},
+      {key:'month', label:'Ce mois'},
+      {key:'prev-month', label:'Mois préc.'}
+    ]; track p.key) {
+      <button
+        class="periode-chip"
+        [class.active]="periodeRapide() === p.key"
+        (click)="setPeriodeRapide(p.key)"
+      >{{ p.label }}</button>
+    }
+  </div>
+
+  <div class="filter-sep"></div>
+
+  <!-- Navigation date -->
+  <div class="date-nav">
+    <button class="nav-btn" (click)="jourPrecedent()" title="Jour précédent">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+    <input
+      class="form-control date-input"
+      type="date"
+      [value]="dateSelectionnee()"
+      (change)="onDateChange($any($event.target).value)"
+    />
+    <button class="nav-btn" (click)="jourSuivant()" [disabled]="isToday" title="Jour suivant">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+    @if (isToday) {
+      <span class="today-badge">Aujourd'hui</span>
+    }
+  </div>
+
+  <div class="filter-sep"></div>
+
+  <select
+    class="form-control filter-select"
+    [value]="filtreService()"
+    (change)="filtreService.set($any($event.target).value)"
+  >
+    <option value="">Tous les services</option>
+    @for (s of nomsServices(); track s) {
+      <option [value]="s">{{ s }}</option>
+    }
+  </select>
+
+  <select
+    class="form-control filter-select"
+    [value]="filtreStatut()"
+    (change)="filtreStatut.set($any($event.target).value)"
+  >
+    <option value="">Tous statuts</option>
+    <option value="present">Présents</option>
+    <option value="retard">Retards</option>
+    <option value="absent">Absents</option>
+  </select>
+</div>
+
+<!-- Stats -->
+<div class="grid-stats" style="margin-bottom: 20px">
+  <div class="stat-card clickable" (click)="filtreStatut.set('')">
+    <div class="stat-icon-wrap blue">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+        />
+        <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7" />
+      </svg>
+    </div>
+    <div>
+      <p class="stat-label">Total</p>
+      <p class="stat-value">{{ stats().total }}</p>
+    </div>
+  </div>
+  <div class="stat-card clickable" (click)="filtreStatut.set('present')">
+    <div class="stat-icon-wrap green">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M22 11.08V12a10 10 0 1 1-5.93-9.14"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+        />
+        <path
+          d="M22 4 12 14.01l-3-3"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+        />
+      </svg>
+    </div>
+    <div>
+      <p class="stat-label">Présents</p>
+      <p class="stat-value">{{ stats().presents }}</p>
+    </div>
+  </div>
+  <div class="stat-card clickable" (click)="filtreStatut.set('retard')">
+    <div class="stat-icon-wrap yellow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7" />
+        <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
+    </div>
+    <div>
+      <p class="stat-label">Retards</p>
+      <p class="stat-value">{{ stats().retards }}</p>
+    </div>
+  </div>
+  <div class="stat-card clickable" (click)="filtreStatut.set('absent')">
+    <div class="stat-icon-wrap red">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7" />
+        <path
+          d="M15 9l-6 6M9 9l6 6"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+        />
+      </svg>
+    </div>
+    <div>
+      <p class="stat-label">Absents</p>
+      <p class="stat-value">{{ stats().absents }}</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon-wrap purple">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M18 20V10M12 20V4M6 20v-6"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+      </svg>
+    </div>
+    <div>
+      <p class="stat-label">Taux présence</p>
+      <p class="stat-value">{{ stats().taux }}%</p>
+    </div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="card table-wrapper">
+  @if (lignesFiltrees().length === 0) {
+    <div class="empty-state">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" />
+        <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      </svg>
+      <p>Aucun pointage pour cette sélection</p>
+    </div>
+  }
+  @if (lignesFiltrees().length > 0) {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Employé</th>
+          <th>Service</th>
+          <th>Arrivée</th>
+          <th>Départ</th>
+          <th>Heures</th>
+          <th>Retard</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (l of lignesFiltrees(); track l.matricule) {
+          <tr>
+            <!-- Replace line 128 with this safer approach -->
+            <td data-label="Employé">
+              <div class="cell-employe">
+                <div class="emp-avatar-sm">
+                  {{ (l.prenom.charAt(0) || '?') + (l.nom.charAt(0) || '?') }}
+                </div>
+                <div>
+                  <span class="emp-name">{{ l.prenom }} {{ l.nom }}</span>
+                  <span class="emp-mat">{{ l.matricule }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="service-chip">{{ l.service }}</span>
+            </td>
+            <td>
+              <span [class.time-late]="l.retard > 0">{{ l.arrive || '—' }}</span>
+            </td>
+            <td data-label="Départ">{{ l.descente || '—' }}</td>
+            <td>
+              @if (l.heures > 0) {
+                <span class="hours-badge">{{ l.heures }}h</span>
+              } @else {
+                <span style="color: var(--text-muted)">—</span>
+              }
+            </td>
+            <td>
+              @if (l.retard > 0) {
+                <span class="retard-badge">+{{ l.retard }} min</span>
+              } @else {
+                <span style="color: var(--text-muted)">—</span>
+              }
+            </td>
+            <td data-label="Statut">
+              <span class="badge badge--{{ statutClass(l.statut) }}">{{
+                statutLabel(l.statut)
+              }}</span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

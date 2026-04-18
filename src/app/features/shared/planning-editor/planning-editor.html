@@ -1,0 +1,109 @@
+<!-- ─── PLANNING EDITOR ───────────────────────────────────────────────────── -->
+
+<!-- Résumé + presets -->
+<div class="planning-toolbar">
+  <div class="planning-resume">
+    <div class="resume-stat">
+      <span class="resume-val">{{ resume().jours }}</span>
+      <span class="resume-lbl">jour{{ resume().jours > 1 ? 's' : '' }}/sem</span>
+    </div>
+    <div class="resume-sep"></div>
+    <div class="resume-stat">
+      <span class="resume-val">{{ resume().label }}</span>
+      <span class="resume-lbl">heures/sem</span>
+    </div>
+  </div>
+
+  @if (!readOnly) {
+    <div class="presets">
+      <span class="presets-label">Presets :</span>
+      <button class="preset-btn" type="button" (click)="semaineStandard()">Lun–Ven</button>
+      <button class="preset-btn" type="button" (click)="sixJours()">Lun–Sam</button>
+    </div>
+  }
+</div>
+
+<!-- Grille des jours -->
+<div class="planning-grid">
+  @for (jour of jours(); track jour.jour) {
+    <div class="jour-card" [class.actif]="jour.actif" [class.repos]="!jour.actif">
+
+      <!-- En-tête du jour -->
+      <div class="jour-header">
+        <span class="jour-nom">{{ jour.jour.slice(0, 3) }}</span>
+        @if (!readOnly) {
+          <label class="toggle-switch" [title]="jour.actif ? 'Marquer repos' : 'Activer'">
+            <input type="checkbox" [checked]="jour.actif" (change)="toggleJour(jour.jour)"/>
+            <span class="toggle-track"></span>
+          </label>
+        } @else {
+          <span class="repos-badge" [class.travail]="jour.actif">
+            {{ jour.actif ? 'Travail' : 'Repos' }}
+          </span>
+        }
+      </div>
+
+      <!-- Contenu -->
+      @if (jour.actif) {
+        <div class="jour-body">
+          @if (!readOnly) {
+            <div class="time-row">
+              <div class="time-group">
+                <label class="time-label">Début</label>
+                <input class="time-input" type="time"
+                  [value]="jour.heureDebut"
+                  (change)="updateHeure(jour.jour, 'heureDebut', $any($event.target).value)"/>
+              </div>
+              <svg class="time-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h14M14 7l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div class="time-group">
+                <label class="time-label">Fin</label>
+                <input class="time-input" type="time"
+                  [value]="jour.heureFin"
+                  (change)="updateHeure(jour.jour, 'heureFin', $any($event.target).value)"/>
+              </div>
+            </div>
+            <div class="jour-footer">
+              <span class="duree-badge">{{ duree(jour) }}</span>
+              <button class="apply-all-btn" type="button" title="Appliquer à tous les jours actifs"
+                (click)="appliquerATous(jour)">
+                Appliquer à tous
+              </button>
+            </div>
+          } @else {
+            <div class="time-display">
+              <span class="time-val">{{ jour.heureDebut }}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M14 7l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              <span class="time-val">{{ jour.heureFin }}</span>
+            </div>
+            <span class="duree-badge">{{ duree(jour) }}</span>
+          }
+        </div>
+      } @else {
+        <div class="repos-body">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Repos</span>
+        </div>
+      }
+
+    </div>
+  }
+</div>
+
+<!-- Actions -->
+@if (!readOnly) {
+  <div class="planning-actions">
+    <button class="btn btn--primary" type="button" [disabled]="saving" (click)="onSave()">
+      @if (saving) { <span class="spinner sm"></span> }
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <polyline points="7 3 7 8 15 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      Enregistrer le planning
+    </button>
+  </div>
+}

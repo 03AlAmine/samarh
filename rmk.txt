@@ -1,0 +1,8 @@
+Justice (onglet litige cot)  nom locataire, niveau dossier, aobservation 
+Recouvrement
+Onglet propection  (Produit, avec entrée bien)
+Ajout transfert( date montant sans nom) aussi mettre 
+Onglet finance entrée sortie
+Onglet echeancier pour assurance (envoi message whtsapp)
+Numero police à ajouter sur l'assurance
+Gestion financiere à ajouté

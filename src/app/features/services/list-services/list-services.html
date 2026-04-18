@@ -1,0 +1,234 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Services</h1>
+    <p class="page-subtitle">{{ services().length }} service{{ services().length > 1 ? 's' : '' }}</p>
+  </div>
+  @if (isAdmin) {
+    <button class="btn btn--primary btn--sm" (click)="openForm()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Nouveau service
+    </button>
+  }
+</div>
+
+<div class="search-bar card" style="padding:12px 16px;margin-bottom:20px">
+  <div class="filter-search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    <input class="filter-input" type="text" placeholder="Rechercher un service…"
+      [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)"/>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="loading-state"><div class="spinner"></div><p>Chargement…</p></div>
+}
+
+@if (!loading()) {
+  @if (services().length === 0) {
+    <div class="card empty-state">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <p>Aucun service trouvé</p>
+    </div>
+  }
+
+  <div class="services-grid">
+    @for (s of services(); track s.id) {
+      <div class="service-card card" (click)="openDetail(s)" style="cursor:pointer">
+        <div class="service-card-header">
+          <div class="service-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </div>
+          <div class="service-meta">
+            <h3 class="service-name">{{ s.nom }}</h3>
+            <code class="mono-xs">{{ s.matricule }}</code>
+          </div>
+          <div class="service-actions">
+            @if (s.actif !== false) {
+              <span class="badge badge--success">Actif</span>
+            } @else {
+              <span class="badge badge--neutral">Inactif</span>
+            }
+          </div>
+        </div>
+
+        <div class="service-stats">
+          <div class="sstat">
+            <span class="sstat-value">{{ effectif(s.matricule) }}</span>
+            <span class="sstat-label">employés</span>
+          </div>
+          <div class="sstat">
+            <span class="sstat-value">{{ s.type_service || 'Permanent' }}</span>
+            <span class="sstat-label">type</span>
+          </div>
+        </div>
+
+        @if (s.description) {
+          <p class="service-description">{{ s.description }}</p>
+        }
+
+        @if (isAdmin) {
+          <div class="service-footer" (click)="$event.stopPropagation()">
+            <button class="btn btn--ghost btn--sm" (click)="openForm(s)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" stroke-width="1.7"/></svg>
+              Modifier
+            </button>
+            <button class="btn btn--ghost btn--sm danger" (click)="deleteService(s.id, $event)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              Supprimer
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- ── Modal formulaire ──────────────────────────────────────────────────────── -->
+@if (showForm()) {
+  <div class="modal-overlay" (click)="closeForm()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingService() ? 'Modifier le service' : 'Nouveau service' }}</h3>
+        <button class="modal-close" (click)="closeForm()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      @if (formError()) { <div class="form-alert">{{ formError() }}</div> }
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="form-group">
+          <label class="form-label">Nom du service *</label>
+          <input class="form-control" formControlName="nom" placeholder="Ex: Ressources Humaines"
+            [class.invalid]="f['nom'].invalid && f['nom'].touched"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Matricule *</label>
+            <input class="form-control" formControlName="matricule" placeholder="SVC001"
+              [class.invalid]="f['matricule'].invalid && f['matricule'].touched"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select class="form-control" formControlName="type_service">
+              <option value="Permanent">Permanent</option>
+              <option value="Rotatif">Rotatif</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" formControlName="description" rows="3" placeholder="Description du service…"></textarea>
+        </div>
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="actif"/>
+            <span>Service actif</span>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn--secondary" (click)="closeForm()">Annuler</button>
+          <button type="submit" class="btn btn--primary" [disabled]="saving()">
+            @if (saving()) { <span class="spinner sm"></span> }
+            {{ editingService() ? 'Enregistrer' : 'Créer le service' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ── Panneau détail service ────────────────────────────────────────────────── -->
+@if (selectedService(); as s) {
+  <div class="detail-overlay" (click)="closeDetail()">
+    <div class="detail-panel" (click)="$event.stopPropagation()">
+
+      <div class="detail-panel-header">
+        <div class="detail-title-group">
+          <div class="service-icon-lg">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <h2>{{ s.nom }}</h2>
+            <span class="detail-sub"><code>{{ s.matricule }}</code> · {{ s.type_service || 'Permanent' }}</span>
+          </div>
+        </div>
+        <button class="modal-close" (click)="closeDetail()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Stats rapides -->
+      <div class="detail-stats">
+        <div class="dstat">
+          <span class="dstat-value">{{ effectif(s.matricule) }}</span>
+          <span class="dstat-label">Employés</span>
+        </div>
+        <div class="dstat">
+          <span class="dstat-value">{{ tauxPresenceService() }}%</span>
+          <span class="dstat-label">Présents aujourd'hui</span>
+        </div>
+        <div class="dstat">
+          <span class="dstat-value badge badge--{{ s.actif !== false ? 'success' : 'neutral' }}">
+            {{ s.actif !== false ? 'Actif' : 'Inactif' }}
+          </span>
+          <span class="dstat-label">Statut</span>
+        </div>
+      </div>
+
+      @if (s.description) {
+        <p class="detail-desc">{{ s.description }}</p>
+      }
+
+      <!-- Onglets du panneau -->
+      <div class="detail-tabs">
+        <button class="detail-tab" [class.active]="detailTab() === 'employes'" (click)="detailTab.set('employes')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/></svg>
+          Employés
+          @if (employesDuService().length) {
+            <span class="dtab-badge">{{ employesDuService().length }}</span>
+          }
+        </button>
+        <button class="detail-tab" [class.active]="detailTab() === 'planning'" (click)="detailTab.set('planning')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.7"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          Planning
+          @if (selectedService()?.planning?.length) {
+            <span class="dtab-badge">{{ selectedService()?.planning?.length }}j</span>
+          }
+        </button>
+      </div>
+
+      <!-- Tab Employés -->
+      @if (detailTab() === 'employes') {
+        @if (employesDuService().length === 0) {
+          <p class="detail-empty">Aucun employé assigné à ce service.</p>
+        }
+        <div class="employe-list-detail">
+          @for (e of employesDuService(); track e.id) {
+            <div class="emp-detail-row">
+              <div class="emp-avatar-sm">{{ initials(e) }}</div>
+              <div class="emp-info">
+                <span class="emp-name">{{ e.prenom }} {{ e.nom }}</span>
+                <span class="emp-meta">{{ e.poste || '—' }} · {{ e.matricule }}</span>
+              </div>
+              <span class="presence-dot" [class.present]="estPresent(e.matricule)"
+                title="{{ estPresent(e.matricule) ? 'Présent' : 'Absent' }}"></span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Tab Planning -->
+      @if (detailTab() === 'planning') {
+        <div class="planning-panel-wrap">
+          <p class="detail-empty-sm">Planning par défaut du service. Les employés sans planning individuel héritent de celui-ci.</p>
+          <app-planning-editor
+            [planning]="selectedService()?.planning || []"
+            [saving]="savingPlanning()"
+            [readOnly]="!isAdmin"
+            (saved)="savePlanningService($event)"
+          />
+        </div>
+      }
+
+    </div>
+  </div>
+}
