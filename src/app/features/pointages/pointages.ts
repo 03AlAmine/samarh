@@ -1,10 +1,10 @@
 // ─── POINTAGES ────────────────────────────────────────────────────────────────
 
-import { Component, inject, signal, computed, OnInit, OnDestroy, effect, ChangeDetectionStrategy, DestroyRef} from '@angular/core';
+import { Component, inject, signal, computed, OnInit, effect, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, Subscription, takeUntil } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { EmployeService } from '../../core/services/employe.service';
 import { PointageService } from '../../core/services/pointage.service';
 import { Employe, Service } from '../../core/models/employe.model';
@@ -30,10 +30,7 @@ interface LignePointage {
   templateUrl: './pointages.html',
   styleUrls: ['./pointages.scss'],
 })
-export class PointagesComponent implements OnInit, OnDestroy {
-  ngOnDestroy(): void {
-    throw new Error('Method not implemented.');
-  }
+export class PointagesComponent implements OnInit {
   private employeService = inject(EmployeService);
   private destroyRef = inject(DestroyRef);
   private pointageService = inject(PointageService);

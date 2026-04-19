@@ -8,7 +8,7 @@
       }
     </p>
   </div>
-  @if (isAdmin) {
+  @if (canEdit) {
     <button class="btn btn--primary btn--sm" (click)="openForm()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       Ajouter
@@ -105,7 +105,7 @@
               <td>{{ e.typeContrat || '—' }}</td>
               <td><span class="badge badge--{{ statutClass(e.statut) }}">{{ e.statut || 'actif' }}</span></td>
               <td class="actions-cell" (click)="$event.stopPropagation()">
-                @if (isAdmin) {
+                @if (canEdit) {
                   <button class="btn btn--ghost btn--icon btn--sm" title="Modifier" (click)="openForm(e)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" stroke-width="1.7"/></svg>
                   </button>
@@ -172,7 +172,7 @@
 <!-- ── Modal ajout/modification ─────────────────────────────────────────────── -->
 @if (showForm()) {
   <div class="modal-overlay" (click)="closeForm()">
-    <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-box modal-box--lg" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ editingEmploye() ? 'Modifier l\'employé' : 'Ajouter un employé' }}</h3>
         <button class="modal-close" (click)="closeForm()">

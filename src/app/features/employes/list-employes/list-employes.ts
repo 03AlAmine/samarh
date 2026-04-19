@@ -1,6 +1,15 @@
 // ─── LISTE EMPLOYÉS ───────────────────────────────────────────────────────────
 
-import { Component, inject, signal, computed, effect, OnInit, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  effect,
+  OnInit,
+  ChangeDetectionStrategy,
+  DestroyRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -11,7 +20,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Employe, Service } from '../../../core/models/employe.model';
-import { EmployeFormComponent } from "../employe-form";
+import { EmployeFormComponent } from '../employe-form/employe-form';
 
 @Component({
   selector: 'app-list-employes',
@@ -25,7 +34,7 @@ export class ListEmployesComponent implements OnInit {
   private employeService = inject(EmployeService);
   private destroyRef = inject(DestroyRef);
   private auth = inject(AuthService);
-  private toast   = inject(ToastService);
+  private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
 
   // State
@@ -43,7 +52,17 @@ export class ListEmployesComponent implements OnInit {
   savingEmploye = signal(false);
   formError = signal('');
 
-  get isAdmin() { return this.auth.isAdmin; }
+  get isAdmin() {
+    return this.auth.isAdmin;
+  }
+  get canEdit() {
+    return this.auth.isAdmin || this.auth.canEditEmployes;
+  }
+
+  /** Pour les chargés de compte, filtre uniquement leurs employés */
+  get currentUser() {
+    return (this.auth as any)['userSubject']?.value as any;
+  }
 
   // Employés filtrés
   employes = computed(() => {
@@ -53,28 +72,39 @@ export class ListEmployesComponent implements OnInit {
     const statut = this.filterStatut();
 
     if (q) list = this.employeService.search(list, q);
-    if (svc) list = list.filter(e => e.service === svc);
-    if (statut) list = list.filter(e => (e.statut || 'actif') === statut);
+    if (svc) list = list.filter((e) => e.service === svc);
+    if (statut) list = list.filter((e) => (e.statut || 'actif') === statut);
 
     return list;
   });
 
   // Employés de la page courante
-  employesPagines = computed(() => {
-    const page = this.currentPage();
-    return this.employes().slice((page - 1) * this.PAGE_SIZE, page * this.PAGE_SIZE);
+  /** Employés visibles selon le rôle */
+  employesVisibles = computed(() => {
+    const all = this.employes();
+    if (this.auth.isAdmin) return all;
+    // Chargé de compte → filtre par services autorisés
+    const u = this.currentUser;
+    if (!u || !Array.isArray(u.services) || u.services.length === 0) return [];
+    return all.filter((e) => u.services.includes(e.service));
   });
 
-  totalPages = computed(() => Math.ceil(this.employes().length / this.PAGE_SIZE));
+  employesPagines = computed(() => {
+    const page = this.currentPage();
+    return this.employesVisibles().slice((page - 1) * this.PAGE_SIZE, page * this.PAGE_SIZE);
+  });
+
+  totalPages = computed(() => Math.ceil(this.employesVisibles().length / this.PAGE_SIZE));
 
   pages = computed(() => {
     const total = this.totalPages();
     const current = this.currentPage();
-    if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
     // Fenêtre glissante autour de la page courante
     const pages: (number | '...')[] = [1];
     if (current > 3) pages.push('...');
-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++)
+      pages.push(i);
     if (current < total - 2) pages.push('...');
     pages.push(total);
     return pages;
@@ -88,23 +118,22 @@ export class ListEmployesComponent implements OnInit {
   }
 
   constructor() {
-    // Remettre à la page 1 quand les filtres changent
+    // Pas besoin d'allowSignalWrites, c'est automatique maintenant
     effect(() => {
-      this.employes(); // track signal
+      this.employes(); // tracker les changements de filtre
       this.currentPage.set(1);
-    }, { allowSignalWrites: true });
+    });
   }
 
   ngOnInit(): void {
-    this.employeService.employes$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(e => {
+    this.employeService.employes$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((e) => {
       this.allEmployes.set(e);
       this.loading.set(false);
     });
-    this.employeService.services$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(s => {
+    this.employeService.services$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((s) => {
       this.services.set(s);
     });
   }
-
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -142,13 +171,18 @@ export class ListEmployesComponent implements OnInit {
 
   async archiver(id: string, event: Event): Promise<void> {
     event.stopPropagation();
-    const ok = await this.confirm.ask('Archiver cet employé ? Il ne sera plus visible dans les listes actives.', 'Archiver', 'warning', 'Archiver l\'employé');
+    const ok = await this.confirm.ask(
+      'Archiver cet employé ? Il ne sera plus visible dans les listes actives.',
+      'Archiver',
+      'warning',
+      "Archiver l'employé",
+    );
     if (!ok) return;
     try {
       await this.employeService.archive(id);
       this.toast.success('Employé archivé');
     } catch (e: any) {
-      this.toast.error(e.message || 'Erreur lors de l\'archivage.');
+      this.toast.error(e.message || "Erreur lors de l'archivage.");
     }
   }
 
@@ -160,7 +194,7 @@ export class ListEmployesComponent implements OnInit {
 
   nomService(matricule?: string): string {
     if (!matricule) return '—';
-    return this.services().find(s => s.matricule === matricule)?.nom || matricule;
+    return this.services().find((s) => s.matricule === matricule)?.nom || matricule;
   }
 
   statutClass(statut?: string): string {

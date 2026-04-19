@@ -14,6 +14,7 @@ import {
   Employe,
   Planning,
 } from '../models/employe.model';
+import { filter, take, switchMap } from 'rxjs/operators';
 import {
   PresenceBrute,
   JourFerie,
@@ -66,9 +67,12 @@ export class PointageService {
       return this.cacheParDate.get(dateISO)!;
     }
 
-    const obs$ = this.fb
-      .clientListenByChild<PresenceBrute>('Login', 'date', dateISO)
-      .pipe(shareReplay(1));
+    const obs$ = this.fb.clientReady$.pipe(
+      filter(ready => ready),
+      take(1),
+      switchMap(() => this.fb.clientListenByChild<PresenceBrute>('Login', 'date', dateISO)),
+      shareReplay(1),
+    );
 
     this.cacheParDate.set(dateISO, obs$);
     return obs$;
@@ -79,15 +83,21 @@ export class PointageService {
    * Utilise orderByChild('date') + startAt/endAt → ne charge que la plage.
    */
   presencesPeriode$(dateDebut: string, dateFin: string): Observable<PresenceBrute[]> {
-    return this.fb
-      .clientListenByChild<PresenceBrute>('Login', 'date', dateDebut, dateFin)
-      .pipe(shareReplay(1));
+    return this.fb.clientReady$.pipe(
+      filter(ready => ready),
+      take(1),
+      switchMap(() => this.fb.clientListenByChild<PresenceBrute>('Login', 'date', dateDebut, dateFin)),
+      shareReplay(1),
+    );
   }
 
   /** Jours fériés (petite collection, temps réel global ok) */
-  jours_feries$: Observable<JourFerie[]> = this.fb
-    .clientListenList<JourFerie>('JoursFeries')
-    .pipe(shareReplay(1));
+  jours_feries$: Observable<JourFerie[]> = this.fb.clientReady$.pipe(
+    filter(ready => ready),
+    take(1),
+    switchMap(() => this.fb.clientListenList<JourFerie>('JoursFeries')),
+    shareReplay(1),
+  );
 
   // ── LECTURE PONCTUELLE ────────────────────────────────────────────────────
 

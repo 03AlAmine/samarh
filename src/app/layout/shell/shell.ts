@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Employés', route: '/employes', icon: 'users', communauteOnly: true },
   { label: 'Services', route: '/services', icon: 'briefcase', communauteOnly: true },
   { label: 'Pointages', route: '/pointages', icon: 'clock', communauteOnly: true },
+  { label: 'Cartes', route: '/cartes', icon: 'id-card', communauteOnly: true },
   { label: 'Communautés', route: '/admin/communautes', icon: 'globe', adminOnly: true },
   { label: 'Utilisateurs', route: '/admin/utilisateurs', icon: 'shield', adminOnly: true },
   {

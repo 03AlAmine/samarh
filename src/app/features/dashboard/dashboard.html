@@ -1,27 +1,31 @@
-<!-- ─── DASHBOARD ─────────────────────────────────────────────────────────── -->
+<!-- ─── DASHBOARD ENRICHI ────────────────────────────────────────────────── -->
 
-<!-- Chargement -->
+<!-- ── Skeleton ──────────────────────────────────────────────────────────── -->
 @if (loading()) {
-  <!-- Skeleton dashboard -->
   <div class="page-header">
-    <div><div class="sk sk-line w-40" style="height:24px;margin-bottom:6px"></div><div class="sk sk-line w-25"></div></div>
+    <div>
+      <div class="sk sk-line w-40" style="height:22px;margin-bottom:6px"></div>
+      <div class="sk sk-line w-25"></div>
+    </div>
   </div>
-  <div class="grid-stats" style="margin-bottom:24px">
-    @for (i of [1,2,3,4]; track i) {
-      <div class="stat-card"><div class="sk sk-square" style="width:40px;height:40px;border-radius:10px;margin-bottom:12px"></div><div class="sk sk-line w-50" style="height:10px;margin-bottom:6px"></div><div class="sk sk-line w-30" style="height:22px"></div></div>
+  <div class="grid-stats" style="margin-bottom:20px">
+    @for (i of [1,2,3,4,5]; track i) {
+      <div class="stat-card">
+        <div class="sk sk-square" style="width:42px;height:42px;border-radius:10px"></div>
+        <div style="flex:1">
+          <div class="sk sk-line w-50" style="height:10px;margin-bottom:7px"></div>
+          <div class="sk sk-line w-30" style="height:20px"></div>
+        </div>
+      </div>
     }
   </div>
-  <div class="dash-grid">
-    <div class="card" style="min-height:200px"><div class="sk sk-line w-40" style="height:14px;margin-bottom:20px"></div><div class="sk sk-circle" style="width:120px;height:120px;border-radius:50%;margin:0 auto"></div></div>
-    <div class="card" style="min-height:200px">
-      <div class="sk sk-line w-30" style="height:14px;margin-bottom:16px"></div>
-      @for (i of [1,2,3,4,5]; track i) {
-        <div style="margin-bottom:10px;display:flex;align-items:center;gap:10px"><div class="sk sk-line" style="flex:1;height:10px"></div><div class="sk sk-line w-10" style="height:10px;min-width:24px"></div></div>
-      }
-    </div>
+  <div class="dash-grid-main">
+    <div class="card sk-card" style="height:180px"></div>
+    <div class="card sk-card" style="height:180px"></div>
   </div>
 }
 
+<!-- ── Contenu ────────────────────────────────────────────────────────────── -->
 @if (!loading()) {
 
   <!-- Header -->
@@ -30,27 +34,30 @@
       <h1 class="page-title">{{ communauteNom }}</h1>
       <p class="page-subtitle">{{ today | titlecase }}</p>
     </div>
-    @if (!isAdmin) {
-      <a routerLink="/employes" class="btn btn--primary btn--sm">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M19 8v6M22 11h-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        Ajouter employé
-      </a>
-    }
+    <div class="header-actions">
+      @if (!isAdmin) {
+        <a routerLink="/employes" class="btn btn--primary btn--sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M19 8v6M22 11h-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          Ajouter employé
+        </a>
+      }
+    </div>
   </div>
 
-  <!-- Pas de base client connectée -->
+  <!-- Pas de DB client -->
   @if (!fb.hasClientDatabase) {
     <div class="card empty-setup">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#9ca3af" stroke-width="1.5"/><path d="M12 8v4M12 16h.01" stroke="#9ca3af" stroke-width="1.7" stroke-linecap="round"/></svg>
       <h3>Aucune base de données configurée</h3>
-      <p>Votre communauté n'a pas encore de configuration Firebase. Contactez l'administrateur pour activer votre espace.</p>
+      <p>Votre communauté n'a pas encore de configuration Firebase. Contactez l'administrateur.</p>
     </div>
   }
 
   @if (fb.hasClientDatabase) {
 
-    <!-- Stats principales -->
-    <div class="grid-stats" style="margin-bottom:24px">
+    <!-- ── Rangée 1 : 4 KPI ──────────────────────────────────────────────── -->
+    <div class="grid-stats" style="margin-bottom:20px">
+
       <div class="stat-card">
         <div class="stat-icon-wrap blue">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -68,6 +75,7 @@
         <div>
           <p class="stat-label">Présents aujourd'hui</p>
           <p class="stat-value">{{ stats().presentsAujourdhui }}</p>
+          <p class="stat-sub">{{ stats().tauxPresence }}% de l'effectif</p>
         </div>
       </div>
 
@@ -78,91 +86,252 @@
         <div>
           <p class="stat-label">Absents</p>
           <p class="stat-value">{{ stats().absentsAujourdhui }}</p>
+          <p class="stat-sub">{{ 100 - stats().tauxPresence }}% de l'effectif</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrap yellow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <p class="stat-label">Retards aujourd'hui</p>
+          <p class="stat-value">{{ alertesRetard().length }}</p>
+          <p class="stat-sub">employé{{ alertesRetard().length > 1 ? 's' : '' }} concerné{{ alertesRetard().length > 1 ? 's' : '' }}</p>
         </div>
       </div>
 
       <div class="stat-card">
         <div class="stat-icon-wrap purple">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 3v18h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m7 16 4-4 4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
         <div>
-          <p class="stat-label">Services</p>
-          <p class="stat-value">{{ stats().totalServices }}</p>
+          <p class="stat-label">Assiduité semaine</p>
+          <p class="stat-value">
+            @if (loadingSemaine()) { <span class="sk sk-line w-30" style="height:20px;display:inline-block"></span> }
+            @else {
+              {{ tauxAssiduiteSemaine() }}%
+            }
+          </p>
+          <p class="stat-sub">moy. sur 7 jours</p>
         </div>
       </div>
+
     </div>
 
-    <!-- Taux de présence + Répartition services -->
-    <div class="dash-grid">
+    <!-- ── Rangée 2 : Graphe 7 jours + Employé semaine ───────────────────── -->
+    <div class="dash-grid-main" style="margin-bottom:20px">
 
-      <!-- Taux de présence -->
+      <!-- Graphe barres 7 jours -->
       <div class="card">
-        <h2 class="card-title">Présence du jour</h2>
-        <div class="presence-ring-wrap">
-          <div class="presence-ring">
-            <svg viewBox="0 0 100 100" width="120" height="120">
-              <circle cx="50" cy="50" r="40" stroke="#f0f2f7" stroke-width="10" fill="none"/>
-              <circle
-                cx="50" cy="50" r="40"
-                [attr.stroke]="stats().tauxPresence >= 80 ? '#16a34a' : stats().tauxPresence >= 50 ? '#d97706' : '#dc2626'"
-                stroke-width="10" fill="none"
-                stroke-linecap="round"
-                [attr.stroke-dasharray]="(stats().tauxPresence * 2.51) + ' 251'"
-                transform="rotate(-90 50 50)"
-              />
+        <div class="card-header-row">
+          <h2 class="card-title">Présences — 7 derniers jours</h2>
+          @if (loadingSemaine()) { <span class="badge badge--neutral">Chargement…</span> }
+        </div>
+
+        @if (!loadingSemaine()) {
+          <div class="chart-bars">
+            @for (j of semaine(); track j.date) {
+              <div class="bar-col" [class.today]="j.isToday">
+                <div class="bar-val">{{ j.presents }}</div>
+                <div class="bar-wrap">
+                  <div class="bar-fill"
+                    [style.height.%]="maxSemainePct() > 0 ? (j.pct / maxSemainePct()) * 100 : 0"
+                    [class.bar-good]="j.pct >= 80"
+                    [class.bar-mid]="j.pct >= 50 && j.pct < 80"
+                    [class.bar-low]="j.pct < 50">
+                  </div>
+                </div>
+                <div class="bar-label">{{ j.label }}</div>
+                @if (j.isToday) { <div class="today-dot"></div> }
+              </div>
+            }
+          </div>
+
+          <!-- Légende -->
+          <div class="chart-legend">
+            <span class="legend-dot good"></span><span>≥ 80%</span>
+            <span class="legend-dot mid"></span><span>50–79%</span>
+            <span class="legend-dot low"></span><span>&lt; 50%</span>
+          </div>
+        }
+
+        @if (loadingSemaine()) {
+          <div class="chart-skeleton">
+            @for (i of [70,50,85,60,90,45,75]; track i) {
+              <div class="bar-col">
+                <div class="sk" style="width:100%;border-radius:4px" [style.height.px]="i * 0.8"></div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Employé de la semaine + taux présence -->
+      <div class="card card--split">
+
+        <!-- Employé de la semaine -->
+        <div class="split-top">
+          <h2 class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="color:#f59e0b">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
             </svg>
-            <div class="ring-center">
-              <span class="ring-value">{{ stats().tauxPresence }}%</span>
-              <span class="ring-label">présence</span>
+            Employé du jour
+          </h2>
+
+          @if (employSemaine()) {
+            <div class="star-employee">
+              <div class="star-avatar" [style.background]="avatarColor(employSemaine()!.id)">
+                {{ initials(employSemaine()!) }}
+              </div>
+              <div class="star-info">
+                <strong>{{ employSemaine()!.prenom }} {{ employSemaine()!.nom }}</strong>
+                <span>{{ employSemaine()!.poste || '—' }}</span>
+                <span class="star-service">{{ employSemaine()!.nom_service || '' }}</span>
+              </div>
+              <div class="star-crown">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#f59e0b">
+                  <path d="M2 20h20M4 20l2-10 6 4 6-4 2 10" stroke="#f59e0b" stroke-width="1.7" stroke-linejoin="round" fill="none"/>
+                  <circle cx="4" cy="9" r="2" fill="#f59e0b"/>
+                  <circle cx="20" cy="9" r="2" fill="#f59e0b"/>
+                  <circle cx="12" cy="6" r="2" fill="#f59e0b"/>
+                </svg>
+              </div>
+            </div>
+            <p class="star-caption">Ponctuel · présent ce jour · aucun retard</p>
+          } @else {
+            <div class="star-empty">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="#d1d5db" stroke-width="1.7" stroke-linejoin="round"/></svg>
+              <p>Données insuffisantes pour aujourd'hui</p>
+            </div>
+          }
+        </div>
+
+        <!-- Taux de présence ring -->
+        <div class="split-bottom">
+          <h2 class="card-title">Taux de présence</h2>
+          <div class="presence-ring-wrap">
+            <div class="presence-ring">
+              <svg viewBox="0 0 100 100" width="110" height="110">
+                <circle cx="50" cy="50" r="40" stroke="#f0f2f7" stroke-width="9" fill="none"/>
+                <circle
+                  cx="50" cy="50" r="40"
+                  [attr.stroke]="stats().tauxPresence >= 80 ? '#16a34a' : stats().tauxPresence >= 50 ? '#d97706' : '#dc2626'"
+                  stroke-width="9" fill="none" stroke-linecap="round"
+                  [attr.stroke-dasharray]="(stats().tauxPresence * 2.51) + ' 251'"
+                  transform="rotate(-90 50 50)"
+                />
+              </svg>
+              <div class="ring-center">
+                <span class="ring-value">{{ stats().tauxPresence }}%</span>
+                <span class="ring-label">présence</span>
+              </div>
+            </div>
+            <div class="presence-legend">
+              <div class="legend-row">
+                <span class="dot green"></span>
+                <span>Présents</span>
+                <strong>{{ stats().presentsAujourdhui }}</strong>
+              </div>
+              <div class="legend-row">
+                <span class="dot red"></span>
+                <span>Absents</span>
+                <strong>{{ stats().absentsAujourdhui }}</strong>
+              </div>
             </div>
           </div>
         </div>
-        <div class="presence-legend">
-          <div class="legend-row">
-            <span class="dot green"></span>
-            <span>Présents</span>
-            <strong>{{ stats().presentsAujourdhui }}</strong>
+
+      </div>
+    </div>
+
+    <!-- ── Rangée 3 : Alertes retards + Répartition services ─────────────── -->
+    <div class="dash-grid-sub" style="margin-bottom:20px">
+
+      <!-- Alertes retards -->
+      <div class="card">
+        <div class="card-header-row">
+          <h2 class="card-title">
+            @if (alertesRetard().length > 0) {
+              <span class="alert-dot"></span>
+            }
+            Retards du jour
+          </h2>
+          <span class="badge badge--{{ alertesRetard().length > 0 ? 'danger' : 'success' }}">
+            {{ alertesRetard().length > 0 ? alertesRetard().length + ' retard' + (alertesRetard().length > 1 ? 's' : '') : 'Aucun retard' }}
+          </span>
+        </div>
+
+        @if (alertesRetard().length === 0) {
+          <div class="mini-empty">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="#16a34a" stroke-width="1.7" stroke-linecap="round"/><path d="M22 4 12 14.01l-3-3" stroke="#16a34a" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <p>Tous les employés sont à l'heure</p>
           </div>
-          <div class="legend-row">
-            <span class="dot red"></span>
-            <span>Absents</span>
-            <strong>{{ stats().absentsAujourdhui }}</strong>
-          </div>
+        }
+
+        <div class="alert-list">
+          @for (a of alertesRetard(); track a.employe.id) {
+            <a [routerLink]="['/employes', a.employe.id]" class="alert-row">
+              <div class="alert-avatar" [style.background]="avatarColor(a.employe.id)">
+                {{ initials(a.employe) }}
+              </div>
+              <div class="alert-info">
+                <strong>{{ a.employe.prenom }} {{ a.employe.nom }}</strong>
+                <span>Arrivée : {{ a.heureArrivee }}</span>
+              </div>
+              <span class="retard-badge">+{{ formatRetard(a.minutesRetard) }}</span>
+            </a>
+          }
         </div>
       </div>
 
-      <!-- Répartition par service -->
+      <!-- Répartition par service avec taux de présence -->
       <div class="card">
         <div class="card-header-row">
           <h2 class="card-title">Par service</h2>
           <a routerLink="/services" class="card-link">Voir tout →</a>
         </div>
-        @if (repartitionServices().length === 0) {
-          <div class="empty-state"><p>Aucun service configuré</p></div>
-        }
-        @for (s of repartitionServices(); track s.nom) {
-          <div class="service-row">
-            <span class="service-name">{{ s.nom }}</span>
-            <div class="service-bar-wrap">
-              <div class="service-bar" [style.width.%]="s.pct"></div>
-            </div>
-            <span class="service-count">{{ s.count }}</span>
-          </div>
-        }
-      </div>
 
+        @if (repartitionServices().length === 0) {
+          <div class="mini-empty"><p>Aucun service configuré</p></div>
+        }
+
+        <div class="service-list">
+          @for (s of repartitionServices(); track s.nom) {
+            <div class="service-row-enrichi">
+              <div class="svc-header">
+                <span class="service-name">{{ s.nom }}</span>
+                <span class="svc-taux" [class.good]="s.taux >= 80" [class.mid]="s.taux >= 50 && s.taux < 80" [class.low]="s.taux < 50">
+                  {{ s.taux }}%
+                </span>
+              </div>
+              <div class="svc-bar-row">
+                <div class="service-bar-wrap">
+                  <div class="service-bar"
+                    [style.width.%]="s.pct"
+                    [class.bar-good]="s.taux >= 80"
+                    [class.bar-mid]="s.taux >= 50 && s.taux < 80"
+                    [class.bar-low]="s.taux < 50">
+                  </div>
+                </div>
+                <span class="svc-detail">{{ s.presents }}/{{ s.total }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
     </div>
 
-    <!-- Derniers employés -->
-    <div class="card" style="margin-top:24px">
+    <!-- ── Rangée 4 : Derniers employés ──────────────────────────────────── -->
+    <div class="card">
       <div class="card-header-row">
         <h2 class="card-title">Derniers employés ajoutés</h2>
         <a routerLink="/employes" class="card-link">Voir tous →</a>
       </div>
 
       @if (derniersEmployes().length === 0) {
-        <div class="empty-state">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
+        <div class="mini-empty">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
           <p>Aucun employé enregistré</p>
         </div>
       }
@@ -170,14 +339,17 @@
       <div class="employe-list">
         @for (e of derniersEmployes(); track e.id) {
           <a [routerLink]="['/employes', e.id]" class="employe-row">
-            <div class="employe-avatar">{{ initials(e) }}</div>
+            <div class="employe-avatar" [style.background]="avatarColor(e.id)">{{ initials(e) }}</div>
             <div class="employe-info">
               <span class="employe-name">{{ e.prenom }} {{ e.nom }}</span>
               <span class="employe-meta">{{ e.poste || '—' }} · {{ e.matricule }}</span>
             </div>
-            <span class="badge badge--{{ e.statut === 'actif' ? 'success' : 'neutral' }}">
-              {{ e.statut || 'actif' }}
-            </span>
+            <div class="employe-right">
+              <span class="badge badge--{{ e.statut === 'actif' ? 'success' : 'neutral' }}">{{ e.statut || 'actif' }}</span>
+              @if (estPresentAujourdhui(e.matricule)) {
+                <span class="present-dot" title="Présent aujourd'hui"></span>
+              }
+            </div>
           </a>
         }
       </div>

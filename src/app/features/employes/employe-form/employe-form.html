@@ -1,0 +1,259 @@
+<!-- ─── FORMULAIRE EMPLOYÉ ────────────────────────────────────────────────── -->
+<form [formGroup]="form" (ngSubmit)="submit()" class="emp-form">
+
+  <!-- ── Onglets ─────────────────────────────────────────────────────────── -->
+  <div class="form-tabs">
+    <button type="button" class="form-tab" [class.active]="activeTab() === 'infos'"
+      (click)="setTab('infos')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      Informations
+    </button>
+    <button type="button" class="form-tab" [class.active]="activeTab() === 'acces'"
+      (click)="setTab('acces')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      Accès & Rôle
+    </button>
+  </div>
+
+  <!-- ── Tab Informations ────────────────────────────────────────────────── -->
+  @if (activeTab() === 'infos') {
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Prénom *</label>
+        <input class="form-control" formControlName="prenom" placeholder="Prénom"
+          [class.invalid]="f['prenom'].invalid && f['prenom'].touched"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nom *</label>
+        <input class="form-control" formControlName="nom" placeholder="Nom"
+          [class.invalid]="f['nom'].invalid && f['nom'].touched"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Matricule *</label>
+        <input class="form-control" formControlName="matricule" placeholder="EMP001"
+          [class.invalid]="f['matricule'].invalid && f['matricule'].touched"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Poste</label>
+        <input class="form-control" formControlName="poste" placeholder="Ex: Technicien"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-control" type="email" formControlName="email" placeholder="employe@exemple.com"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Téléphone</label>
+        <input class="form-control" type="tel" formControlName="telephone" placeholder="+221 77 000 00 00"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Service d'affectation</label>
+        <select class="form-control" formControlName="service">
+          <option value="">— Aucun —</option>
+          @for (s of services; track s.id) {
+            <option [value]="s.matricule">{{ s.nom }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type de contrat</label>
+        <select class="form-control" formControlName="typeContrat">
+          <option value="CDI">CDI</option>
+          <option value="CDD">CDD</option>
+          <option value="Stage">Stage</option>
+          <option value="Freelance">Freelance</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date d'embauche</label>
+        <input class="form-control" type="date" formControlName="dateEmbauche"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Statut</label>
+        <select class="form-control" formControlName="statut">
+          <option value="actif">Actif</option>
+          <option value="inactif">Inactif</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Login (accès app)</label>
+        <input class="form-control" formControlName="login" placeholder="login_employe"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ employe ? 'Nouveau mot de passe' : 'Mot de passe' }}</label>
+        <input class="form-control" type="password" formControlName="password"
+          placeholder="{{ employe ? 'Laisser vide pour conserver' : '••••••' }}"/>
+      </div>
+    </div>
+  }
+
+  <!-- ── Tab Accès & Rôle ────────────────────────────────────────────────── -->
+  @if (activeTab() === 'acces') {
+    <div class="acces-section">
+
+      <!-- Rôle -->
+      <div class="acces-block">
+        <h4 class="acces-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          </svg>
+          Rôle dans l'application
+        </h4>
+        <div class="role-cards">
+          <!-- Employé -->
+          <div class="role-card" [class.active]="role() === 'Employé'"
+            (click)="setRole('Employé')">
+            <div class="role-card-check">
+              @if (role() === 'Employé') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="m5 13 4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              }
+            </div>
+            <div class="role-card-icon employee">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="role-card-body">
+              <strong>Employé</strong>
+              <span>Accès à son profil uniquement</span>
+            </div>
+          </div>
+
+          <!-- Chargé de compte -->
+          <div class="role-card" [class.active]="role() === 'Chargé de compte'"
+            (click)="setRole('Chargé de compte')">
+            <div class="role-card-check">
+              @if (role() === 'Chargé de compte') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="m5 13 4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              }
+            </div>
+            <div class="role-card-icon manager">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="role-card-body">
+              <strong>Chargé de compte</strong>
+              <span>Gère les services sélectionnés</span>
+            </div>
+          </div>
+
+          <!-- Admin communauté -->
+          <div class="role-card" [class.active]="role() === 'Admin communauté'"
+            (click)="setRole('Admin communauté')">
+            <div class="role-card-check">
+              @if (role() === 'Admin communauté') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="m5 13 4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              }
+            </div>
+            <div class="role-card-icon admin">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="role-card-body">
+              <strong>Admin communauté</strong>
+              <span>Accès complet à tout</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description du rôle sélectionné -->
+        <div class="role-desc">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          {{ roleDescription }}
+        </div>
+      </div>
+
+      <!-- Services autorisés (visible seulement si Chargé de compte) -->
+      @if (role() === 'Chargé de compte') {
+        <div class="acces-block">
+          <h4 class="acces-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+            Services qu'il peut gérer
+            <span class="count-badge">{{ selectedServices().size }} sélectionné{{ selectedServices().size > 1 ? 's' : '' }}</span>
+          </h4>
+
+          @if (services.length === 0) {
+            <p class="empty-hint">Aucun service disponible dans cette communauté.</p>
+          }
+
+          <div class="services-grid">
+            @for (s of services; track s.id) {
+              <div class="service-item" [class.selected]="isServiceSelected(s.matricule)"
+                (click)="toggleService(s.matricule)">
+                <div class="svc-check">
+                  @if (isServiceSelected(s.matricule)) {
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                      <path d="m5 13 4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                  }
+                </div>
+                <div class="svc-name">{{ s.nom }}</div>
+                <div class="svc-mat">{{ s.matricule }}</div>
+              </div>
+            }
+          </div>
+
+          @if (role() === 'Chargé de compte' && selectedServices().size === 0) {
+            <p class="warn-hint">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                <path d="M12 9v4M12 17h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+              Sélectionnez au moins un service pour activer les permissions.
+            </p>
+          }
+        </div>
+      }
+
+      <!-- Résumé permissions pour Admin -->
+      @if (role() === 'Admin communauté') {
+        <div class="acces-block">
+          <h4 class="acces-title">Permissions accordées</h4>
+          <div class="perm-list">
+            @for (p of ['Voir tous les employés', 'Ajouter / modifier des employés', 'Gérer tous les services', 'Voir tous les pointages', 'Accès aux rapports']; track p) {
+              <div class="perm-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <path d="m5 13 4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+                {{ p }}
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- ── Actions ──────────────────────────────────────────────────────────── -->
+  <div class="form-actions">
+    <button type="button" class="btn btn--secondary" (click)="cancel()">Annuler</button>
+    <button type="submit" class="btn btn--primary" [disabled]="loading || hashing">
+      @if (loading || hashing) { <span class="spinner sm"></span> }
+      @if (hashing) { Sécurisation… } @else { {{ employe ? 'Enregistrer' : 'Ajouter l\'employé' }} }
+    </button>
+  </div>
+
+</form>

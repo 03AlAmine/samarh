@@ -3,8 +3,8 @@
 // Toutes les opérations passent par FirebaseService.clientXxx()
 
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map, shareReplay } from 'rxjs/operators';
+import { Observable, EMPTY } from 'rxjs';
+import { map, shareReplay, switchMap, filter, take } from 'rxjs/operators';
 import * as bcrypt from 'bcryptjs';
 import { FirebaseService } from './firebase.service';
 import { Employe, Service } from '../models/employe.model';
@@ -14,15 +14,23 @@ export class EmployeService {
   private fb = inject(FirebaseService);
 
   // ── Streams temps réel ────────────────────────────────────────────────────
+  // Ces streams attendent que la base client soit initialisée (clientReady$)
+  // avant de s'abonner, évitant l'erreur "Base client non initialisée".
 
   /** Tous les employés actifs (temps réel) */
-  employes$: Observable<Employe[]> = this.fb.clientListenList<Employe>('Employe').pipe(
+  employes$: Observable<Employe[]> = this.fb.clientReady$.pipe(
+    filter(ready => ready),
+    take(1),
+    switchMap(() => this.fb.clientListenList<Employe>('Employe')),
     map((list) => list.filter((e) => e.statut !== 'archive')),
     shareReplay(1),
   );
 
   /** Tous les services (temps réel) */
-  services$: Observable<Service[]> = this.fb.clientListenList<Service>('Service').pipe(
+  services$: Observable<Service[]> = this.fb.clientReady$.pipe(
+    filter(ready => ready),
+    take(1),
+    switchMap(() => this.fb.clientListenList<Service>('Service')),
     shareReplay(1),
   );
 

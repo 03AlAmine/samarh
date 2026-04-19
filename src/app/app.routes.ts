@@ -11,7 +11,8 @@ export const routes: Routes = [
   },
   {
     path: 'register',
-    loadComponent: () => import('./features/auth/register/register').then((c) => c.RegisterComponent),
+    loadComponent: () =>
+      import('./features/auth/register/register').then((c) => c.RegisterComponent),
     canActivate: [publicGuard],
     title: 'Inscription',
   },
@@ -28,15 +29,16 @@ export const routes: Routes = [
   // ── Protégées (tout utilisateur connecté) ─────────────────────────────────
   {
     path: 'dashboard',
-    loadComponent: () =>
-      import('./features/dashboard/dashboard').then((c) => c.DashboardComponent),
+    loadComponent: () => import('./features/dashboard/dashboard').then((c) => c.DashboardComponent),
     canActivate: [authGuard],
     title: 'Tableau de bord',
   },
   {
     path: 'employes',
     loadComponent: () =>
-      import('./features/employes/list-employes/list-employes').then((c) => c.ListEmployesComponent),
+      import('./features/employes/list-employes/list-employes').then(
+        (c) => c.ListEmployesComponent,
+      ),
     canActivate: [authGuard],
     title: 'Employés',
   },
@@ -52,16 +54,23 @@ export const routes: Routes = [
   {
     path: 'services',
     loadComponent: () =>
-      import('./features/services/list-services/list-services').then((c) => c.ListServicesComponent),
+      import('./features/services/list-services/list-services').then(
+        (c) => c.ListServicesComponent,
+      ),
     canActivate: [authGuard],
     title: 'Services',
   },
   {
     path: 'pointages',
-    loadComponent: () =>
-      import('./features/pointages/pointages').then((c) => c.PointagesComponent),
+    loadComponent: () => import('./features/pointages/pointages').then((c) => c.PointagesComponent),
     canActivate: [authGuard],
     title: 'Pointages',
+  },
+  {
+    path: 'cartes',
+    loadComponent: () => import('./features/cartes/cartes').then((c) => c.CartesComponent),
+    canActivate: [authGuard],
+    title: 'Cartes employés',
   },
 
   // ── Admin SaaS uniquement ──────────────────────────────────────────────────
@@ -86,7 +95,7 @@ export const routes: Routes = [
         (c) => c.RegisterRequestsComponent,
       ),
     canActivate: [authGuard, adminGuard],
-    title: 'Demandes d\'inscription',
+    title: "Demandes d'inscription",
   },
 
   // ── Profil ─────────────────────────────────────────────────────────────────

@@ -1,5 +1,3 @@
-<!-- ─── ADMIN COMMUNAUTÉS ────────────────────────────────────────────────── -->
-
 <div class="page-header">
   <div>
     <h1 class="page-title">Communautés</h1>
@@ -13,45 +11,28 @@
       <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7"/>
       <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
     </svg>
-    <input
-      class="search-input"
-      type="text"
-      placeholder="Rechercher par nom ou ID…"
-      [value]="searchTerm()"
-      (input)="searchTerm.set($any($event.target).value)"
-    />
+    <input class="search-input" type="text" placeholder="Rechercher par nom ou ID…"
+      [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)"/>
   </div>
 </div>
 
 @if (loading()) {
-  <div class="loading-state">
-    <div class="spinner"></div>
-    <p>Chargement…</p>
-  </div>
+  <div class="loading-state"><div class="spinner"></div><p>Chargement…</p></div>
 }
 
 @if (!loading()) {
   @if (filtered().length === 0) {
-    <div class="card">
-      <div class="empty-state">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-        </svg>
-        <p>Aucune communauté trouvée</p>
-      </div>
-    </div>
+    <div class="card"><div class="empty-state"><p>Aucune communauté trouvée</p></div></div>
   }
-
   @if (filtered().length > 0) {
     <div class="card table-wrapper">
       <table class="data-table">
         <thead>
           <tr>
             <th>Nom</th>
-            <th>ID</th>
             <th>Type</th>
             <th>Membres</th>
+            <th>DB Firebase</th>
             <th>Création</th>
             <th>Statut</th>
             <th></th>
@@ -59,15 +40,25 @@
         </thead>
         <tbody>
           @for (c of filtered(); track c.id) {
-            <tr>
-              <td><strong>{{ c.nom }}</strong></td>
-              <td><code class="mono">{{ c.id }}</code></td>
+            <tr class="clickable-row" (click)="openDetail(c)">
               <td>
-                <span class="badge badge--accent">
-                  {{ c.type === 'company' ? 'Entreprise' : 'Individuel' }}
-                </span>
+                <div class="comm-name">
+                  <div class="comm-avatar">{{ c?.nom?.[0]?.toUpperCase() || '?' }}</div>
+                  <div>
+                    <strong>{{ c.nom }}</strong>
+                    <span class="text-muted mono" style="font-size:11px;display:block">{{ c.id }}</span>
+                  </div>
+                </div>
               </td>
+              <td><span class="badge badge--accent">{{ c.type === 'company' ? 'Entreprise' : 'Individuel' }}</span></td>
               <td>{{ membres(c) }}</td>
+              <td>
+                @if (hasConfig(c)) {
+                  <span class="badge badge--success">Configurée</span>
+                } @else {
+                  <span class="badge badge--neutral">Non configurée</span>
+                }
+              </td>
               <td class="text-muted">{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
               <td>
                 <span class="badge badge--{{ c.status === 'active' ? 'success' : 'warning' }}">
@@ -75,7 +66,8 @@
                 </span>
               </td>
               <td>
-                <button class="btn-action {{ c.status === 'active' ? 'warn' : '' }}" (click)="toggleStatus(c)">
+                <button class="btn-action {{ c.status === 'active' ? 'warn' : '' }}"
+                  (click)="toggleStatus(c, $event)">
                   {{ c.status === 'active' ? 'Suspendre' : 'Réactiver' }}
                 </button>
               </td>
@@ -85,4 +77,70 @@
       </table>
     </div>
   }
+}
+
+<!-- ── Panneau détail ──────────────────────────────────────────────────────── -->
+@if (selected()) {
+  <div class="detail-overlay" (click)="closeDetail()"></div>
+  <aside class="detail-panel">
+    <div class="detail-panel-header">
+      <div class="comm-avatar lg">{{ selected()?.nom?.[0]?.toUpperCase() || '?' }}</div>
+      <div>
+        <h2>{{ selected()!.nom }}</h2>
+        <code class="mono" style="font-size:11px;color:var(--text-secondary)">{{ selected()!.id }}</code>
+      </div>
+      <button class="close-btn" (click)="closeDetail()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="detail-body">
+      <!-- Infos générales -->
+      <div class="detail-section">
+        <h3 class="detail-section-title">Informations</h3>
+        <div class="detail-rows">
+          <div class="detail-row"><span>Type</span><span>{{ selected()!.type === 'company' ? 'Entreprise' : 'Individuel' }}</span></div>
+          <div class="detail-row"><span>Membres</span><span>{{ membres(selected()!) }}</span></div>
+          <div class="detail-row"><span>UID admin</span><code class="mono small">{{ selected()!.uidAdmin }}</code></div>
+          <div class="detail-row"><span>Statut</span>
+            <span class="badge badge--{{ selected()!.status === 'active' ? 'success' : 'warning' }}">
+              {{ selected()!.status === 'active' ? 'Actif' : 'Suspendu' }}
+            </span>
+          </div>
+          <div class="detail-row"><span>Créée le</span><span>{{ selected()!.createdAt | date:'dd/MM/yyyy HH:mm' }}</span></div>
+          @if (selected()!.updatedAt) {
+            <div class="detail-row"><span>Modifiée le</span><span>{{ selected()!.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span></div>
+          }
+        </div>
+      </div>
+
+      <!-- Config Firebase -->
+      <div class="detail-section">
+        <h3 class="detail-section-title">Base Firebase</h3>
+        @if (hasConfig(selected()!)) {
+          <div class="detail-rows">
+            @for (key of configKeys(selected()!); track key) {
+              <div class="detail-row config-row">
+                <span class="config-key">{{ key }}</span>
+                <code class="mono small config-val">{{ maskKey($any(selected())['firebaseConfig'][key]) }}</code>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-muted" style="font-size:13px;padding:8px 0">Aucune configuration Firebase renseignée.</p>
+        }
+      </div>
+
+      <!-- Actions -->
+      <div class="detail-actions">
+        <button class="btn btn--{{ selected()!.status === 'active' ? 'danger' : 'primary' }}"
+          (click)="toggleStatus(selected()!)">
+          {{ selected()!.status === 'active' ? 'Suspendre' : 'Réactiver' }}
+        </button>
+        <button class="btn btn--ghost" (click)="closeDetail()">Fermer</button>
+      </div>
+    </div>
+  </aside>
 }

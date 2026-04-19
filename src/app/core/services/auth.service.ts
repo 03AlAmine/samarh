@@ -59,9 +59,9 @@ export class AuthService {
         }
         this.authReady$.next(true);
       });
-    } else {
-      this.authReady$.next(true);
     }
+    // Si restored=true, authReady$ est émis dans restoreSessionFromStorage()
+    // après l'initialisation de la base client (voir .then() ci-dessus)
   }
 
   // ── SESSION COMMUNAUTÉ (employé sans Firebase Auth) ───────────────────────
@@ -83,15 +83,20 @@ export class AuthService {
       const user: EmployeeUser = this.buildEmployeeUser(session);
       this.userSubject.next(user);
 
-      // Charger la DB client en arrière-plan
+      // Charger la DB client — authReady ne passe à true qu'APRÈS init
+      // pour éviter la race condition "Base client non initialisée"
       this.fb.adminGet<Communaute>(`communautes/${session.communauteId}`)
-        .then((communaute) => {
+        .then(async (communaute) => {
           if (communaute?.firebaseConfig) {
-            this.fb.initClientDatabase(communaute.firebaseConfig, session.communauteId);
+            await this.fb.initClientDatabase(communaute.firebaseConfig, session.communauteId);
           }
+          this.authReady$.next(true);
         })
-        .catch(() => {});
+        .catch(() => {
+          this.authReady$.next(true); // laisser passer même en cas d'erreur réseau
+        });
 
+      // NE PAS émettre authReady$ ici — c'est fait dans le .then() ci-dessus
       return true;
     } catch {
       return false;
@@ -290,6 +295,28 @@ export class AuthService {
 
   get isLoggedIn(): boolean {
     return this.userSubject.value !== null;
+  }
+
+  /**
+   * Retourne true si l'utilisateur peut gérer un service donné.
+   * Admin communauté → tous les services.
+   * Chargé de compte → uniquement les services listés dans u.services[].
+   */
+  canManageService(serviceMatricule: string): boolean {
+    if (this.isAdmin) return true;
+    const u = this.userSubject.value as any;
+    if (!u) return false;
+    // services est un array de matricules de services
+    if (Array.isArray(u.services) && u.services.includes(serviceMatricule)) return true;
+    return false;
+  }
+
+  /** True si l'utilisateur peut ajouter/modifier des employés (admin ou chargé d'au moins 1 service) */
+  get canEditEmployes(): boolean {
+    if (this.isAdmin) return true;
+    const u = this.userSubject.value as any;
+    if (!u || !u.isCommunauteUser) return false;
+    return Array.isArray(u.services) && u.services.length > 0 && u.services[0] !== 'Tous';
   }
 
   get isAdmin(): boolean {

@@ -21,8 +21,8 @@ import {
   equalTo,
   Database as RtdbDatabase,
 } from 'firebase/database';
-import { Observable, Subject } from 'rxjs';
-import { shareReplay } from 'rxjs/operators';
+import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { shareReplay, filter, take } from 'rxjs/operators';
 import { FirebaseClientConfig } from '../models/user.model';
 
 const CLIENT_APP_NAME = 'sama-rh-client';
@@ -37,6 +37,9 @@ export class FirebaseService implements OnDestroy {
   private clientDatabase: RtdbDatabase | null = null;
   private currentCommunauteId: string | null = null;
   private destroy$ = new Subject<void>();
+
+  /** Émet true quand la base client est initialisée et prête. */
+  clientReady$ = new BehaviorSubject<boolean>(false);
 
   constructor() {
     runInInjectionContext(this.injector, () => {
@@ -90,16 +93,23 @@ export class FirebaseService implements OnDestroy {
   // ── BASE CLIENT (communauté) ──────────────────────────────────────────────
 
   async initClientDatabase(config: FirebaseClientConfig, communauteId: string): Promise<void> {
-    if (this.currentCommunauteId === communauteId && this.clientDatabase) return;
+    if (this.currentCommunauteId === communauteId && this.clientDatabase) {
+      // Déjà initialisée pour cette communauté
+      if (!this.clientReady$.value) this.clientReady$.next(true);
+      return;
+    }
+    this.clientReady$.next(false);
     this.destroyClientApp();
     const existingApp = getApps().find((a) => a.name === CLIENT_APP_NAME);
     if (existingApp) await deleteApp(existingApp);
     this.clientApp = initializeApp(config, CLIENT_APP_NAME);
     this.clientDatabase = getDatabase(this.clientApp, config.databaseURL);
     this.currentCommunauteId = communauteId;
+    this.clientReady$.next(true);
   }
 
   private destroyClientApp(): void {
+    this.clientReady$.next(false);
     if (this.clientApp) {
       deleteApp(this.clientApp).catch(() => {});
       this.clientApp = null;
@@ -109,6 +119,12 @@ export class FirebaseService implements OnDestroy {
   }
 
   get hasClientDatabase(): boolean { return this.clientDatabase !== null; }
+
+  /** Promise qui résout quand la base client est prête */
+  waitForClient(): Promise<void> {
+    if (this.clientReady$.value) return Promise.resolve();
+    return this.clientReady$.pipe(filter(v => v), take(1)).toPromise().then(() => {});
+  }
   get communauteId(): string | null { return this.currentCommunauteId; }
 
   private requireClientDb(): RtdbDatabase {

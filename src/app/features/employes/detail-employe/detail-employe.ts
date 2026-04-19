@@ -7,7 +7,7 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { EmployeService } from '../../../core/services/employe.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Employe, Service } from '../../../core/models/employe.model';
-import { EmployeFormComponent } from '../employe-form';
+import { EmployeFormComponent } from '../employe-form/employe-form';
 import { PlanningEditorComponent } from '../../shared/planning-editor/planning-editor';
 import { ToastService } from '../../../core/services/toast.service';
 import { Planning } from '../../../core/models/employe.model';
@@ -40,6 +40,7 @@ export class DetailEmployeComponent implements OnInit {
   editError = signal('');
 
   get isAdmin() { return this.auth.isAdmin; }
+  get canEdit() { return this.auth.isAdmin || this.auth.canEditEmployes; }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
