@@ -25,72 +25,53 @@
 </div>
 
 <!-- Filtres -->
-<div class="filters-row card" style="padding: 12px 16px; margin-bottom: 20px">
-  <!-- Périodes rapides -->
-  <div class="periodes-rapides">
-    @for (p of [
-      {key:'today', label:"Aujourd'hui"},
-      {key:'yesterday', label:'Hier'},
-      {key:'week', label:'Semaine'},
-      {key:'month', label:'Ce mois'},
-      {key:'prev-month', label:'Mois préc.'}
-    ]; track p.key) {
-      <button
-        class="periode-chip"
-        [class.active]="periodeRapide() === p.key"
-        (click)="setPeriodeRapide(p.key)"
-      >{{ p.label }}</button>
-    }
+<div class="filters-container">
+  <!-- Première ligne : Périodes et date -->
+  <div class="filters-row">
+    <div class="periodes-rapides">
+      @for (p of [{ key: 'today', label: "Aujourd'hui" }, { key: 'yesterday', label: 'Hier' }, { key: 'week', label: 'Semaine' }, { key: 'month', label: 'Ce mois' }, { key: 'prev-month', label: 'Mois préc.' }]; track p.key) {
+        <button class="periode-chip" [class.active]="periodeRapide() === p.key" (click)="setPeriodeRapide(p.key)">
+          {{ p.label }}
+        </button>
+      }
+    </div>
+
+    <div class="filter-sep"></div>
+
+    <div class="date-nav">
+      <button class="nav-btn" (click)="jourPrecedent()" title="Jour précédent">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      <input class="date-input" type="date" [value]="dateSelectionnee()" (change)="onDateChange($any($event.target).value)" />
+      <button class="nav-btn" (click)="jourSuivant()" [disabled]="isToday" title="Jour suivant">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      @if (isToday) {
+        <span class="today-badge">Aujourd'hui</span>
+      }
+    </div>
   </div>
 
-  <div class="filter-sep"></div>
+  <!-- Deuxième ligne : Filtres service et statut -->
+  <div class="filters-bar">
+    <select class="filter-select" [value]="filtreService()" (change)="filtreService.set($any($event.target).value)">
+      <option value="">Tous les services</option>
+      @for (s of nomsServices(); track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
 
-  <!-- Navigation date -->
-  <div class="date-nav">
-    <button class="nav-btn" (click)="jourPrecedent()" title="Jour précédent">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-      </svg>
-    </button>
-    <input
-      class="form-control date-input"
-      type="date"
-      [value]="dateSelectionnee()"
-      (change)="onDateChange($any($event.target).value)"
-    />
-    <button class="nav-btn" (click)="jourSuivant()" [disabled]="isToday" title="Jour suivant">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-      </svg>
-    </button>
-    @if (isToday) {
-      <span class="today-badge">Aujourd'hui</span>
-    }
+    <select class="filter-select" [value]="filtreStatut()" (change)="filtreStatut.set($any($event.target).value)">
+      <option value="">Tous statuts</option>
+      <option value="present">Présents</option>
+      <option value="retard">Retards</option>
+      <option value="absent">Absents</option>
+    </select>
   </div>
-
-  <div class="filter-sep"></div>
-
-  <select
-    class="form-control filter-select"
-    [value]="filtreService()"
-    (change)="filtreService.set($any($event.target).value)"
-  >
-    <option value="">Tous les services</option>
-    @for (s of nomsServices(); track s) {
-      <option [value]="s">{{ s }}</option>
-    }
-  </select>
-
-  <select
-    class="form-control filter-select"
-    [value]="filtreStatut()"
-    (change)="filtreStatut.set($any($event.target).value)"
-  >
-    <option value="">Tous statuts</option>
-    <option value="present">Présents</option>
-    <option value="retard">Retards</option>
-    <option value="absent">Absents</option>
-  </select>
 </div>
 
 <!-- Stats -->

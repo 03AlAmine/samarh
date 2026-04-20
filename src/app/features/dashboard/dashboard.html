@@ -122,45 +122,45 @@
     <!-- ── Rangée 2 : Graphe 7 jours + Employé semaine ───────────────────── -->
     <div class="dash-grid-main" style="margin-bottom:20px">
 
-      <!-- Graphe barres 7 jours -->
-      <div class="card">
-        <div class="card-header-row">
-          <h2 class="card-title">Présences — 7 derniers jours</h2>
+      <!-- Graphe barres 7 jours — Chart.js -->
+      <div class="card chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title-group">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chart-icon">
+              <rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/>
+            </svg>
+            <h2 class="card-title">Présences <span class="chart-subtitle">— 7 derniers jours</span></h2>
+          </div>
+          @if (!loadingSemaine()) {
+            <div class="chart-summary-badge">
+              <span class="chart-avg-label">Moy.</span>
+              <span class="chart-avg-val">{{ tauxAssiduiteSemaine() }}%</span>
+            </div>
+          }
           @if (loadingSemaine()) { <span class="badge badge--neutral">Chargement…</span> }
         </div>
 
         @if (!loadingSemaine()) {
-          <div class="chart-bars">
-            @for (j of semaine(); track j.date) {
-              <div class="bar-col" [class.today]="j.isToday">
-                <div class="bar-val">{{ j.presents }}</div>
-                <div class="bar-wrap">
-                  <div class="bar-fill"
-                    [style.height.%]="maxSemainePct() > 0 ? (j.pct / maxSemainePct()) * 100 : 0"
-                    [class.bar-good]="j.pct >= 80"
-                    [class.bar-mid]="j.pct >= 50 && j.pct < 80"
-                    [class.bar-low]="j.pct < 50">
-                  </div>
-                </div>
-                <div class="bar-label">{{ j.label }}</div>
-                @if (j.isToday) { <div class="today-dot"></div> }
-              </div>
-            }
+          <div class="chart-canvas-wrap">
+            <canvas baseChart
+              [data]="chartData()"
+              [options]="chartOptions"
+              type="bar">
+            </canvas>
           </div>
 
-          <!-- Légende -->
-          <div class="chart-legend">
-            <span class="legend-dot good"></span><span>≥ 80%</span>
-            <span class="legend-dot mid"></span><span>50–79%</span>
-            <span class="legend-dot low"></span><span>&lt; 50%</span>
+          <div class="chart-legend-v2">
+            <div class="legend-item"><span class="leg-pip pip-good"></span><span>≥ 80%</span></div>
+            <div class="legend-item"><span class="leg-pip pip-mid"></span><span>50–79%</span></div>
+            <div class="legend-item"><span class="leg-pip pip-low"></span><span>&lt; 50%</span></div>
           </div>
         }
 
         @if (loadingSemaine()) {
-          <div class="chart-skeleton">
-            @for (i of [70,50,85,60,90,45,75]; track i) {
-              <div class="bar-col">
-                <div class="sk" style="width:100%;border-radius:4px" [style.height.px]="i * 0.8"></div>
+          <div class="chart-skeleton-v2">
+            @for (h of [55,70,40,85,60,90,50]; track h) {
+              <div class="skel-col">
+                <div class="skel-bar sk" [style.height.%]="h"></div>
               </div>
             }
           </div>

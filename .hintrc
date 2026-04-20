@@ -41,6 +41,7 @@
           "meta[name=theme-color]"
         ]
       }
-    ]
+    ],
+    "css-prefix-order": "off"
   }
 }

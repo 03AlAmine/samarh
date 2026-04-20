@@ -1,18 +1,27 @@
 // ─── DASHBOARD ENRICHI ────────────────────────────────────────────────────────
 import {
-  Component, inject, signal, computed, OnInit,
-  ChangeDetectionStrategy, DestroyRef,
+  Component, inject, signal, computed, OnInit, effect,
+  ChangeDetectionStrategy, DestroyRef, ViewChild, ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { combineLatest, forkJoin, of } from 'rxjs';
+import { combineLatest, forkJoin, of, firstValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { BaseChartDirective } from 'ng2-charts';
+import {
+  Chart, ChartOptions, BarController, BarElement,
+  LineController, LineElement, PointElement,
+  CategoryScale, LinearScale, Tooltip, Legend, Filler,
+} from 'chart.js';
+
+Chart.register(BarController, BarElement, LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
+
 import { AuthService } from '../../core/services/auth.service';
 import { EmployeService } from '../../core/services/employe.service';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { PointageService } from '../../core/services/pointage.service';
-import { Employe, Service } from '../../core/models/employe.model';
+import { Employe, Planning, Service } from '../../core/models/employe.model';
 import { PresenceBrute } from '../../core/models/pointage.model';
 
 interface JourSemaine {
@@ -42,7 +51,7 @@ interface TopEmploye {
   selector: 'app-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, BaseChartDirective],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
 })
@@ -52,6 +61,8 @@ export class DashboardComponent implements OnInit {
   private employeService = inject(EmployeService);
   readonly fb            = inject(FirebaseService);
   private pointageService = inject(PointageService);
+  private cdr            = inject(ChangeDetectorRef);
+  @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
 
   // ── State ─────────────────────────────────────────────────────────────────
   loading         = signal(true);
@@ -61,6 +72,102 @@ export class DashboardComponent implements OnInit {
   semaine         = signal<JourSemaine[]>([]);
   alertesRetard   = signal<AlerteRetard[]>([]);
   loadingSemaine  = signal(true);
+
+  constructor() {
+    // Quand les données de la semaine changent, mettre à jour le chart (OnPush compatible)
+    effect(() => {
+      this.semaine(); // track
+      this.chart?.update();
+      this.cdr.markForCheck();
+    });
+  }
+
+  // ── Chart.js data (réactif via computed) ─────────────────────────────────
+  chartData = computed((): any => {
+    const sem = this.semaine();
+    const values = sem.map(j => j.presents);
+    const max = Math.max(...values, 0);
+    return {
+      labels: sem.map(j => j.label),
+      datasets: [
+        {
+          type: 'bar' as const,
+          label: 'Présents',
+          data: values,
+          backgroundColor: sem.map(j =>
+            j.pct >= 80 ? 'rgba(16,185,129,0.85)'
+            : j.pct >= 50 ? 'rgba(245,158,11,0.85)'
+            : 'rgba(239,68,68,0.85)'
+          ),
+          hoverBackgroundColor: sem.map(j =>
+            j.pct >= 80 ? 'rgba(16,185,129,1)'
+            : j.pct >= 50 ? 'rgba(245,158,11,1)'
+            : 'rgba(239,68,68,1)'
+          ),
+          borderRadius: 6,
+          borderSkipped: false,
+          order: 2,
+        },
+        {
+          type: 'line' as const,
+          label: 'Tendance',
+          data: values,
+          borderColor: 'rgba(99,102,241,0.9)',
+          borderWidth: 2,
+          borderDash: [],
+          pointRadius: values.map(v => v === max && max > 0 ? 6 : 3),
+          pointHoverRadius: 8,
+          pointBackgroundColor: values.map(v => v === max && max > 0 ? '#6366f1' : 'rgba(99,102,241,0.6)'),
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          fill: false,
+          tension: 0.4,
+          order: 1,
+        },
+      ],
+    };
+  });
+
+  chartOptions: ChartOptions<'bar'> & { plugins?: any } = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 700, easing: 'easeOutQuart' as const },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(15,23,42,0.92)',
+        titleColor: '#f8fafc',
+        bodyColor: '#cbd5e1',
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          label: (ctx: any) => {
+            const j = this.semaine()[ctx.dataIndex];
+            return j ? ` ${ctx.parsed.y} présents (${j.pct}%)` : '';
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 12, weight: 600 as const }, color: '#64748b' },
+        border: { display: false },
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(148,163,184,0.12)', drawTicks: false },
+        ticks: {
+          stepSize: 1,
+          precision: 0,
+          font: { size: 11 },
+          color: '#94a3b8',
+          padding: 8,
+        },
+        border: { display: false, dash: [4, 4] },
+      },
+    },
+  };
 
   // ── Stats du jour ─────────────────────────────────────────────────────────
   stats = computed(() => {
@@ -224,7 +331,11 @@ export class DashboardComponent implements OnInit {
       // Trouver le planning de l'employé pour aujourd'hui
       const jourSemaine = new Date().toLocaleDateString('fr-FR', { weekday: 'long' });
       const jourCap     = jourSemaine.charAt(0).toUpperCase() + jourSemaine.slice(1);
-      const planningJour = emp.planning?.find(pl =>
+      // Firebase peut renvoyer un objet au lieu d'un tableau — normaliser
+      const planningArray: Planning[] = Array.isArray(emp.planning)
+        ? emp.planning
+        : Object.values(emp.planning ?? {});
+      const planningJour = planningArray.find(pl =>
         pl.jour.toLowerCase() === jourCap.toLowerCase()
       );
       if (!planningJour) return;
@@ -260,21 +371,17 @@ export class DashboardComponent implements OnInit {
       const d = new Date(today);
       d.setDate(today.getDate() - (6 - i));
       const iso = d.toISOString().split('T')[0];
-      return this.pointageService.presencesJour$(iso)
-        .pipe(takeUntilDestroyed(this.destroyRef), catchError(() => of([])))
-        .toPromise()
-        .then(p => {
-          const presences = p || [];
-          return {
-            label:      labels[d.getDay()],
-            date:       iso,
-            presents:   presences.length,
-            total,
-            pct:        total ? Math.round((presences.length / total) * 100) : 0,
-            isToday:    iso === today.toISOString().split('T')[0],
-            matricules: presences.map(x => x.matricule), // ← stocker les matricules
-          } as JourSemaine;
-        });
+      return firstValueFrom(
+        this.pointageService.presencesJour$(iso).pipe(catchError(() => of([])))
+      ).then(presences => ({
+        label:      labels[d.getDay()],
+        date:       iso,
+        presents:   presences.length,
+        total,
+        pct:        total ? Math.round((presences.length / total) * 100) : 0,
+        isToday:    iso === today.toISOString().split('T')[0],
+        matricules: presences.map(x => x.matricule),
+      } as JourSemaine));
     });
 
     try {
@@ -317,7 +424,5 @@ export class DashboardComponent implements OnInit {
   }
 
   // Max bar height pour le graphe (normalisation)
-  maxSemainePct(): number {
-    return Math.max(...this.semaine().map(j => j.pct), 1);
-  }
+
 }

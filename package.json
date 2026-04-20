@@ -49,6 +49,7 @@
     "html2pdf.js": "^0.12.1",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.7",
+    "ng2-charts": "^10.0.0",
     "papaparse": "^5.5.3",
     "pdfmake": "^0.2.20",
     "primeflex": "^4.0.0",
