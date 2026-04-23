@@ -189,7 +189,15 @@ export class ListEmployesComponent implements OnInit {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   initials(e: Employe): string {
-    return `${(e.prenom || '?')[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
+    if (e.prenom) {
+      return `${e.prenom[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
+    }
+    // nom contient prénom + nom (ex: "Amadou Diallo") → prendre les initiales des 2 premiers mots
+    const parts = (e.nom || '').trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return (e.nom || '').substring(0, 2).toUpperCase();
   }
 
   nomService(matricule?: string): string {

@@ -6,14 +6,18 @@
   <div class="page-header"><h1 class="page-title">Employé introuvable</h1></div>
   <div class="card empty-state">
     <p>Cet employé n'existe pas ou a été supprimé.</p>
-    <a routerLink="/employes" class="btn btn--secondary" style="margin-top:12px">Retour à la liste</a>
+    <a routerLink="/employes" class="btn btn--secondary" style="margin-top: 12px"
+      >Retour à la liste</a
+    >
   </div>
 }
 
 @if (!loading() && employe(); as e) {
   <div class="breadcrumb">
     <a routerLink="/employes">Employés</a>
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+    </svg>
     <span>{{ e.prenom }} {{ e.nom }}</span>
   </div>
 
@@ -23,7 +27,9 @@
       <h1>{{ e.prenom }} {{ e.nom }}</h1>
       <div class="profile-meta">
         <span>{{ e.poste || 'Poste non défini' }}</span>
-        @if (e.service) { <span class="sep">·</span><span>{{ nomService(e.service) }}</span> }
+        @if (e.service) {
+          <span class="sep">·</span><span>{{ nomService(e.service) }}</span>
+        }
         <span class="sep">·</span>
         <code class="mono-sm">{{ e.matricule }}</code>
       </div>
@@ -35,8 +41,17 @@
       @if (canEdit) {
         <button class="btn btn--secondary btn--sm" (click)="openEdit()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" stroke-width="1.7"/>
+            <path
+              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+            />
+            <path
+              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"
+              stroke="currentColor"
+              stroke-width="1.7"
+            />
           </svg>
           Modifier
         </button>
@@ -45,60 +60,99 @@
   </div>
 
   @if (activeTab() === 'infos') {
-  <div class="detail-grid">
-    <div class="card">
-      <h2 class="section-title">Informations personnelles</h2>
-      <div class="info-list">
-        <div class="info-row"><span class="info-key">Email</span><span>{{ e.email || '—' }}</span></div>
-        <div class="info-row"><span class="info-key">Téléphone</span><span>{{ e.telephone || '—' }}</span></div>
-        @if (age) {
-          <div class="info-row"><span class="info-key">Âge</span><span>{{ age }} ans</span></div>
-        }
-        <div class="info-row"><span class="info-key">Date de naissance</span><span>{{ e.dateNaissance || '—' }}</span></div>
-        <div class="info-row"><span class="info-key">CIN</span><span>{{ e.cin || '—' }}</span></div>
-        <div class="info-row"><span class="info-key">Adresse</span><span>{{ e.adresse || '—' }}{{ e.ville ? ', ' + e.ville : '' }}</span></div>
-        <div class="info-row"><span class="info-key">Civilité</span><span>{{ e.civilite || '—' }}</span></div>
-        <div class="info-row"><span class="info-key">Situation familiale</span><span>{{ e.situationFamiliale || '—' }}</span></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2 class="section-title">Informations professionnelles</h2>
-      <div class="info-list">
-        <div class="info-row"><span class="info-key">Poste</span><span>{{ e.poste || '—' }}</span></div>
-        <div class="info-row"><span class="info-key">Service</span><span>{{ nomService(e.service) }}</span></div>
-        <div class="info-row"><span class="info-key">Type de contrat</span><span>{{ e.typeContrat || '—' }}</span></div>
-        <div class="info-row"><span class="info-key">Date d'embauche</span><span>{{ e.dateEmbauche || '—' }}</span></div>
-        @if (e.dateFinContrat) {
-          <div class="info-row"><span class="info-key">Fin de contrat</span><span>{{ e.dateFinContrat }}</span></div>
-        }
-        <div class="info-row"><span class="info-key">N° CNSS</span><span>{{ e.numCNSS || '—' }}</span></div>
-        @if (e.salaireBase) {
-          <div class="info-row"><span class="info-key">Salaire de base</span><span>{{ e.salaireBase | number }} FCFA</span></div>
-        }
-        <div class="info-row"><span class="info-key">Login app</span><span>{{ e.login || '—' }}</span></div>
-      </div>
-    </div>
-
-    @if (e.competences?.length) {
-      <div class="card full-width">
-        <h2 class="section-title">Compétences</h2>
-        <div class="tags">
-          @for (c of e.competences; track c) {
-            <span class="tag">{{ c }}</span>
+    <div class="detail-grid">
+      <div class="card">
+        <h2 class="section-title">Informations personnelles</h2>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-key">Email</span><span>{{ e.email || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Téléphone</span><span>{{ e.telephone || '—' }}</span>
+          </div>
+          @if (age) {
+            <div class="info-row">
+              <span class="info-key">Âge</span><span>{{ age }} ans</span>
+            </div>
           }
+          <div class="info-row">
+            <span class="info-key">Date de naissance</span><span>{{ e.dateNaissance || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">CIN</span><span>{{ e.cin || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Adresse</span
+            ><span>{{ e.adresse || '—' }}{{ e.ville ? ', ' + e.ville : '' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Civilité</span><span>{{ e.civilite || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Situation familiale</span
+            ><span>{{ e.situationFamiliale || '—' }}</span>
+          </div>
         </div>
       </div>
-    }
-  </div>
-  } <!-- fin onglet infos -->
+
+      <div class="card">
+        <h2 class="section-title">Informations professionnelles</h2>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-key">Poste</span><span>{{ e.poste || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Service</span><span>{{ nomService(e.service) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Type de contrat</span><span>{{ e.typeContrat || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Date d'embauche</span><span>{{ e.dateEmbauche || '—' }}</span>
+          </div>
+          @if (e.dateFinContrat) {
+            <div class="info-row">
+              <span class="info-key">Fin de contrat</span><span>{{ e.dateFinContrat }}</span>
+            </div>
+          }
+          <div class="info-row">
+            <span class="info-key">N° CNSS</span><span>{{ e.numCNSS || '—' }}</span>
+          </div>
+          @if (e.salaireBase) {
+            <div class="info-row">
+              <span class="info-key">Salaire de base</span
+              ><span>{{ e.salaireBase | number }} FCFA</span>
+            </div>
+          }
+          <div class="info-row">
+            <span class="info-key">Login app</span><span>{{ e.login || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      @if (e.competences?.length) {
+        <div class="card full-width">
+          <h2 class="section-title">Compétences</h2>
+          <div class="tags">
+            @for (c of e.competences; track c) {
+              <span class="tag">{{ c }}</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+  <!-- fin onglet infos -->
 
   <!-- Onglet Planning -->
   @if (activeTab() === 'planning') {
     <div class="card">
       <div class="planning-card-header">
         <h2 class="section-title">Planning hebdomadaire</h2>
-        <p class="planning-card-sub">Définissez les jours et heures de travail de {{ e.prenom }}. Ce planning est utilisé pour le calcul des retards et des jours de repos.</p>
+        <p class="planning-card-sub">
+          Définissez les jours et heures de travail de {{ e.prenom }}. Ce planning est utilisé pour
+          le calcul des retards et des jours de repos.
+        </p>
       </div>
       <app-planning-editor
         [planning]="e.planning || []"
@@ -118,7 +172,12 @@
         <h3>Modifier l'employé</h3>
         <button class="modal-close" (click)="closeEdit()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path
+              d="M18 6 6 18M6 6l12 12"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
           </svg>
         </button>
       </div>

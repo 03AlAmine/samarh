@@ -1,20 +1,34 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Cartes employés</h1>
-    <p class="page-subtitle">{{ filtered().length }} carte{{ filtered().length > 1 ? 's' : '' }}
-      @if (selected().size > 0) { · <strong>{{ selected().size }}</strong> sélectionnée{{ selected().size > 1 ? 's' : '' }} }
+    <p class="page-subtitle">
+      {{ filtered().length }} carte{{ filtered().length > 1 ? 's' : '' }}
+      @if (selected().size > 0) {
+        · <strong>{{ selected().size }}</strong> sélectionnée{{ selected().size > 1 ? 's' : '' }}
+      }
     </p>
   </div>
   <div class="header-actions">
     <button class="btn btn--ghost btn--sm" (click)="selectAll()" title="Tout sélectionner">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7" />
+        <path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
       Tout sélectionner
     </button>
     @if (selected().size > 0) {
       <button class="btn btn--ghost btn--sm" (click)="clearSelection()">Désélectionner</button>
     }
     <button class="btn btn--primary btn--sm" (click)="imprimerSelection()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><rect x="6" y="14" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.7"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+        />
+        <rect x="6" y="14" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.7" />
+      </svg>
       Imprimer{{ selected().size > 0 ? ' (' + selected().size + ')' : ' tout' }}
     </button>
   </div>
@@ -25,12 +39,27 @@
   <!-- Filtres -->
   <div class="filters-row">
     <div class="search-wrap">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-      <input class="search-input" placeholder="Nom, prénom, matricule…"
-        [value]="search()" (input)="search.set($any($event.target).value); page.set(1)"/>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7" />
+        <path
+          d="m21 21-4.35-4.35"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+        />
+      </svg>
+      <input
+        class="search-input"
+        placeholder="Nom, prénom, matricule…"
+        [value]="search()"
+        (input)="search.set($any($event.target).value); page.set(1)"
+      />
     </div>
-    <select class="filter-select" [value]="filterSvc()"
-      (change)="filterSvc.set($any($event.target).value); page.set(1)">
+    <select
+      class="filter-select"
+      [value]="filterSvc()"
+      (change)="filterSvc.set($any($event.target).value); page.set(1)"
+    >
       <option value="">Tous les services</option>
       @for (s of services(); track s.id) {
         <option [value]="s.matricule">{{ s.nom }}</option>
@@ -43,24 +72,38 @@
     <div class="style-group">
       <span class="style-label">Style</span>
       <div class="btn-group">
-        <button [class.active]="styleCarte() === 'moderne'" (click)="styleCarte.set('moderne')">Moderne</button>
-        <button [class.active]="styleCarte() === 'minimal'" (click)="styleCarte.set('minimal')">Minimal</button>
-        <button [class.active]="styleCarte() === 'premium'" (click)="styleCarte.set('premium')">Premium</button>
+        <button [class.active]="styleCarte() === 'moderne'" (click)="styleCarte.set('moderne')">
+          Moderne
+        </button>
+        <button [class.active]="styleCarte() === 'minimal'" (click)="styleCarte.set('minimal')">
+          Minimal
+        </button>
+        <button [class.active]="styleCarte() === 'premium'" (click)="styleCarte.set('premium')">
+          Premium
+        </button>
       </div>
     </div>
     <div class="style-group">
       <span class="style-label">Format</span>
       <div class="btn-group">
-        <button [class.active]="format() === 'paysage'" (click)="format.set('paysage')">Paysage</button>
-        <button [class.active]="format() === 'portrait'" (click)="format.set('portrait')">Portrait</button>
+        <button [class.active]="format() === 'paysage'" (click)="format.set('paysage')">
+          Paysage
+        </button>
+        <button [class.active]="format() === 'portrait'" (click)="format.set('portrait')">
+          Portrait
+        </button>
       </div>
     </div>
     <div class="style-group">
       <span class="style-label">Couleur</span>
       <div class="color-row">
         @for (c of presetColors; track c) {
-          <button class="color-dot" [class.active]="couleur() === c"
-            [style.background]="c" (click)="couleur.set(c)"></button>
+          <button
+            class="color-dot"
+            [class.active]="couleur() === c"
+            [style.background]="c"
+            (click)="couleur.set(c)"
+          ></button>
         }
       </div>
     </div>
@@ -70,7 +113,7 @@
 <!-- Grille des cartes -->
 @if (loading()) {
   <div class="skeleton-grid">
-    @for (i of [1,2,3,4,5,6]; track i) {
+    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
       <div class="card-skeleton"></div>
     }
   </div>
@@ -83,15 +126,21 @@
 
   <div class="cartes-grid" [class.portrait]="format() === 'portrait'">
     @for (e of paginated(); track e.id) {
-      <div class="carte {{ styleCarte() }} {{ format() }}"
+      <div
+        class="carte {{ styleCarte() }} {{ format() }}"
         [class.selected]="isSelected(e.id)"
         (click)="toggleSelect(e.id)"
-        [style.--accent]="getCouleurStyle()">
-
+        [style.--accent]="getCouleurStyle()"
+      >
         <!-- Header coloré -->
         <div class="carte-header">
           @if (e.image) {
-            <img class="carte-photo" [src]="e.image" [alt]="e.prenom + ' ' + e.nom" loading="lazy"/>
+            <img
+              class="carte-photo"
+              [src]="e.image"
+              [alt]="e.prenom + ' ' + e.nom"
+              loading="lazy"
+            />
           } @else {
             <div class="carte-avatar" [style.background]="avatarColor(e.id)">{{ initials(e) }}</div>
           }
@@ -100,7 +149,9 @@
             <span class="carte-poste">{{ e.poste || 'Employé' }}</span>
           </div>
           <div class="carte-check" [class.visible]="isSelected(e.id)">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="m5 13 4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="m5 13 4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+            </svg>
           </div>
         </div>
 
@@ -114,7 +165,9 @@
             <div class="carte-qr-placeholder">
               <div class="qr-icon">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" opacity=".3">
-                  <path d="M3 3h7v7H3zm1 1v5h5V4zm1 1h3v3H5zM14 3h7v7h-7zm1 1v5h5V4zm1 1h3v3h-3zM3 14h7v7H3zm1 1v5h5v-5zm1 1h3v3H5zM14 14h2v2h-2zm2 0h2v2h-2zm2 2h2v2h-2zm0 2h-2v2h2zm-4 0h2v2h-2zm0-4h-2v2h2zm-2 4h-2v2h2z"/>
+                  <path
+                    d="M3 3h7v7H3zm1 1v5h5V4zm1 1h3v3H5zM14 3h7v7h-7zm1 1v5h5V4zm1 1h3v3h-3zM3 14h7v7H3zm1 1v5h5v-5zm1 1h3v3H5zM14 14h2v2h-2zm2 0h2v2h-2zm2 2h2v2h-2zm0 2h-2v2h2zm-4 0h2v2h-2zm0-4h-2v2h2zm-2 4h-2v2h2z"
+                  />
                 </svg>
                 <span>QR</span>
               </div>
@@ -141,7 +194,9 @@
     <div class="pagination card">
       <button class="page-btn" [disabled]="page() === 1" (click)="page.set(page() - 1)">←</button>
       <span class="page-info">{{ page() }} / {{ totalPages() }}</span>
-      <button class="page-btn" [disabled]="page() === totalPages()" (click)="page.set(page() + 1)">→</button>
+      <button class="page-btn" [disabled]="page() === totalPages()" (click)="page.set(page() + 1)">
+        →
+      </button>
     </div>
   }
 }

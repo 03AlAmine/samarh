@@ -29,8 +29,21 @@
   <!-- Première ligne : Périodes et date -->
   <div class="filters-row">
     <div class="periodes-rapides">
-      @for (p of [{ key: 'today', label: "Aujourd'hui" }, { key: 'yesterday', label: 'Hier' }, { key: 'week', label: 'Semaine' }, { key: 'month', label: 'Ce mois' }, { key: 'prev-month', label: 'Mois préc.' }]; track p.key) {
-        <button class="periode-chip" [class.active]="periodeRapide() === p.key" (click)="setPeriodeRapide(p.key)">
+      @for (
+        p of [
+          { key: 'today', label: "Aujourd'hui" },
+          { key: 'yesterday', label: 'Hier' },
+          { key: 'week', label: 'Semaine' },
+          { key: 'month', label: 'Ce mois' },
+          { key: 'prev-month', label: 'Mois préc.' },
+        ];
+        track p.key
+      ) {
+        <button
+          class="periode-chip"
+          [class.active]="periodeRapide() === p.key"
+          (click)="setPeriodeRapide(p.key)"
+        >
           {{ p.label }}
         </button>
       }
@@ -44,7 +57,12 @@
           <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
       </button>
-      <input class="date-input" type="date" [value]="dateSelectionnee()" (change)="onDateChange($any($event.target).value)" />
+      <input
+        class="date-input"
+        type="date"
+        [value]="dateSelectionnee()"
+        (change)="onDateChange($any($event.target).value)"
+      />
       <button class="nav-btn" (click)="jourSuivant()" [disabled]="isToday" title="Jour suivant">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -58,14 +76,22 @@
 
   <!-- Deuxième ligne : Filtres service et statut -->
   <div class="filters-bar">
-    <select class="filter-select" [value]="filtreService()" (change)="filtreService.set($any($event.target).value)">
+    <select
+      class="filter-select"
+      [value]="filtreService()"
+      (change)="filtreService.set($any($event.target).value)"
+    >
       <option value="">Tous les services</option>
       @for (s of nomsServices(); track s) {
         <option [value]="s">{{ s }}</option>
       }
     </select>
 
-    <select class="filter-select" [value]="filtreStatut()" (change)="filtreStatut.set($any($event.target).value)">
+    <select
+      class="filter-select"
+      [value]="filtreStatut()"
+      (change)="filtreStatut.set($any($event.target).value)"
+    >
       <option value="">Tous statuts</option>
       <option value="present">Présents</option>
       <option value="retard">Retards</option>
@@ -192,11 +218,9 @@
             <!-- Replace line 128 with this safer approach -->
             <td data-label="Employé">
               <div class="cell-employe">
-                <div class="emp-avatar-sm">
-                  {{ (l.prenom.charAt(0) || '?') + (l.nom.charAt(0) || '?') }}
-                </div>
+                <div class="emp-avatar-sm">{{ initiales(l) }}</div>
                 <div>
-                  <span class="emp-name">{{ l.prenom }} {{ l.nom }}</span>
+                  <span class="emp-name">{{ fullName(l) }}</span>
                   <span class="emp-mat">{{ l.matricule }}</span>
                 </div>
               </div>
@@ -205,9 +229,11 @@
               <span class="service-chip">{{ l.service }}</span>
             </td>
             <td>
-              <span [class.time-late]="l.retard > 0">{{ l.arrive || '—' }}</span>
+              <span [class.time-late]="l.retard > 0">{{
+                l.arrive ? formatHeure(l.arrive) : '—'
+              }}</span>
             </td>
-            <td data-label="Départ">{{ l.descente || '—' }}</td>
+            <td data-label="Départ">{{ l.descente ? formatHeure(l.descente) : '—' }}</td>
             <td>
               @if (l.heures > 0) {
                 <span class="hours-badge">{{ l.heures }}h</span>

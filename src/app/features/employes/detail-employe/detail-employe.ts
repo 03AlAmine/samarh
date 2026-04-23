@@ -1,6 +1,10 @@
 import {
-  Component, inject, signal, OnInit,
-  ChangeDetectionStrategy, ChangeDetectorRef,
+  Component,
+  inject,
+  signal,
+  OnInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
@@ -39,12 +43,19 @@ export class DetailEmployeComponent implements OnInit {
   savingEdit = signal(false);
   editError = signal('');
 
-  get isAdmin() { return this.auth.isAdmin; }
-  get canEdit() { return this.auth.isAdmin || this.auth.canEditEmployes; }
+  get isAdmin() {
+    return this.auth.isAdmin;
+  }
+  get canEdit() {
+    return this.auth.isAdmin || this.auth.canEditEmployes;
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (!id) { this.router.navigate(['/employes']); return; }
+    if (!id) {
+      this.router.navigate(['/employes']);
+      return;
+    }
     this.load(id);
   }
 
@@ -96,7 +107,7 @@ export class DetailEmployeComponent implements OnInit {
     this.savingPlanning.set(true);
     try {
       await this.employeService.update(e.id, { planning });
-      this.employe.update(emp => emp ? { ...emp, planning } : emp);
+      this.employe.update((emp) => (emp ? { ...emp, planning } : emp));
       this.toast.success('Planning enregistré');
     } catch (err: any) {
       this.toast.error(err.message || 'Erreur lors de la sauvegarde.');
@@ -107,11 +118,19 @@ export class DetailEmployeComponent implements OnInit {
 
   nomService(matricule?: string): string {
     if (!matricule) return '—';
-    return this.services().find(s => s.matricule === matricule)?.nom || matricule;
+    return this.services().find((s) => s.matricule === matricule)?.nom || matricule;
   }
 
   initials(e: Employe): string {
-    return `${(e.prenom || '?')[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
+    if (e.prenom) {
+      return `${e.prenom[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
+    }
+    // nom contient prénom + nom (ex: "Amadou Diallo") → prendre les initiales des 2 premiers mots
+    const parts = (e.nom || '').trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return (e.nom || '').substring(0, 2).toUpperCase();
   }
 
   get age(): number | null {

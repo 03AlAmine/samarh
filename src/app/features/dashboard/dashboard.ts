@@ -1,7 +1,15 @@
 // ─── DASHBOARD ENRICHI ────────────────────────────────────────────────────────
 import {
-  Component, inject, signal, computed, OnInit, effect,
-  ChangeDetectionStrategy, DestroyRef, ViewChild, ChangeDetectorRef,
+  Component,
+  inject,
+  signal,
+  computed,
+  OnInit,
+  effect,
+  ChangeDetectionStrategy,
+  DestroyRef,
+  ViewChild,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -10,12 +18,32 @@ import { combineLatest, forkJoin, of, firstValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { BaseChartDirective } from 'ng2-charts';
 import {
-  Chart, ChartOptions, BarController, BarElement,
-  LineController, LineElement, PointElement,
-  CategoryScale, LinearScale, Tooltip, Legend, Filler,
+  Chart,
+  ChartOptions,
+  BarController,
+  BarElement,
+  LineController,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+  Filler,
 } from 'chart.js';
 
-Chart.register(BarController, BarElement, LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
+Chart.register(
+  BarController,
+  BarElement,
+  LineController,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+  Filler,
+);
 
 import { AuthService } from '../../core/services/auth.service';
 import { EmployeService } from '../../core/services/employe.service';
@@ -25,8 +53,8 @@ import { Employe, Planning, Service } from '../../core/models/employe.model';
 import { PresenceBrute } from '../../core/models/pointage.model';
 
 interface JourSemaine {
-  label: string;        // 'Lun', 'Mar'…
-  date: string;         // ISO
+  label: string; // 'Lun', 'Mar'…
+  date: string; // ISO
   presents: number;
   total: number;
   pct: number;
@@ -42,8 +70,8 @@ interface AlerteRetard {
 
 interface TopEmploye {
   employe: Employe;
-  joursPresents: number;      // sur 7
-  score: number;              // 0-100
+  joursPresents: number; // sur 7
+  score: number; // 0-100
   badge: 'or' | 'argent' | 'bronze';
 }
 
@@ -56,22 +84,22 @@ interface TopEmploye {
   styleUrls: ['./dashboard.scss'],
 })
 export class DashboardComponent implements OnInit {
-  private auth           = inject(AuthService);
-  private destroyRef     = inject(DestroyRef);
+  private auth = inject(AuthService);
+  private destroyRef = inject(DestroyRef);
   private employeService = inject(EmployeService);
-  readonly fb            = inject(FirebaseService);
+  readonly fb = inject(FirebaseService);
   private pointageService = inject(PointageService);
-  private cdr            = inject(ChangeDetectorRef);
+  private cdr = inject(ChangeDetectorRef);
   @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
 
   // ── State ─────────────────────────────────────────────────────────────────
-  loading         = signal(true);
-  employes        = signal<Employe[]>([]);
-  services        = signal<Service[]>([]);
-  presencesToday  = signal<PresenceBrute[]>([]);
-  semaine         = signal<JourSemaine[]>([]);
-  alertesRetard   = signal<AlerteRetard[]>([]);
-  loadingSemaine  = signal(true);
+  loading = signal(true);
+  employes = signal<Employe[]>([]);
+  services = signal<Service[]>([]);
+  presencesToday = signal<PresenceBrute[]>([]);
+  semaine = signal<JourSemaine[]>([]);
+  alertesRetard = signal<AlerteRetard[]>([]);
+  loadingSemaine = signal(true);
 
   constructor() {
     // Quand les données de la semaine changent, mettre à jour le chart (OnPush compatible)
@@ -85,24 +113,28 @@ export class DashboardComponent implements OnInit {
   // ── Chart.js data (réactif via computed) ─────────────────────────────────
   chartData = computed((): any => {
     const sem = this.semaine();
-    const values = sem.map(j => j.presents);
+    const values = sem.map((j) => j.presents);
     const max = Math.max(...values, 0);
     return {
-      labels: sem.map(j => j.label),
+      labels: sem.map((j) => j.label),
       datasets: [
         {
           type: 'bar' as const,
           label: 'Présents',
           data: values,
-          backgroundColor: sem.map(j =>
-            j.pct >= 80 ? 'rgba(16,185,129,0.85)'
-            : j.pct >= 50 ? 'rgba(245,158,11,0.85)'
-            : 'rgba(239,68,68,0.85)'
+          backgroundColor: sem.map((j) =>
+            j.pct >= 80
+              ? 'rgba(16,185,129,0.85)'
+              : j.pct >= 50
+                ? 'rgba(245,158,11,0.85)'
+                : 'rgba(239,68,68,0.85)',
           ),
-          hoverBackgroundColor: sem.map(j =>
-            j.pct >= 80 ? 'rgba(16,185,129,1)'
-            : j.pct >= 50 ? 'rgba(245,158,11,1)'
-            : 'rgba(239,68,68,1)'
+          hoverBackgroundColor: sem.map((j) =>
+            j.pct >= 80
+              ? 'rgba(16,185,129,1)'
+              : j.pct >= 50
+                ? 'rgba(245,158,11,1)'
+                : 'rgba(239,68,68,1)',
           ),
           borderRadius: 6,
           borderSkipped: false,
@@ -115,9 +147,11 @@ export class DashboardComponent implements OnInit {
           borderColor: 'rgba(99,102,241,0.9)',
           borderWidth: 2,
           borderDash: [],
-          pointRadius: values.map(v => v === max && max > 0 ? 6 : 3),
+          pointRadius: values.map((v) => (v === max && max > 0 ? 6 : 3)),
           pointHoverRadius: 8,
-          pointBackgroundColor: values.map(v => v === max && max > 0 ? '#6366f1' : 'rgba(99,102,241,0.6)'),
+          pointBackgroundColor: values.map((v) =>
+            v === max && max > 0 ? '#6366f1' : 'rgba(99,102,241,0.6)',
+          ),
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
           fill: false,
@@ -171,16 +205,16 @@ export class DashboardComponent implements OnInit {
 
   // ── Stats du jour ─────────────────────────────────────────────────────────
   stats = computed(() => {
-    const actifs  = this.employes().filter(e => e.statut !== 'archive' && e.statut !== 'inactif');
-    const mats    = this.presencesToday().map(p => p.matricule);
-    const presents = actifs.filter(e => mats.includes(e.matricule)).length;
-    const taux     = actifs.length ? Math.round((presents / actifs.length) * 100) : 0;
+    const actifs = this.employes().filter((e) => e.statut !== 'archive' && e.statut !== 'inactif');
+    const mats = this.presencesToday().map((p) => p.matricule);
+    const presents = actifs.filter((e) => mats.includes(e.matricule)).length;
+    const taux = actifs.length ? Math.round((presents / actifs.length) * 100) : 0;
     return {
-      totalEmployes:    actifs.length,
+      totalEmployes: actifs.length,
       presentsAujourdhui: presents,
-      absentsAujourdhui:  actifs.length - presents,
-      totalServices:    this.services().length,
-      tauxPresence:     taux,
+      absentsAujourdhui: actifs.length - presents,
+      totalServices: this.services().length,
+      tauxPresence: taux,
     };
   });
 
@@ -197,32 +231,31 @@ export class DashboardComponent implements OnInit {
 
   // ── Top 3 employés sur 7 jours (présences + ponctualité) ─────────────────
   topEmployesSemaine = computed((): TopEmploye[] => {
-    const sem    = this.semaine();
-    const actifs = this.employes().filter(e => e.statut !== 'archive' && e.statut !== 'inactif');
+    const sem = this.semaine();
+    const actifs = this.employes().filter((e) => e.statut !== 'archive' && e.statut !== 'inactif');
     if (!sem.length || !actifs.length) return [];
 
     // Compter les présences par matricule sur les 7 jours
     const presencesParMat = new Map<string, number>();
-    sem.forEach(j => {
-      (j.matricules || []).forEach(mat => {
+    sem.forEach((j) => {
+      (j.matricules || []).forEach((mat) => {
         presencesParMat.set(mat, (presencesParMat.get(mat) || 0) + 1);
       });
     });
 
     const joursDispos = sem.length;
-    const retardsMat = new Set(this.alertesRetard().map(a => a.employe.matricule));
+    const retardsMat = new Set(this.alertesRetard().map((a) => a.employe.matricule));
 
     const scored = actifs
-      .map(e => {
+      .map((e) => {
         const jours = presencesParMat.get(e.matricule) || 0;
         // Score : 70% présence + 30% ponctualité (pas de retard aujourd'hui)
         const ponctualiteBonus = retardsMat.has(e.matricule) ? 0 : 10;
-        const score = joursDispos > 0
-          ? Math.round((jours / joursDispos) * 90) + ponctualiteBonus
-          : 0;
+        const score =
+          joursDispos > 0 ? Math.round((jours / joursDispos) * 90) + ponctualiteBonus : 0;
         return { employe: e, joursPresents: jours, score };
       })
-      .filter(x => x.joursPresents > 0)
+      .filter((x) => x.joursPresents > 0)
       .sort((a, b) => b.score - a.score || b.joursPresents - a.joursPresents)
       .slice(0, 3);
 
@@ -232,11 +265,11 @@ export class DashboardComponent implements OnInit {
 
   // ── Répartition par service ───────────────────────────────────────────────
   repartitionServices = computed(() => {
-    const employes = this.employes().filter(e => e.statut !== 'archive');
-    const mats     = this.presencesToday().map(p => p.matricule);
-    const map      = new Map<string, { total: number; presents: number }>();
+    const employes = this.employes().filter((e) => e.statut !== 'archive');
+    const mats = this.presencesToday().map((p) => p.matricule);
+    const map = new Map<string, { total: number; presents: number }>();
 
-    employes.forEach(e => {
+    employes.forEach((e) => {
       const key = e.service || '__none__';
       const cur = map.get(key) || { total: 0, presents: 0 };
       cur.total++;
@@ -246,17 +279,17 @@ export class DashboardComponent implements OnInit {
 
     return Array.from(map.entries())
       .map(([matricule, data]) => {
-        const svc = this.services().find(s => s.matricule === matricule);
+        const svc = this.services().find((s) => s.matricule === matricule);
         const taux = data.total ? Math.round((data.presents / data.total) * 100) : 0;
         return {
-          nom:      svc?.nom || 'Non assigné',
-          total:    data.total,
+          nom: svc?.nom || 'Non assigné',
+          total: data.total,
           presents: data.presents,
           taux,
-          pct:      Math.round((data.total / (employes.length || 1)) * 100),
+          pct: Math.round((data.total / (employes.length || 1)) * 100),
         };
       })
-      .filter(s => s.nom !== 'Non assigné' || s.total > 0)
+      .filter((s) => s.nom !== 'Non assigné' || s.total > 0)
       .sort((a, b) => b.total - a.total)
       .slice(0, 6);
   });
@@ -265,16 +298,24 @@ export class DashboardComponent implements OnInit {
   derniersEmployes = computed(() =>
     [...this.employes()]
       .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
-      .slice(0, 5)
+      .slice(0, 5),
   );
 
   // ── Getters ───────────────────────────────────────────────────────────────
-  get user()          { return this.auth.currentUser as any; }
-  get isAdmin()       { return this.auth.isAdmin; }
-  get communauteNom() { return this.user?.communauteNom || this.user?.companyName || 'Mon espace'; }
-  get today()         {
+  get user() {
+    return this.auth.currentUser as any;
+  }
+  get isAdmin() {
+    return this.auth.isAdmin;
+  }
+  get communauteNom() {
+    return this.user?.communauteNom || this.user?.companyName || 'Mon espace';
+  }
+  get today() {
     return new Date().toLocaleDateString('fr-FR', {
-      weekday: 'long', day: 'numeric', month: 'long',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
     });
   }
 
@@ -290,10 +331,7 @@ export class DashboardComponent implements OnInit {
   private loadData(): void {
     this.loading.set(true);
 
-    combineLatest([
-      this.employeService.employes$,
-      this.employeService.services$,
-    ])
+    combineLatest([this.employeService.employes$, this.employeService.services$])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([employes, services]) => {
@@ -309,7 +347,8 @@ export class DashboardComponent implements OnInit {
 
   private loadPresencesToday(): void {
     const today = new Date().toISOString().split('T')[0];
-    this.pointageService.presencesJour$(today)
+    this.pointageService
+      .presencesJour$(today)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (presences) => {
@@ -324,31 +363,41 @@ export class DashboardComponent implements OnInit {
     const employes = this.employes();
     const alertes: AlerteRetard[] = [];
 
-    presences.forEach(p => {
-      const emp = employes.find(e => e.matricule === p.matricule);
+    presences.forEach((p) => {
+      const emp = employes.find((e) => e.matricule === p.matricule);
       if (!emp || !p.arrive) return;
 
-      // Trouver le planning de l'employé pour aujourd'hui
       const jourSemaine = new Date().toLocaleDateString('fr-FR', { weekday: 'long' });
-      const jourCap     = jourSemaine.charAt(0).toUpperCase() + jourSemaine.slice(1);
-      // Firebase peut renvoyer un objet au lieu d'un tableau — normaliser
+      const jourCap = jourSemaine.charAt(0).toUpperCase() + jourSemaine.slice(1);
       const planningArray: Planning[] = Array.isArray(emp.planning)
         ? emp.planning
         : Object.values(emp.planning ?? {});
-      const planningJour = planningArray.find(pl =>
-        pl.jour.toLowerCase() === jourCap.toLowerCase()
+      const planningJour = planningArray.find(
+        (pl) => pl.jour.toLowerCase() === jourCap.toLowerCase(),
       );
       if (!planningJour) return;
 
-      const heurePrevu  = planningJour.heureDebut * 60 + (planningJour.minuteDebut || 0);
-      const [hA, mA]    = p.arrive.split(':').map(Number);
-      const heureArrivee = hA * 60 + (mA || 0);
-      const retard       = heureArrivee - heurePrevu;
+      const heurePrevu = planningJour.heureDebut * 60 + (planningJour.minuteDebut || 0);
 
-      if (retard >= 10) { // au moins 10 min de retard
+      // ✅ Gérer ISO complet ET format HH:mm
+      let heureArrivee: number;
+      let heureArriveeStr: string;
+      if (p.arrive.includes('T')) {
+        const d = new Date(p.arrive);
+        heureArrivee = d.getHours() * 60 + d.getMinutes();
+        heureArriveeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      } else {
+        const [hA, mA] = p.arrive.split(':').map(Number);
+        heureArrivee = hA * 60 + (mA || 0);
+        heureArriveeStr = p.arrive;
+      }
+
+      const retard = heureArrivee - heurePrevu;
+
+      if (retard >= 10) {
         alertes.push({
-          employe:      emp,
-          heureArrivee: p.arrive,
+          employe: emp,
+          heureArrivee: heureArriveeStr,
           minutesRetard: retard,
         });
       }
@@ -359,9 +408,9 @@ export class DashboardComponent implements OnInit {
 
   private async loadSemaine(employes: Employe[]): Promise<void> {
     this.loadingSemaine.set(true);
-    const actifs = employes.filter(e => e.statut !== 'archive' && e.statut !== 'inactif');
-    const total  = actifs.length;
-    const today  = new Date();
+    const actifs = employes.filter((e) => e.statut !== 'archive' && e.statut !== 'inactif');
+    const total = actifs.length;
+    const today = new Date();
     const days: JourSemaine[] = [];
 
     // 7 derniers jours
@@ -372,16 +421,19 @@ export class DashboardComponent implements OnInit {
       d.setDate(today.getDate() - (6 - i));
       const iso = d.toISOString().split('T')[0];
       return firstValueFrom(
-        this.pointageService.presencesJour$(iso).pipe(catchError(() => of([])))
-      ).then(presences => ({
-        label:      labels[d.getDay()],
-        date:       iso,
-        presents:   presences.length,
-        total,
-        pct:        total ? Math.round((presences.length / total) * 100) : 0,
-        isToday:    iso === today.toISOString().split('T')[0],
-        matricules: presences.map(x => x.matricule),
-      } as JourSemaine));
+        this.pointageService.presencesJour$(iso).pipe(catchError(() => of([]))),
+      ).then(
+        (presences) =>
+          ({
+            label: labels[d.getDay()],
+            date: iso,
+            presents: presences.length,
+            total,
+            pct: total ? Math.round((presences.length / total) * 100) : 0,
+            isToday: iso === today.toISOString().split('T')[0],
+            matricules: presences.map((x) => x.matricule),
+          }) as JourSemaine,
+      );
     });
 
     try {
@@ -405,17 +457,28 @@ export class DashboardComponent implements OnInit {
   });
 
   initials(e: Employe): string {
-    return `${(e.prenom || '?')[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
+    if (e.prenom) {
+      return `${e.prenom[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
+    }
+    // nom contient prénom + nom (ex: "Amadou Diallo") → prendre les initiales des 2 premiers mots
+    const parts = (e.nom || '').trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return (e.nom || '').substring(0, 2).toUpperCase();
   }
-
+  nomService(matricule: string | undefined): string {
+    if (!matricule) return '';
+    return this.services().find((s) => s.matricule === matricule)?.nom || '';
+  }
   avatarColor(id: string): string {
-    const colors = ['#4f7df3','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4'];
+    const colors = ['#4f7df3', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
     const idx = id ? id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : 0;
     return colors[idx % colors.length];
   }
 
   estPresentAujourdhui(matricule: string): boolean {
-    return this.presencesToday().some(p => p.matricule === matricule);
+    return this.presencesToday().some((p) => p.matricule === matricule);
   }
 
   formatRetard(min: number): string {
@@ -424,5 +487,4 @@ export class DashboardComponent implements OnInit {
   }
 
   // Max bar height pour le graphe (normalisation)
-
 }

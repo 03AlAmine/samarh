@@ -4,32 +4,52 @@
     <p class="page-subtitle">
       @if (!loading()) {
         {{ employes().length }} employé{{ employes().length > 1 ? 's' : '' }}
-        @if (totalPages() > 1) { · page {{ currentPage() }}/{{ totalPages() }} }
+        @if (totalPages() > 1) {
+          · page {{ currentPage() }}/{{ totalPages() }}
+        }
       }
     </p>
   </div>
   @if (canEdit) {
     <button class="btn btn--primary btn--sm" (click)="openForm()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
       Ajouter
     </button>
   }
 </div>
 
 <!-- Filtres -->
-<div class="filters-bar card" style="margin-bottom:20px;padding:14px 16px">
+<div class="filters-bar card" style="margin-bottom: 20px; padding: 14px 16px">
   <div class="filter-search">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-    <input class="filter-input" type="text" placeholder="Rechercher par nom, matricule, poste…"
-      [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)"/>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+      <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7" />
+      <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+    </svg>
+    <input
+      class="filter-input"
+      type="text"
+      placeholder="Rechercher par nom, matricule, poste…"
+      [value]="searchTerm()"
+      (input)="searchTerm.set($any($event.target).value)"
+    />
   </div>
-  <select class="form-control filter-select" [value]="filterService()" (change)="filterService.set($any($event.target).value)">
+  <select
+    class="form-control filter-select"
+    [value]="filterService()"
+    (change)="filterService.set($any($event.target).value)"
+  >
     <option value="">Tous les services</option>
     @for (s of services(); track s.id) {
       <option [value]="s.matricule">{{ s.nom }}</option>
     }
   </select>
-  <select class="form-control filter-select" [value]="filterStatut()" (change)="filterStatut.set($any($event.target).value)">
+  <select
+    class="form-control filter-select"
+    [value]="filterStatut()"
+    (change)="filterStatut.set($any($event.target).value)"
+  >
     <option value="">Tous les statuts</option>
     <option value="actif">Actif</option>
     <option value="inactif">Inactif</option>
@@ -43,11 +63,17 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>Employé</th><th>Matricule</th><th>Poste</th><th>Service</th><th>Contrat</th><th>Statut</th><th></th>
+          <th>Employé</th>
+          <th>Matricule</th>
+          <th>Poste</th>
+          <th>Service</th>
+          <th>Contrat</th>
+          <th>Statut</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
-        @for (i of [1,2,3,4,5,6,7,8]; track i) {
+        @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
           <tr class="skeleton-row">
             <td>
               <div class="cell-employe">
@@ -76,7 +102,14 @@
   <div class="card table-wrapper desktop-table">
     @if (employes().length === 0) {
       <div class="empty-state">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+            stroke="currentColor"
+            stroke-width="1.5"
+          />
+          <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5" />
+        </svg>
         <p>Aucun employé trouvé</p>
       </div>
     }
@@ -84,7 +117,13 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Employé</th><th>Matricule</th><th>Poste</th><th>Service</th><th>Contrat</th><th>Statut</th><th></th>
+            <th>Employé</th>
+            <th>Matricule</th>
+            <th>Poste</th>
+            <th>Service</th>
+            <th>Contrat</th>
+            <th>Statut</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -95,22 +134,75 @@
                   <div class="emp-avatar">{{ initials(e) }}</div>
                   <div>
                     <span class="emp-name">{{ e.prenom }} {{ e.nom }}</span>
-                    @if (e.email) { <span class="emp-email">{{ e.email }}</span> }
+                    @if (e.email) {
+                      <span class="emp-email">{{ e.email }}</span>
+                    }
                   </div>
                 </div>
               </td>
-              <td><code class="mono">{{ e.matricule }}</code></td>
+              <td>
+                <code class="mono">{{ e.matricule }}</code>
+              </td>
               <td>{{ e.poste || '—' }}</td>
               <td>{{ nomService(e.service) }}</td>
               <td>{{ e.typeContrat || '—' }}</td>
-              <td><span class="badge badge--{{ statutClass(e.statut) }}">{{ e.statut || 'actif' }}</span></td>
+              <td>
+                <span class="badge badge--{{ statutClass(e.statut) }}">{{
+                  e.statut || 'actif'
+                }}</span>
+              </td>
               <td class="actions-cell" (click)="$event.stopPropagation()">
                 @if (canEdit) {
-                  <button class="btn btn--ghost btn--icon btn--sm" title="Modifier" (click)="openForm(e)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" stroke-width="1.7"/></svg>
+                  <button
+                    class="btn btn--ghost btn--icon btn--sm"
+                    title="Modifier"
+                    (click)="openForm(e)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                      />
+                      <path
+                        d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                      />
+                    </svg>
                   </button>
-                  <button class="btn btn--ghost btn--icon btn--sm" title="Archiver" (click)="archiver(e.id, $event)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="21 8 21 21 3 21 3 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><rect x="1" y="3" width="22" height="5" rx="1" stroke="currentColor" stroke-width="1.7"/><line x1="10" y1="12" x2="14" y2="12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                  <button
+                    class="btn btn--ghost btn--icon btn--sm"
+                    title="Archiver"
+                    (click)="archiver(e.id, $event)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <polyline
+                        points="21 8 21 21 3 21 3 8"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                      />
+                      <rect
+                        x="1"
+                        y="3"
+                        width="22"
+                        height="5"
+                        rx="1"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                      />
+                      <line
+                        x1="10"
+                        y1="12"
+                        x2="14"
+                        y2="12"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                      />
+                    </svg>
                   </button>
                 }
               </td>
@@ -136,9 +228,24 @@
           <div class="ec-right">
             <span class="badge badge--{{ statutClass(e.statut) }}">{{ e.statut || 'actif' }}</span>
             @if (isAdmin) {
-              <button class="btn btn--ghost btn--icon btn--sm" title="Modifier"
-                (click)="$event.preventDefault(); $event.stopPropagation(); openForm(e)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" stroke-width="1.7"/></svg>
+              <button
+                class="btn btn--ghost btn--icon btn--sm"
+                title="Modifier"
+                (click)="$event.preventDefault(); $event.stopPropagation(); openForm(e)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+                </svg>
               </button>
             }
           </div>
@@ -151,7 +258,9 @@
   @if (totalPages() > 1) {
     <div class="pagination">
       <button class="pg-btn" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
       </button>
       @for (p of pages(); track $index) {
         @if (p === '...') {
@@ -162,8 +271,14 @@
           </button>
         }
       }
-      <button class="pg-btn" (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <button
+        class="pg-btn"
+        (click)="goToPage(currentPage() + 1)"
+        [disabled]="currentPage() === totalPages()"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
       </button>
     </div>
   }
@@ -174,15 +289,27 @@
   <div class="modal-overlay" (click)="closeForm()">
     <div class="modal-box modal-box--lg" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>{{ editingEmploye() ? 'Modifier l\'employé' : 'Ajouter un employé' }}</h3>
+        <h3>{{ editingEmploye() ? "Modifier l'employé" : 'Ajouter un employé' }}</h3>
         <button class="modal-close" (click)="closeForm()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M18 6 6 18M6 6l12 12"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
         </button>
       </div>
-      @if (formError()) { <div class="form-alert">{{ formError() }}</div> }
+      @if (formError()) {
+        <div class="form-alert">{{ formError() }}</div>
+      }
       <app-employe-form
-        [employe]="editingEmploye()" [services]="services()" [loading]="savingEmploye()"
-        (saved)="saveEmploye($event)" (cancelled)="closeForm()"
+        [employe]="editingEmploye()"
+        [services]="services()"
+        [loading]="savingEmploye()"
+        (saved)="saveEmploye($event)"
+        (cancelled)="closeForm()"
       />
     </div>
   </div>

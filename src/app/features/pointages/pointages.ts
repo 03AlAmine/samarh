@@ -1,6 +1,15 @@
 // ─── POINTAGES ────────────────────────────────────────────────────────────────
 
-import { Component, inject, signal, computed, OnInit, effect, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  OnInit,
+  effect,
+  ChangeDetectionStrategy,
+  DestroyRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -39,7 +48,7 @@ export class PointagesComponent implements OnInit {
   dateSelectionnee = signal(new Date().toISOString().split('T')[0]);
   filtreService = signal('');
   filtreStatut = signal('');
-  periodeRapide = signal('');   // 'today' | 'week' | 'month' | 'prev-month' | ''
+  periodeRapide = signal(''); // 'today' | 'week' | 'month' | 'prev-month' | ''
 
   // Données
   allEmployes = signal<Employe[]>([]);
@@ -134,6 +143,17 @@ export class PointagesComponent implements OnInit {
     this.abonnerPresences(this.dateSelectionnee());
   }
 
+  fullName(l: LignePointage): string {
+    return l.prenom ? `${l.prenom} ${l.nom}` : l.nom;
+  }
+
+  initiales(l: LignePointage): string {
+    if (l.prenom) return `${l.prenom[0]}${l.nom[0] || ''}`.toUpperCase();
+    const parts = l.nom.trim().split(/\s+/);
+    return parts.length >= 2
+      ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+      : l.nom.substring(0, 2).toUpperCase();
+  }
 
   // Appelé quand l'utilisateur change la date
   onDateChange(date: string): void {
@@ -141,7 +161,7 @@ export class PointagesComponent implements OnInit {
     this.filtreService.set('');
     this.filtreStatut.set('');
     // Reset période rapide si l'utilisateur change la date manuellement
-    if (!['today','yesterday','week','month','prev-month'].includes(this.periodeRapide())) {
+    if (!['today', 'yesterday', 'week', 'month', 'prev-month'].includes(this.periodeRapide())) {
       this.periodeRapide.set('');
     }
     // Ré-abonner au nouveau stream filtré (le cache du service réutilise si déjà chargé)
@@ -184,7 +204,8 @@ export class PointagesComponent implements OnInit {
     if (p === 'today') {
       date = today.toISOString().split('T')[0];
     } else if (p === 'yesterday') {
-      const y = new Date(today); y.setDate(y.getDate() - 1);
+      const y = new Date(today);
+      y.setDate(y.getDate() - 1);
       date = y.toISOString().split('T')[0];
     } else if (p === 'week') {
       // Lundi de cette semaine
@@ -206,8 +227,11 @@ export class PointagesComponent implements OnInit {
   get labelPeriode(): string {
     const p = this.periodeRapide();
     const labels: Record<string, string> = {
-      today: "Aujourd'hui", yesterday: 'Hier',
-      week: 'Cette semaine', month: 'Ce mois', 'prev-month': 'Mois précédent',
+      today: "Aujourd'hui",
+      yesterday: 'Hier',
+      week: 'Cette semaine',
+      month: 'Ce mois',
+      'prev-month': 'Mois précédent',
     };
     return labels[p] || '';
   }
@@ -251,12 +275,22 @@ export class PointagesComponent implements OnInit {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
+  formatHeure(iso: string): string {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return iso;
+    }
+  }
   private calcHeures(arrive: string, descente: string): number {
     if (!arrive || !descente) return 0;
-    const [hA, mA] = arrive.split(':').map(Number);
-    const [hD, mD] = descente.split(':').map(Number);
-    const diff = hD * 60 + mD - (hA * 60 + mA);
-    return diff > 0 ? Math.round((diff / 60) * 10) / 10 : 0;
+    try {
+      const diff = new Date(descente).getTime() - new Date(arrive).getTime();
+      return diff > 0 ? Math.round((diff / 3600000) * 10) / 10 : 0;
+    } catch {
+      return 0;
+    }
   }
 
   private calcRetard(e: Employe, svc: Service | undefined, date: string, arrive: string): number {
@@ -266,8 +300,9 @@ export class PointagesComponent implements OnInit {
     const jour = new Date(date).toLocaleDateString('fr-FR', { weekday: 'long' });
     const plage = planning.find((p) => p.jour?.toLowerCase() === jour.toLowerCase());
     if (!plage) return 0;
-    const [hA, mA] = arrive.split(':').map(Number);
-    return Math.max(0, hA * 60 + mA - (plage.heureDebut * 60 + plage.minuteDebut));
+    const d = new Date(arrive);
+    const arriveMin = d.getHours() * 60 + d.getMinutes();
+    return Math.max(0, arriveMin - (plage.heureDebut * 60 + plage.minuteDebut));
   }
 
   statutClass(s: string): string {

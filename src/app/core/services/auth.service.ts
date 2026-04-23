@@ -85,7 +85,8 @@ export class AuthService {
 
       // Charger la DB client — authReady ne passe à true qu'APRÈS init
       // pour éviter la race condition "Base client non initialisée"
-      this.fb.adminGet<Communaute>(`communautes/${session.communauteId}`)
+      this.fb
+        .adminGet<Communaute>(`communautes/${session.communauteId}`)
         .then(async (communaute) => {
           if (communaute?.firebaseConfig) {
             await this.fb.initClientDatabase(communaute.firebaseConfig, session.communauteId);
@@ -249,9 +250,10 @@ export class AuthService {
   }
 
   private async createCommunaute(userData: any): Promise<string> {
-    const nom = userData.userType === 'company'
-      ? userData.companyName
-      : `${userData.firstName} ${userData.lastName}`;
+    const nom =
+      userData.userType === 'company'
+        ? userData.companyName
+        : `${userData.firstName} ${userData.lastName}`;
 
     const id = await this.fb.adminPush('communautes', {
       uidAdmin: userData.uid,
@@ -266,11 +268,27 @@ export class AuthService {
   }
 
   private buildEmployeeUser(session: any): EmployeeUser {
+    // Gérer le cas où prenom est vide mais nom contient le nom complet
+    let firstName = session.prenom || '';
+    let lastName = session.nom || '';
+
+    // Si prenom est vide mais nom contient un espace (ex: "Aminata Thiam")
+    if (!firstName && lastName && lastName.includes(' ')) {
+      const parts = lastName.trim().split(/\s+/);
+      firstName = parts[0]; // "Aminata"
+      lastName = parts.slice(1).join(' '); // "Thiam"
+    }
+
+    // Si prenom est vide et nom n'a pas d'espace, on met tout dans lastName
+    if (!firstName && lastName) {
+      // lastName reste tel quel, firstName reste vide
+    }
+
     return {
       uid: session.uid || session.userId || `local_${Date.now()}`,
       email: session.email || '',
-      firstName: session.prenom || session.firstName || '',
-      lastName: session.nom || session.lastName || '',
+      firstName: firstName,
+      lastName: lastName,
       phone: session.telephone || session.phone || '',
       userType: 'employee',
       accountType: 'free',
@@ -286,7 +304,6 @@ export class AuthService {
       communauteNom: session.communauteNom || '',
     };
   }
-
   // ── GETTERS ───────────────────────────────────────────────────────────────
 
   get currentUser(): AppUser | null {
@@ -332,7 +349,12 @@ export class AuthService {
     if (Array.isArray(u.services) && u.services[0] === 'Tous') return true;
     if (u.role === 'Administrateur' || u.role === 'admin') return true;
     // Gérant de communauté connecté via Firebase Auth (company ou individual avec communauteId)
-    if (!u.isCommunauteUser && u.communauteId && (u.userType === 'company' || u.userType === 'individual')) return true;
+    if (
+      !u.isCommunauteUser &&
+      u.communauteId &&
+      (u.userType === 'company' || u.userType === 'individual')
+    )
+      return true;
     return false;
   }
 
@@ -356,8 +378,6 @@ export class AuthService {
 
   /** Attend que l'auth soit prête (pour les guards) */
   waitForAuth(): Promise<boolean> {
-    return firstValueFrom(
-      this.authReady$.pipe(filter((ready) => ready))
-    );
+    return firstValueFrom(this.authReady$.pipe(filter((ready) => ready)));
   }
 }

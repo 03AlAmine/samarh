@@ -76,19 +76,42 @@ export class ShellComponent implements OnInit, OnDestroy {
     });
   });
 
-  userInitials = computed(() => {
-    const u = this.user();
-    if (!u) return '?';
-    return `${(u.firstName || '?')[0]}${(u.lastName || '')[0] || ''}`.toUpperCase();
-  });
+// shell.ts
 
-  userLabel = computed(() => {
-    const u = this.user() as any;
-    if (!u) return '';
-    if (u.isCommunauteUser) return u.communauteNom || 'Employé';
-    if (u.userType === 'company') return u.companyName || 'Entreprise';
-    return `${u.firstName} ${u.lastName}`;
-  });
+userInitials(): string {
+  const u = this.user();
+  if (!u) return '?';
+
+  // Utiliser firstName/lastName (déjà remplis par buildEmployeeUser)
+  if (u.firstName && u.lastName) {
+    return `${u.firstName[0]}${u.lastName[0]}`.toUpperCase();
+  }
+  if (u.firstName) {
+    return u.firstName.substring(0, 2).toUpperCase();
+  }
+  if (u.lastName) {
+    return u.lastName.substring(0, 2).toUpperCase();
+  }
+  // Fallback sur login pour les employés sans nom
+  const login = (u as any).login;
+  if (login) return login.substring(0, 2).toUpperCase();
+
+  return '?';
+}
+
+userLabel = computed(() => {
+  const u = this.user() as any;
+  if (!u) return '';
+
+  if (u.isCommunauteUser) {
+    // Utiliser firstName/lastName (déjà remplis par buildEmployeeUser)
+    if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
+    return u.login || u.matricule || 'Employé';
+  }
+
+  if (u.userType === 'company') return u.companyName || 'Entreprise';
+  return `${u.firstName} ${u.lastName}`;
+});
 
   roleLabel = computed(() => {
     const u = this.user() as any;
