@@ -1,5 +1,4 @@
-<!-- ─── POINTAGES ─────────────────────────────────────────────────────────── -->
-
+<!-- pointages.html - version complète (inchangée, le filtrage est dans le TS) -->
 <div class="page-header">
   <div>
     <h1 class="page-title">Pointages</h1>
@@ -215,7 +214,6 @@
       <tbody>
         @for (l of lignesFiltrees(); track l.matricule) {
           <tr>
-            <!-- Replace line 128 with this safer approach -->
             <td data-label="Employé">
               <div class="cell-employe">
                 <div class="emp-avatar-sm">{{ initiales(l) }}</div>
@@ -225,23 +223,23 @@
                 </div>
               </div>
             </td>
-            <td>
+            <td data-label="Service">
               <span class="service-chip">{{ l.service }}</span>
             </td>
-            <td>
+            <td data-label="Arrivée">
               <span [class.time-late]="l.retard > 0">{{
                 l.arrive ? formatHeure(l.arrive) : '—'
               }}</span>
             </td>
             <td data-label="Départ">{{ l.descente ? formatHeure(l.descente) : '—' }}</td>
-            <td>
+            <td data-label="Heures">
               @if (l.heures > 0) {
                 <span class="hours-badge">{{ l.heures }}h</span>
               } @else {
                 <span style="color: var(--text-muted)">—</span>
               }
             </td>
-            <td>
+            <td data-label="Retard">
               @if (l.retard > 0) {
                 <span class="retard-badge">+{{ l.retard }} min</span>
               } @else {

@@ -1,4 +1,4 @@
-// ─── FORMULAIRE EMPLOYÉ ────────────────────────────────────────────────────────
+// employe-form.ts - version corrigée
 import {
   Component, Input, Output, EventEmitter,
   OnInit, inject, ChangeDetectionStrategy, signal,
@@ -50,28 +50,30 @@ export class EmployeFormComponent implements OnInit {
   });
 
   ngOnInit(): void {
+
     if (this.employe) {
       this.form.patchValue({
         nom:          this.employe.nom          || '',
-        prenom:       this.employe.prenom        || '',
-        matricule:    this.employe.matricule     || '',
-        email:        this.employe.email         || '',
-        telephone:    this.employe.telephone     || '',
-        poste:        this.employe.poste         || '',
-        service:      this.employe.service       || '',
-        typeContrat:  this.employe.typeContrat   || 'CDI',
-        dateEmbauche: this.employe.dateEmbauche  || '',
-        statut:       this.employe.statut        || 'actif',
-        login:        this.employe.login         || '',
+        prenom:       this.employe.prenom       || '',
+        matricule:    this.employe.matricule    || '',
+        email:        this.employe.email        || '',
+        telephone:    this.employe.telephone    || '',
+        poste:        this.employe.poste        || '',
+        service:      this.employe.service      || '',
+        typeContrat:  this.employe.typeContrat  || 'CDI',
+        dateEmbauche: this.employe.dateEmbauche || '',
+        statut:       this.employe.statut       || 'actif',
+        login:        this.employe.login        || '',
       });
 
       // ── Charger les permissions existantes ────────────────────────────────
       const emp = this.employe as any;
 
+
       // services[] = liste des matricules de services gérés
       if (emp.services === 'Tous' || emp.role === 'Administrateur') {
         this.role.set('Admin communauté');
-        this.selectedServices.set(new Set());          // admin = tous → pas besoin de liste
+        this.selectedServices.set(new Set());
       } else if (Array.isArray(emp.services) && emp.services.length > 0) {
         this.role.set('Chargé de compte');
         this.selectedServices.set(new Set(emp.services));
@@ -83,7 +85,9 @@ export class EmployeFormComponent implements OnInit {
   }
 
   // ── Onglets ───────────────────────────────────────────────────────────────
-  setTab(t: Tab): void { this.activeTab.set(t); }
+  setTab(t: Tab): void {
+    this.activeTab.set(t);
+  }
 
   // ── Gestion sélection services ────────────────────────────────────────────
   toggleService(matricule: string): void {
@@ -100,7 +104,9 @@ export class EmployeFormComponent implements OnInit {
 
   setRole(r: 'Employé' | 'Chargé de compte' | 'Admin communauté'): void {
     this.role.set(r);
-    if (r === 'Employé') this.selectedServices.set(new Set());
+    if (r === 'Employé') {
+      this.selectedServices.set(new Set());
+    }
   }
 
   get roleDescription(): string {
@@ -114,17 +120,30 @@ export class EmployeFormComponent implements OnInit {
     }
   }
 
-  // ── Soumission ────────────────────────────────────────────────────────────
+  // ── Soumission corrigée avec plus de logs ─────────────────────────────────
   async submit(): Promise<void> {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+
+    // Vérifier les champs invalides
+    if (this.form.invalid) {
+      Object.keys(this.form.controls).forEach(key => {
+        const control = this.form.get(key);
+        if (control?.invalid) {
+          control.markAsTouched();
+        }
+      });
+      return;
+    }
 
     const val = { ...this.form.value } as any;
     const rawPassword: string = val.password || '';
+
 
     if (rawPassword) {
       this.hashing = true;
       try {
         val.mdp = await bcrypt.hash(rawPassword, 13);
+      } catch (error) {
+        console.error('❌ Erreur lors du hash du mot de passe:', error);
       } finally {
         this.hashing = false;
       }
@@ -133,6 +152,7 @@ export class EmployeFormComponent implements OnInit {
 
     // ── Ajouter les champs de permission ────────────────────────────────────
     const roleVal = this.role();
+
     if (roleVal === 'Admin communauté') {
       val.services         = 'Tous';
       val.role             = 'Administrateur';
@@ -151,6 +171,11 @@ export class EmployeFormComponent implements OnInit {
     this.saved.emit(val as Partial<Employe>);
   }
 
-  cancel(): void { this.cancelled.emit(); }
-  get f() { return this.form.controls; }
+  cancel(): void {
+    this.cancelled.emit();
+  }
+
+  get f() {
+    return this.form.controls;
+  }
 }

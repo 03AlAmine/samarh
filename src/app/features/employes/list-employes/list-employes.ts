@@ -1,24 +1,23 @@
-// ─── LISTE EMPLOYÉS ───────────────────────────────────────────────────────────
-
+// list-employes.ts - version complète avec filtrage par rôle
 import {
   Component,
   inject,
   signal,
   computed,
-  effect,
   OnInit,
   ChangeDetectionStrategy,
   DestroyRef,
+  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { takeUntil } from 'rxjs';
 import { EmployeService } from '../../../core/services/employe.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { RoleFilterService } from '../../../core/services/role-filter.service';
 import { Employe, Service } from '../../../core/models/employe.model';
 import { EmployeFormComponent } from '../employe-form/employe-form';
 
@@ -34,16 +33,18 @@ export class ListEmployesComponent implements OnInit {
   private employeService = inject(EmployeService);
   private destroyRef = inject(DestroyRef);
   private auth = inject(AuthService);
+  private roleFilter = inject(RoleFilterService);
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
 
   // State
   loading = signal(true);
   allEmployes = signal<Employe[]>([]);
-  services = signal<Service[]>([]);
+  allServices = signal<Service[]>([]);
   searchTerm = signal('');
   filterService = signal('');
   filterStatut = signal('');
+
   // Pagination
   PAGE_SIZE = 25;
   currentPage = signal(1);
@@ -56,17 +57,28 @@ export class ListEmployesComponent implements OnInit {
     return this.auth.isAdmin;
   }
   get canEdit() {
-    return this.auth.isAdmin || this.auth.canEditEmployes;
+    return this.auth.canEditEmployes;
   }
 
-  /** Pour les chargés de compte, filtre uniquement leurs employés */
-  get currentUser() {
-    return (this.auth as any)['userSubject']?.value as any;
-  }
+  /**
+   * Services visibles selon le rôle (pour le filtre déroulant)
+   */
+  servicesVisibles = computed((): Service[] => {
+    return this.roleFilter.filterServices(this.allServices());
+  });
 
-  // Employés filtrés
-  employes = computed(() => {
-    let list = this.allEmployes();
+  /**
+   * Employés visibles selon le rôle
+   */
+  employesVisibles = computed((): Employe[] => {
+    return this.roleFilter.filterEmployes(this.allEmployes());
+  });
+
+  /**
+   * Employés filtrés par recherche, service et statut
+   */
+  employesFiltres = computed(() => {
+    let list = this.employesVisibles();
     const q = this.searchTerm().toLowerCase().trim();
     const svc = this.filterService();
     const statut = this.filterStatut();
@@ -78,29 +90,17 @@ export class ListEmployesComponent implements OnInit {
     return list;
   });
 
-  // Employés de la page courante
-  /** Employés visibles selon le rôle */
-  employesVisibles = computed(() => {
-    const all = this.employes();
-    if (this.auth.isAdmin) return all;
-    // Chargé de compte → filtre par services autorisés
-    const u = this.currentUser;
-    if (!u || !Array.isArray(u.services) || u.services.length === 0) return [];
-    return all.filter((e) => u.services.includes(e.service));
-  });
-
   employesPagines = computed(() => {
     const page = this.currentPage();
-    return this.employesVisibles().slice((page - 1) * this.PAGE_SIZE, page * this.PAGE_SIZE);
+    return this.employesFiltres().slice((page - 1) * this.PAGE_SIZE, page * this.PAGE_SIZE);
   });
 
-  totalPages = computed(() => Math.ceil(this.employesVisibles().length / this.PAGE_SIZE));
+  totalPages = computed(() => Math.ceil(this.employesFiltres().length / this.PAGE_SIZE));
 
   pages = computed(() => {
     const total = this.totalPages();
     const current = this.currentPage();
     if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    // Fenêtre glissante autour de la page courante
     const pages: (number | '...')[] = [1];
     if (current > 3) pages.push('...');
     for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++)
@@ -113,14 +113,13 @@ export class ListEmployesComponent implements OnInit {
   goToPage(p: number | '...'): void {
     if (p === '...') return;
     this.currentPage.set(p);
-    // Scroll en haut de la liste
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   constructor() {
-    // Pas besoin d'allowSignalWrites, c'est automatique maintenant
+    // Réinitialiser la page quand les filtres changent
     effect(() => {
-      this.employes(); // tracker les changements de filtre
+      this.employesFiltres();
       this.currentPage.set(1);
     });
   }
@@ -131,13 +130,16 @@ export class ListEmployesComponent implements OnInit {
       this.loading.set(false);
     });
     this.employeService.services$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((s) => {
-      this.services.set(s);
+      this.allServices.set(s);
     });
   }
 
-  // ── Actions ───────────────────────────────────────────────────────────────
-
   openForm(employe?: Employe): void {
+    // Vérifier les droits d'édition
+    if (employe && !this.roleFilter.canEditEmploye(employe)) {
+      this.toast.error("Vous n'avez pas les droits pour modifier cet employé.");
+      return;
+    }
     this.editingEmploye.set(employe ?? null);
     this.formError.set('');
     this.showForm.set(true);
@@ -171,6 +173,12 @@ export class ListEmployesComponent implements OnInit {
 
   async archiver(id: string, event: Event): Promise<void> {
     event.stopPropagation();
+    const employe = this.allEmployes().find(e => e.id === id);
+    if (employe && !this.roleFilter.canEditEmploye(employe)) {
+      this.toast.error("Vous n'avez pas les droits pour archiver cet employé.");
+      return;
+    }
+
     const ok = await this.confirm.ask(
       'Archiver cet employé ? Il ne sera plus visible dans les listes actives.',
       'Archiver',
@@ -186,13 +194,10 @@ export class ListEmployesComponent implements OnInit {
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
   initials(e: Employe): string {
     if (e.prenom) {
       return `${e.prenom[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
     }
-    // nom contient prénom + nom (ex: "Amadou Diallo") → prendre les initiales des 2 premiers mots
     const parts = (e.nom || '').trim().split(/\s+/);
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
@@ -202,7 +207,7 @@ export class ListEmployesComponent implements OnInit {
 
   nomService(matricule?: string): string {
     if (!matricule) return '—';
-    return this.services().find((s) => s.matricule === matricule)?.nom || matricule;
+    return this.allServices().find((s) => s.matricule === matricule)?.nom || matricule;
   }
 
   statutClass(statut?: string): string {

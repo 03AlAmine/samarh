@@ -1,9 +1,10 @@
+<!-- list-employes.html - version mise à jour -->
 <div class="page-header">
   <div>
     <h1 class="page-title">Employés</h1>
     <p class="page-subtitle">
       @if (!loading()) {
-        {{ employes().length }} employé{{ employes().length > 1 ? 's' : '' }}
+        {{ employesFiltres().length }} employé{{ employesFiltres().length > 1 ? 's' : '' }}
         @if (totalPages() > 1) {
           · page {{ currentPage() }}/{{ totalPages() }}
         }
@@ -20,7 +21,7 @@
   }
 </div>
 
-<!-- Filtres -->
+<!-- Filtres - MODIFICATION ICI : utiliser servicesVisibles au lieu de services() -->
 <div class="filters-bar card" style="margin-bottom: 20px; padding: 14px 16px">
   <div class="filter-search">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
@@ -41,7 +42,7 @@
     (change)="filterService.set($any($event.target).value)"
   >
     <option value="">Tous les services</option>
-    @for (s of services(); track s.id) {
+    @for (s of servicesVisibles(); track s.id) {
       <option [value]="s.matricule">{{ s.nom }}</option>
     }
   </select>
@@ -100,7 +101,7 @@
 <!-- ── Table desktop ────────────────────────────────────────────────────────── -->
 @if (!loading()) {
   <div class="card table-wrapper desktop-table">
-    @if (employes().length === 0) {
+    @if (employesPagines().length === 0) {
       <div class="empty-state">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
           <path
@@ -113,7 +114,7 @@
         <p>Aucun employé trouvé</p>
       </div>
     }
-    @if (employes().length > 0) {
+    @if (employesPagines().length > 0) {
       <table class="data-table">
         <thead>
           <tr>
@@ -214,7 +215,7 @@
   </div>
 
   <!-- ── Cards mobile ─────────────────────────────────────────────────────── -->
-  @if (employes().length > 0) {
+  @if (employesPagines().length > 0) {
     <div class="mobile-cards">
       @for (e of employesPagines(); track e.id) {
         <a class="employe-card" [routerLink]="['/employes', e.id]">
@@ -227,7 +228,7 @@
           </div>
           <div class="ec-right">
             <span class="badge badge--{{ statutClass(e.statut) }}">{{ e.statut || 'actif' }}</span>
-            @if (isAdmin) {
+            @if (canEdit) {
               <button
                 class="btn btn--ghost btn--icon btn--sm"
                 title="Modifier"
@@ -306,7 +307,7 @@
       }
       <app-employe-form
         [employe]="editingEmploye()"
-        [services]="services()"
+        [services]="servicesVisibles()"
         [loading]="savingEmploye()"
         (saved)="saveEmploye($event)"
         (cancelled)="closeForm()"

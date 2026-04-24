@@ -1,3 +1,4 @@
+<!-- cartes.html - version complète avec filtrage par rôle -->
 <div class="page-header">
   <div>
     <h1 class="page-title">Cartes employés</h1>
@@ -61,7 +62,7 @@
       (change)="filterSvc.set($any($event.target).value); page.set(1)"
     >
       <option value="">Tous les services</option>
-      @for (s of services(); track s.id) {
+      @for (s of servicesVisibles(); track s.id) {
         <option [value]="s.matricule">{{ s.nom }}</option>
       }
     </select>
@@ -121,7 +122,17 @@
 
 @if (!loading()) {
   @if (filtered().length === 0) {
-    <div class="card empty-state"><p>Aucun employé trouvé</p></div>
+    <div class="card empty-state">
+      <p>
+        @if (!isAdmin && filterSvc()) {
+          Aucun employé dans ce service
+        } @else if (!isAdmin) {
+          Aucun employé dans vos services
+        } @else {
+          Aucun employé trouvé
+        }
+      </p>
+    </div>
   }
 
   <div class="cartes-grid" [class.portrait]="format() === 'portrait'">

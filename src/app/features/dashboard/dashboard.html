@@ -1,6 +1,6 @@
-<!-- ─── DASHBOARD MINIMAL ────────────────────────────────────────────────── -->
+<!-- ─── DASHBOARD — ROLE-AWARE ─────────────────────────────────────────────── -->
 
-<!-- ── Skeleton ──────────────────────────────────────────────────────────── -->
+<!-- ══ Skeleton ══════════════════════════════════════════════════════════════ -->
 @if (loading()) {
   <div class="dash-header sk-header">
     <div class="sk sk-line w-40" style="height:18px;margin-bottom:6px"></div>
@@ -17,17 +17,31 @@
   </div>
 }
 
-<!-- ── Contenu ────────────────────────────────────────────────────────────── -->
+<!-- ══ Contenu principal ══════════════════════════════════════════════════════ -->
 @if (!loading()) {
 
-  <!-- Header -->
+  <!-- ── Header ────────────────────────────────────────────────────────────── -->
   <div class="dash-header">
     <div class="dash-header__left">
-      <h1 class="dash-title">{{ communauteNom }}</h1>
+      <h1 class="dash-title">
+        {{ communauteNom }}
+        <!-- Badge scope pour les chargés de compte -->
+        @if (!isAdmin) {
+          <span class="scope-badge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="9" r="2.5" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+            {{ mesServicesNoms }}
+          </span>
+        }
+      </h1>
       <p class="dash-date">{{ today | titlecase }}</p>
     </div>
+
     <div class="dash-header__right">
-      @if (!isAdmin) {
+      @if (canAddEmploye) {
         <a routerLink="/employes" class="btn-add">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
             <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
@@ -38,7 +52,7 @@
     </div>
   </div>
 
-  <!-- Pas de DB -->
+  <!-- ── Pas de DB ────────────────────────────────────────────────────────── -->
   @if (!fb.hasClientDatabase) {
     <div class="empty-db">
       <div class="empty-db__icon">
@@ -54,12 +68,45 @@
 
   @if (fb.hasClientDatabase) {
 
-    <!-- ── KPI row ──────────────────────────────────────────────────────── -->
+    <!-- ══ SECTION : Bannière scope chargé de compte ═════════════════════════ -->
+    @if (!isAdmin) {
+      <div class="scope-banner">
+        <div class="scope-banner__icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="scope-banner__body">
+          <strong>Vue filtrée</strong>
+          <span>Vous voyez uniquement les données de :
+            <em>{{ mesServicesNoms }}</em>
+          </span>
+        </div>
+        <div class="scope-banner__stats">
+          <span class="scope-stat">
+            <strong>{{ stats().totalEmployes }}</strong> employés
+          </span>
+          <span class="scope-stat">
+            <strong>{{ servicesAutorises().length }}</strong> service{{ servicesAutorises().length > 1 ? 's' : '' }}
+          </span>
+        </div>
+      </div>
+    }
+
+    <!-- ══ KPI Row ═══════════════════════════════════════════════════════════ -->
     <div class="kpi-row">
 
+      <!-- Effectif — admin : total global / chargé : total de ses services -->
       <div class="kpi-card">
-        <span class="kpi-label">Effectif</span>
+        <span class="kpi-label">{{ isAdmin ? 'Effectif total' : 'Mes employés' }}</span>
         <span class="kpi-value">{{ stats().totalEmployes }}</span>
+        @if (!isAdmin) {
+          <span class="kpi-sub">{{ servicesAutorises().length }} service{{ servicesAutorises().length > 1 ? 's' : '' }}</span>
+        }
         <span class="kpi-icon kpi-icon--blue">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -121,14 +168,14 @@
 
     </div>
 
-    <!-- ── Grille principale : graphe + panneau droit ─────────────────────── -->
+    <!-- ══ Grille principale ══════════════════════════════════════════════════ -->
     <div class="main-grid">
 
       <!-- Graphe 7 jours -->
       <div class="panel">
         <div class="panel__head">
           <span class="panel__title">Présences
-            <span class="panel__sub">— 7 derniers jours</span>
+            <span class="panel__sub">— 7 derniers jours{{ !isAdmin ? ' · mes services' : '' }}</span>
           </span>
           @if (!loadingSemaine()) {
             <span class="pill">Moy. {{ tauxAssiduiteSemaine() }}%</span>
@@ -160,39 +207,84 @@
         }
       </div>
 
-      <!-- Panneau droit : employé du jour + ring -->
+      <!-- Panneau droit -->
       <div class="side-panels">
 
-        <!-- Employé du jour -->
-        <div class="panel panel--compact">
-          <div class="panel__head">
-            <span class="panel__title">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="color:#f59e0b">
-                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
-                  stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-              </svg>
-              Employé du jour
-            </span>
-          </div>
-
-          @if (employSemaine()) {
-            <div class="star-row">
-              <div class="avatar avatar--lg" [style.background]="avatarColor(employSemaine()!.id)">
-                {{ initials(employSemaine()!) }}
-              </div>
-              <div class="star-info">
-                <strong>{{ employSemaine()!.prenom ? employSemaine()!.prenom + ' ' + employSemaine()!.nom : employSemaine()!.nom }}</strong>
-                <span>{{ employSemaine()!.poste || '—' }}</span>
-              </div>
-              <div class="star-score">
-                <span class="score-val">{{ employSemaineScore() }}<small>/7</small></span>
-                <span class="score-label">jours</span>
-              </div>
+        <!-- ── Employé du jour (admin uniquement) ─────────────────────────── -->
+        @if (showStarEmployee) {
+          <div class="panel panel--compact">
+            <div class="panel__head">
+              <span class="panel__title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="color:#f59e0b">
+                  <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
+                    stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                </svg>
+                Employé du jour
+              </span>
             </div>
-          } @else {
-            <p class="panel__empty">Données insuffisantes</p>
-          }
-        </div>
+
+            @if (employSemaine()) {
+              <div class="star-row">
+                <div class="avatar avatar--lg" [style.background]="avatarColor(employSemaine()!.id)">
+                  {{ initials(employSemaine()!) }}
+                </div>
+                <div class="star-info">
+                  <strong>{{ employSemaine()!.prenom ? employSemaine()!.prenom + ' ' + employSemaine()!.nom : employSemaine()!.nom }}</strong>
+                  <span>{{ employSemaine()!.poste || '—' }}</span>
+                </div>
+                <div class="star-score">
+                  <span class="score-val">{{ employSemaineScore() }}<small>/7</small></span>
+                  <span class="score-label">jours</span>
+                </div>
+              </div>
+            } @else {
+              <p class="panel__empty">Données insuffisantes</p>
+            }
+          </div>
+        }
+
+        <!-- ── Vue rapide services (chargé de compte) ─────────────────────── -->
+        @if (!isAdmin) {
+          <div class="panel panel--compact">
+            <div class="panel__head">
+              <span class="panel__title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="color:#6366f1">
+                  <rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                  <rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                  <rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                  <rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+                Mes services
+              </span>
+            </div>
+            <div class="my-services-list">
+              @for (svc of repartitionServices(); track svc.nom) {
+                <div class="my-svc-item">
+                  <div class="my-svc-header">
+                    <span class="my-svc-name">{{ svc.nom }}</span>
+                    <span class="my-svc-pct"
+                      [class.c-green]="svc.taux >= 80"
+                      [class.c-yellow]="svc.taux >= 50 && svc.taux < 80"
+                      [class.c-red]="svc.taux < 50">
+                      {{ svc.taux }}%
+                    </span>
+                  </div>
+                  <div class="svc-bar-row">
+                    <div class="svc-track">
+                      <div class="svc-fill"
+                        [style.width.%]="svc.pct"
+                        [class.svc-fill--green]="svc.taux >= 80"
+                        [class.svc-fill--yellow]="svc.taux >= 50 && svc.taux < 80"
+                        [class.svc-fill--red]="svc.taux < 50">
+                      </div>
+                    </div>
+                    <span class="svc-count">{{ svc.presents }}/{{ svc.total }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
 
         <!-- Ring taux de présence -->
         <div class="panel panel--compact">
@@ -231,17 +323,19 @@
       </div>
     </div>
 
-    <!-- ── Grille secondaire : retards + services ─────────────────────────── -->
+    <!-- ══ Grille secondaire ══════════════════════════════════════════════════ -->
     <div class="sub-grid">
 
-      <!-- Retards -->
+      <!-- Retards du jour -->
       <div class="panel">
         <div class="panel__head">
           <span class="panel__title">
             @if (alertesRetard().length > 0) { <span class="pulse-dot"></span> }
             Retards du jour
           </span>
-          <span class="pill" [class.pill--danger]="alertesRetard().length > 0" [class.pill--ok]="alertesRetard().length === 0">
+          <span class="pill"
+            [class.pill--danger]="alertesRetard().length > 0"
+            [class.pill--ok]="alertesRetard().length === 0">
             {{ alertesRetard().length > 0 ? alertesRetard().length + ' retard' + (alertesRetard().length > 1 ? 's' : '') : 'Aucun' }}
           </span>
         </div>
@@ -264,7 +358,11 @@
               </div>
               <div class="person-info">
                 <strong>{{ a.employe.prenom ? a.employe.prenom + ' ' + a.employe.nom : a.employe.nom }}</strong>
-                <span>{{ a.heureArrivee }}</span>
+                <span>{{ a.heureArrivee }}
+                  @if (!isAdmin) {
+                    · {{ nomService(a.employe.service) }}
+                  }
+                </span>
               </div>
               <span class="tag tag--warn">+{{ formatRetard(a.minutesRetard) }}</span>
             </a>
@@ -272,11 +370,13 @@
         </div>
       </div>
 
-      <!-- Services -->
+      <!-- Services (admin : tous / chargé : ses services avec lien pointage direct) -->
       <div class="panel">
         <div class="panel__head">
           <span class="panel__title">Par service</span>
-          <a routerLink="/services" class="panel__link">Voir tout →</a>
+          @if (isAdmin) {
+            <a routerLink="/services" class="panel__link">Voir tout →</a>
+          }
         </div>
 
         @if (repartitionServices().length === 0) {
@@ -288,12 +388,20 @@
             <div class="svc-row">
               <div class="svc-top">
                 <span class="svc-name">{{ s.nom }}</span>
-                <span class="svc-pct"
-                  [class.c-green]="s.taux >= 80"
-                  [class.c-yellow]="s.taux >= 50 && s.taux < 80"
-                  [class.c-red]="s.taux < 50">
-                  {{ s.taux }}%
-                </span>
+                <div class="svc-top-right">
+                  <span class="svc-pct"
+                    [class.c-green]="s.taux >= 80"
+                    [class.c-yellow]="s.taux >= 50 && s.taux < 80"
+                    [class.c-red]="s.taux < 50">
+                    {{ s.taux }}%
+                  </span>
+                  <!-- Chargé : accès direct au pointage de son service -->
+                  @if (!isAdmin) {
+                    <a [routerLink]="['/pointage']" [queryParams]="{ service: s.matricule }" class="svc-link">
+                      Pointage →
+                    </a>
+                  }
+                </div>
               </div>
               <div class="svc-bar-row">
                 <div class="svc-track">
@@ -313,10 +421,12 @@
 
     </div>
 
-    <!-- ── Derniers employés ──────────────────────────────────────────────── -->
+    <!-- ══ Derniers employés ══════════════════════════════════════════════════ -->
     <div class="panel" style="margin-top: 16px">
       <div class="panel__head">
-        <span class="panel__title">Derniers ajoutés</span>
+        <span class="panel__title">
+          {{ isAdmin ? 'Derniers ajoutés' : 'Mes employés récents' }}
+        </span>
         <a routerLink="/employes" class="panel__link">Voir tous →</a>
       </div>
 
@@ -335,7 +445,9 @@
               <span>{{ e.poste ? e.poste + (nomService(e.service) ? ' · ' + nomService(e.service) : '') : nomService(e.service) || '—' }}</span>
             </div>
             <div class="person-right">
-              <span class="tag" [class.tag--ok]="(e.statut || 'actif') === 'actif'" [class.tag--muted]="(e.statut || 'actif') !== 'actif'">
+              <span class="tag"
+                [class.tag--ok]="(e.statut || 'actif') === 'actif'"
+                [class.tag--muted]="(e.statut || 'actif') !== 'actif'">
                 {{ e.statut || 'actif' }}
               </span>
               @if (estPresentAujourdhui(e.matricule)) {
@@ -346,6 +458,43 @@
         }
       </div>
     </div>
+
+    <!-- ══ Actions rapides (chargé uniquement) ═══════════════════════════════ -->
+    @if (!isAdmin) {
+      <div class="quick-actions">
+        <a routerLink="/pointage" class="quick-action">
+          <span class="quick-action__icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="quick-action__label">Saisir pointage</span>
+        </a>
+        <a routerLink="/employes" class="quick-action">
+          <span class="quick-action__icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+          </span>
+          <span class="quick-action__label">Mes employés</span>
+        </a>
+        <a routerLink="/rapports" class="quick-action">
+          <span class="quick-action__icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="quick-action__label">Rapport mensuel</span>
+        </a>
+      </div>
+    }
 
   }
 }

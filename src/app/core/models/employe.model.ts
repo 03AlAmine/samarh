@@ -36,14 +36,21 @@ export interface Employe {
   password?: string;
   mdp?: string;
   motDePasse?: string;
-  services?: string[]; // services autorisés pour la connexion
   planning?: Planning[];
   planningRotatif?: PlanningRotatif[];
   createdAt?: string;
   updatedAt?: string;
+
+  services?: string[]; // ex: ['SVC001', 'SVC002']
+
+  // Rôle de l'employé dans l'application
+  role?: 'Employé' | 'Chargé de compte' | 'Administrateur';
+
+  // Pour compatibilité avec l'existant
+  estChargeCompte?: boolean;
 }
 
-/** Service / département d'une communauté */
+// employe.model.ts - ajouter/modifier l'interface Service
 export interface Service {
   id: string;
   matricule: string;
@@ -53,8 +60,12 @@ export interface Service {
   planningRotatif?: PlanningRotatif[];
   actif?: boolean;
   description?: string;
-  responsable?: string;
+  responsablesIds?: string[]; // IDs des employés responsables
+  responsables?: Employe[]; // Pour l'affichage (détaillé)
   effectif?: number;
+  responsablePrincipal?: string; // ID du responsable principal (optionnel)
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** Créneau horaire journalier */

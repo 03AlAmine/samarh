@@ -1,8 +1,10 @@
+// app.component.ts - version corrigée avec le modal de confirmation
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from './core/services/auth.service';
+import { ConfirmDialogService } from './core/services/confirm-dialog.service';
 import { ShellComponent } from './layout/shell/shell';
 
 // Routes qui affichent le layout shell (sidebar + header)
@@ -45,6 +47,34 @@ const SHELL_ROUTES = [
         <router-outlet></router-outlet>
       }
     }
+
+    <!-- ✅ MODAL DE CONFIRMATION (AJOUTER ICI) -->
+    @if (confirmDialog.options(); as opt) {
+      <div class="confirm-overlay" (click)="confirmDialog.cancel()">
+        <div class="confirm-modal" (click)="$event.stopPropagation()">
+          <div class="confirm-header">
+            <h3>{{ opt.title || 'Confirmation' }}</h3>
+          </div>
+          <div class="confirm-body">
+            <p>{{ opt.message }}</p>
+          </div>
+          <div class="confirm-footer">
+            <button class="btn-cancel" (click)="confirmDialog.cancel()">
+              {{ opt.cancelLabel || 'Annuler' }}
+            </button>
+            <button
+              class="btn-confirm"
+              [class.btn-danger]="opt.type === 'danger'"
+              [class.btn-warning]="opt.type === 'warning'"
+              [class.btn-info]="opt.type === 'info'"
+              (click)="confirmDialog.confirm()"
+            >
+              {{ opt.confirmLabel || 'Confirmer' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .app-splash {
@@ -70,14 +100,118 @@ const SHELL_ROUTES = [
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ✅ STYLES DU MODAL DE CONFIRMATION */
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .confirm-modal {
+      background: white;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.2s ease;
+      overflow: hidden;
+    }
+
+    .confirm-header {
+      padding: 20px 24px 0;
+      h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        color: #1e293b;
+      }
+    }
+
+    .confirm-body {
+      padding: 16px 24px;
+      p {
+        font-size: 14px;
+        color: #475569;
+        margin: 0;
+        line-height: 1.5;
+      }
+    }
+
+    .confirm-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 24px 24px;
+      background: #f8fafc;
+
+      button {
+        padding: 8px 20px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+      }
+
+      .btn-cancel {
+        background: transparent;
+        color: #64748b;
+        &:hover {
+          background: #e2e8f0;
+        }
+      }
+
+      .btn-confirm {
+        background: #3b82f6;
+        color: white;
+        &:hover {
+          background: #2563eb;
+        }
+        &.btn-danger {
+          background: #ef4444;
+          &:hover { background: #dc2626; }
+        }
+        &.btn-warning {
+          background: #f59e0b;
+          &:hover { background: #d97706; }
+        }
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
   `],
 })
 export class AppComponent implements OnInit {
   private router = inject(Router);
-  private auth   = inject(AuthService);
+  private auth = inject(AuthService);
 
-  showShell  = false;
-  authReady  = signal(false);
+  // ✅ Injecter ConfirmDialogService
+  confirmDialog = inject(ConfirmDialogService);
+
+  showShell = false;
+  authReady = signal(false);
 
   ngOnInit(): void {
     // Attendre que l'auth soit prête (session restaurée + DB client initialisée)

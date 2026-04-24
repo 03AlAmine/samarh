@@ -412,3 +412,220 @@
     }
   }
 }
+// detail-employe.scss - ajouter ces styles à la fin
+
+// ─── ONGLET RESPONSABLES ──────────────────────────────────────────────────────
+.responsables-detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-header-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+
+  svg {
+    color: var(--accent);
+  }
+
+  .section-title {
+    margin-bottom: 0;
+  }
+}
+
+.empty-responsable-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+
+  svg {
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  p {
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+}
+
+.services-responsables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.service-responsable-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-sm);
+    transform: translateX(4px);
+
+    .arrow-icon {
+      opacity: 1;
+      transform: translateX(2px);
+    }
+  }
+
+  .service-icon-small {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .service-info {
+    flex: 1;
+
+    .service-name {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .service-mat {
+      font-size: 10px;
+      font-family: monospace;
+      color: var(--text-muted);
+      background: var(--bg-secondary);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  }
+
+  .service-stats-mini {
+    .stat-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+  }
+
+  .arrow-icon {
+    opacity: 0.4;
+    transition: all var(--transition-fast);
+    color: var(--text-muted);
+  }
+}
+
+.warning-card {
+  background: var(--warning-light);
+  border-color: rgba(245, 158, 11, 0.2);
+
+  .warning-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    svg {
+      color: var(--warning);
+      flex-shrink: 0;
+    }
+
+    strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--warning-dark);
+      margin-bottom: 2px;
+    }
+
+    p {
+      font-size: 12px;
+      color: var(--warning-dark);
+      margin: 0;
+      opacity: 0.9;
+    }
+  }
+}
+
+.stats-cards-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stat-mini-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+
+  .stat-number {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+}
+
+// Badges pour les rôles
+.badge--admin {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: white;
+}
+
+.badge--manager {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.badge--employee {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .services-responsables-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-cards-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .warning-card .warning-content {
+    flex-direction: column;
+    text-align: center;
+  }
+}

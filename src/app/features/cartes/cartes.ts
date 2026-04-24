@@ -1,3 +1,4 @@
+// cartes.ts - version refactorisée avec RoleFilterService
 import {
   Component,
   inject,
@@ -11,6 +12,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EmployeService } from '../../core/services/employe.service';
+import { AuthService } from '../../core/services/auth.service';
+import { RoleFilterService } from '../../core/services/role-filter.service';
 import { Employe, Service } from '../../core/models/employe.model';
 
 type Style = 'moderne' | 'minimal' | 'premium';
@@ -27,9 +30,11 @@ type Format = 'paysage' | 'portrait';
 export class CartesComponent implements OnInit {
   private employeService = inject(EmployeService);
   private destroyRef = inject(DestroyRef);
+  private auth = inject(AuthService);
+  private roleFilter = inject(RoleFilterService);
 
-  employes = signal<Employe[]>([]);
-  services = signal<Service[]>([]);
+  allEmployes = signal<Employe[]>([]);
+  allServices = signal<Service[]>([]);
   loading = signal(true);
   search = signal('');
   filterSvc = signal('');
@@ -51,10 +56,35 @@ export class CartesComponent implements OnInit {
     '#1e293b',
   ];
 
+  get isAdmin() {
+    return this.auth.isAdmin;
+  }
+
+  get canEdit() {
+    return this.auth.canEditEmployes;
+  }
+
+  /**
+   * Services visibles selon le rôle
+   */
+  servicesVisibles = computed((): Service[] => {
+    return this.roleFilter.filterServices(this.allServices());
+  });
+
+  /**
+   * Employés visibles selon le rôle
+   */
+  employesVisibles = computed((): Employe[] => {
+    return this.roleFilter.filterEmployes(this.allEmployes());
+  });
+
+  /**
+   * Employés filtrés par recherche et service
+   */
   filtered = computed(() => {
     const q = this.search().toLowerCase();
     const svc = this.filterSvc();
-    return this.employes().filter((e) => {
+    return this.employesVisibles().filter((e) => {
       const ok =
         !q ||
         `${e.prenom} ${e.nom}`.toLowerCase().includes(q) ||
@@ -73,16 +103,20 @@ export class CartesComponent implements OnInit {
 
   ngOnInit(): void {
     this.employeService.employes$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((list) => {
-      this.employes.set(list);
+      this.allEmployes.set(list);
       this.loading.set(false);
     });
 
     this.employeService.services$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((list) => this.services.set(list));
+      .subscribe((list) => this.allServices.set(list));
   }
 
   toggleSelect(id: string): void {
+    // Vérifier que l'employé est visible avant de le sélectionner
+    const employe = this.employesVisibles().find(e => e.id === id);
+    if (!employe) return;
+
     this.selected.update((s) => {
       const n = new Set(s);
       n.has(id) ? n.delete(id) : n.add(id);
@@ -95,6 +129,7 @@ export class CartesComponent implements OnInit {
   }
 
   selectAll(): void {
+    // Ne sélectionner que les employés visibles
     this.selected.update(() => new Set(this.filtered().map((e) => e.id)));
   }
 
@@ -104,7 +139,7 @@ export class CartesComponent implements OnInit {
 
   getServiceNom(matricule?: string): string {
     if (!matricule) return '';
-    return this.services().find((s) => s.matricule === matricule)?.nom || '';
+    return this.allServices().find((s) => s.matricule === matricule)?.nom || '';
   }
 
   avatarColor(id: string): string {
@@ -126,7 +161,6 @@ export class CartesComponent implements OnInit {
     if (e.prenom) {
       return `${e.prenom[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
     }
-    // nom contient prénom + nom (ex: "Amadou Diallo") → prendre les initiales des 2 premiers mots
     const parts = (e.nom || '').trim().split(/\s+/);
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
@@ -135,15 +169,8 @@ export class CartesComponent implements OnInit {
   }
 
   imprimerSelection(): void {
-    const sel = this.selected();
-    if (sel.size === 0) {
-      window.print();
-    } else {
-      window.print();
-    }
-  }
-
-  imprimerTout(): void {
+    // L'impression n'affiche que ce qui est visible à l'écran
+    // Le CSS @media print gère l'affichage
     window.print();
   }
 

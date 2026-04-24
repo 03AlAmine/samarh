@@ -1,5 +1,4 @@
-// ─── POINTAGES ────────────────────────────────────────────────────────────────
-
+// pointages.ts - version refactorisée avec RoleFilterService
 import {
   Component,
   inject,
@@ -16,6 +15,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
 import { EmployeService } from '../../core/services/employe.service';
 import { PointageService } from '../../core/services/pointage.service';
+import { AuthService } from '../../core/services/auth.service';
+import { RoleFilterService } from '../../core/services/role-filter.service';
 import { Employe, Service } from '../../core/models/employe.model';
 import { PresenceBrute } from '../../core/models/pointage.model';
 
@@ -24,6 +25,7 @@ interface LignePointage {
   nom: string;
   prenom: string;
   service: string;
+  serviceMatricule: string;
   arrive: string;
   descente: string;
   heures: number;
@@ -43,6 +45,8 @@ export class PointagesComponent implements OnInit {
   private employeService = inject(EmployeService);
   private destroyRef = inject(DestroyRef);
   private pointageService = inject(PointageService);
+  private auth = inject(AuthService);
+  private roleFilter = inject(RoleFilterService);
 
   // Filtres
   dateSelectionnee = signal(new Date().toISOString().split('T')[0]);
@@ -57,12 +61,34 @@ export class PointagesComponent implements OnInit {
 
   // Abonnement courant au stream de présences (change quand la date change)
   private presencesSub: Subscription | null = null;
-  // presencesSub nettoyé via DestroyRef
 
-  // Lignes calculées
-  // In pointages.ts, update the lignes computed signal:
+  get isAdmin() {
+    return this.auth.isAdmin;
+  }
+
+  get canEdit() {
+    return this.auth.canEditEmployes;
+  }
+
+  /**
+   * Services visibles selon le rôle
+   */
+  servicesVisibles = computed((): Service[] => {
+    return this.roleFilter.filterServices(this.allServices());
+  });
+
+  /**
+   * Employés visibles selon le rôle
+   */
+  employesVisibles = computed((): Employe[] => {
+    return this.roleFilter.filterEmployes(this.allEmployes());
+  });
+
+  /**
+   * Lignes de pointage calculées (uniquement sur les employés visibles)
+   */
   lignes = computed<LignePointage[]>(() => {
-    const employes = this.allEmployes().filter((e) => e.statut !== 'archive');
+    const employes = this.employesVisibles().filter((e) => e.statut !== 'archive');
     const presences = this.presences();
     const services = this.allServices();
 
@@ -83,9 +109,10 @@ export class PointagesComponent implements OnInit {
           : 'present';
       return {
         matricule: e.matricule,
-        nom: e.nom || '', // Ensure string
-        prenom: e.prenom || '', // Ensure string
+        nom: e.nom || '',
+        prenom: e.prenom || '',
         service: svc?.nom || e.service || '—',
+        serviceMatricule: e.service || '',
         arrive,
         descente,
         heures,
@@ -95,6 +122,9 @@ export class PointagesComponent implements OnInit {
     });
   });
 
+  /**
+   * Lignes filtrées par service et statut
+   */
   lignesFiltrees = computed(() => {
     let list = this.lignes();
     const svc = this.filtreService();
@@ -104,6 +134,9 @@ export class PointagesComponent implements OnInit {
     return list;
   });
 
+  /**
+   * Statistiques basées sur les employés visibles
+   */
   stats = computed(() => {
     const l = this.lignes();
     const presents = l.filter((x) => x.statut === 'present').length;
@@ -119,6 +152,9 @@ export class PointagesComponent implements OnInit {
     };
   });
 
+  /**
+   * Noms des services disponibles (uniquement ceux des employés visibles)
+   */
   nomsServices = computed(() =>
     [
       ...new Set(
@@ -236,7 +272,7 @@ export class PointagesComponent implements OnInit {
     return labels[p] || '';
   }
 
-  // ── Export CSV ────────────────────────────────────────────────────────────
+  // ── Export CSV (uniquement les données visibles) ─────────────────────────
 
   exportCSV(): void {
     const rows = [
@@ -283,6 +319,7 @@ export class PointagesComponent implements OnInit {
       return iso;
     }
   }
+
   private calcHeures(arrive: string, descente: string): number {
     if (!arrive || !descente) return 0;
     try {
@@ -308,6 +345,7 @@ export class PointagesComponent implements OnInit {
   statutClass(s: string): string {
     return s === 'present' ? 'success' : s === 'retard' ? 'warning' : 'danger';
   }
+
   statutLabel(s: string): string {
     return s === 'present' ? 'Présent' : s === 'retard' ? 'Retard' : 'Absent';
   }

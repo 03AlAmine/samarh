@@ -1,13 +1,17 @@
+<!-- list-services.html - version complète avec gestion des responsables via Employe.services -->
 <div class="page-header">
   <div>
     <h1 class="page-title">Services</h1>
     <p class="page-subtitle">
-      {{ services().length }} service{{ services().length > 1 ? 's' : '' }}
+      {{ servicesFiltres().length }} service{{ servicesFiltres().length > 1 ? 's' : '' }}
+      @if (totalEmployes() > 0) {
+        · {{ totalEmployes() }} employés
+      }
     </p>
   </div>
   @if (isAdmin) {
-    <button class="btn btn--primary btn--sm" (click)="openForm()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <button class="btn btn--primary" (click)="openForm()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
       </svg>
       Nouveau service
@@ -15,128 +19,185 @@
   }
 </div>
 
-<div class="search-bar card" style="padding: 12px 16px; margin-bottom: 20px">
-  <div class="filter-search">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+<!-- Stats rapides -->
+@if (!loading() && servicesFiltres().length > 0) {
+  <div class="stats-row">
+    <div class="stat-card-mini">
+      <div class="stat-icon blue">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ servicesFiltres().length }}</span>
+        <span class="stat-label">Services</span>
+      </div>
+    </div>
+    <div class="stat-card-mini">
+      <div class="stat-icon green">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7"/>
+          <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ totalEmployes() }}</span>
+        <span class="stat-label">Employés</span>
+      </div>
+    </div>
+    <div class="stat-card-mini">
+      <div class="stat-icon purple">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ totalResponsables() }}</span>
+        <span class="stat-label">Responsables</span>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Barre de recherche et filtres -->
+<div class="search-section">
+  <div class="search-bar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7" />
       <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
     </svg>
     <input
-      class="filter-input"
       type="text"
-      placeholder="Rechercher un service…"
+      placeholder="Rechercher un service..."
       [value]="searchTerm()"
       (input)="searchTerm.set($any($event.target).value)"
     />
   </div>
+  <div class="filter-buttons">
+    <button
+      class="filter-btn"
+      [class.active]="filterType() === 'all'"
+      (click)="filterType.set('all')">
+      Tous
+    </button>
+    <button
+      class="filter-btn"
+      [class.active]="filterType() === 'actif'"
+      (click)="filterType.set('actif')">
+      Actifs
+    </button>
+    <button
+      class="filter-btn"
+      [class.active]="filterType() === 'responsable'"
+      (click)="filterType.set('responsable')"
+      [class.has-badge]="totalResponsables() > 0">
+      Avec responsable
+      @if (totalResponsables() > 0) {
+        <span class="badge-count">{{ totalResponsables() }}</span>
+      }
+    </button>
+  </div>
 </div>
 
+<!-- Chargement -->
 @if (loading()) {
-  <div class="loading-state">
-    <div class="spinner"></div>
-    <p>Chargement…</p>
+  <div class="skeleton-grid">
+    @for (i of [1,2,3,4,5,6]; track i) {
+      <div class="skeleton-card"></div>
+    }
   </div>
 }
 
+<!-- Grille des services -->
 @if (!loading()) {
-  @if (services().length === 0) {
-    <div class="card empty-state">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+  @if (servicesFiltres().length === 0) {
+    <div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
         <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
-        <path
-          d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-        />
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      <p>Aucun service trouvé</p>
+      <h3>Aucun service trouvé</h3>
+      <p>{{ !isAdmin ? 'Vous n\'avez accès qu\'aux services qui vous sont assignés.' : 'Créez votre premier service' }}</p>
+      @if (isAdmin) {
+        <button class="btn btn--outline" (click)="openForm()">Créer un service</button>
+      }
     </div>
   }
 
   <div class="services-grid">
-    @for (s of services(); track s.id) {
-      <div class="service-card card" (click)="openDetail(s)" style="cursor: pointer">
-        <div class="service-card-header">
-          <div class="service-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <rect
-                x="2"
-                y="7"
-                width="20"
-                height="14"
-                rx="2"
-                stroke="currentColor"
-                stroke-width="1.7"
-              />
-              <path
-                d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-              />
+    @for (s of servicesFiltres(); track s.id) {
+      <div class="service-card" (click)="openDetail(s)">
+        <div class="card-header">
+          <div class="service-icon" [style.background]="getServiceColor(s.matricule)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           </div>
-          <div class="service-meta">
-            <h3 class="service-name">{{ s.nom }}</h3>
-            <code class="mono-xs">{{ s.matricule }}</code>
+          <div class="card-info">
+            <h3>{{ s.nom }}</h3>
+            <code>{{ s.matricule }}</code>
           </div>
-          <div class="service-actions">
+          <div class="card-badge">
             @if (s.actif !== false) {
-              <span class="badge badge--success">Actif</span>
+              <span class="badge success">Actif</span>
             } @else {
-              <span class="badge badge--neutral">Inactif</span>
+              <span class="badge neutral">Inactif</span>
             }
           </div>
         </div>
 
-        <div class="service-stats">
-          <div class="sstat">
-            <span class="sstat-value">{{ effectif(s.matricule) }}</span>
-            <span class="sstat-label">employés</span>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-number">{{ getEffectif(s.matricule) }}</span>
+            <span class="stat-name">Employés</span>
           </div>
-          <div class="sstat">
-            <span class="sstat-value">{{ s.type_service || 'Permanent' }}</span>
-            <span class="sstat-label">type</span>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">{{ getResponsableCountForService(s) }}</span>
+            <span class="stat-name">Responsable{{ getResponsableCountForService(s) > 1 ? 's' : '' }}</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">{{ getTauxPresence(s.matricule) }}%</span>
+            <span class="stat-name">Présence</span>
           </div>
         </div>
 
+        <!-- Liste des responsables (aperçu) -->
+        @if (getResponsablesApercu(s).length > 0) {
+          <div class="responsables-preview">
+            <div class="resp-avatars">
+              @for (resp of getResponsablesApercu(s); track resp.id) {
+                <div class="resp-avatar" [style.background]="getAvatarColor(resp.id)" title="{{ resp.prenom }} {{ resp.nom }}">
+                  {{ getInitials(resp) }}
+                </div>
+              }
+              @if (getResponsableCountForService(s) > 3) {
+                <div class="resp-more">+{{ getResponsableCountForService(s) - 3 }}</div>
+              }
+            </div>
+            <span class="resp-label">Équipe encadrante</span>
+          </div>
+        }
+
         @if (s.description) {
-          <p class="service-description">{{ s.description }}</p>
+          <p class="card-description">{{ s.description | slice:0:80 }}{{ s.description.length > 80 ? '...' : '' }}</p>
         }
 
         @if (isAdmin) {
-          <div class="service-footer" (click)="$event.stopPropagation()">
-            <button class="btn btn--ghost btn--sm" (click)="openForm(s)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                />
-                <path
-                  d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                />
+          <div class="card-actions" (click)="$event.stopPropagation()">
+            <button class="action-btn edit" (click)="openForm(s)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" stroke-width="1.7"/>
               </svg>
               Modifier
             </button>
-            <button class="btn btn--ghost btn--sm danger" (click)="deleteService(s.id, $event)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <polyline
-                  points="3 6 5 6 21 6"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                />
-                <path
-                  d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                />
+            <button class="action-btn delete" (click)="deleteService(s.id, $event)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
               </svg>
               Supprimer
             </button>
@@ -147,75 +208,111 @@
   </div>
 }
 
-<!-- ── Modal formulaire ──────────────────────────────────────────────────────── -->
+<!-- Modal formulaire avec gestion des responsables -->
 @if (showForm()) {
   <div class="modal-overlay" (click)="closeForm()">
-    <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>{{ editingService() ? 'Modifier le service' : 'Nouveau service' }}</h3>
-        <button class="modal-close" (click)="closeForm()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M18 6 6 18M6 6l12 12"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
+        <h2>{{ editingService() ? 'Modifier le service' : 'Nouveau service' }}</h2>
+        <button class="close-btn" (click)="closeForm()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
+
       @if (formError()) {
-        <div class="form-alert">{{ formError() }}</div>
+        <div class="alert error">{{ formError() }}</div>
       }
+
       <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
-        <div class="form-group">
-          <label class="form-label">Nom du service *</label>
-          <input
-            class="form-control"
-            formControlName="nom"
-            placeholder="Ex: Ressources Humaines"
-            [class.invalid]="f['nom'].invalid && f['nom'].touched"
-          />
-        </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Matricule *</label>
-            <input
-              class="form-control"
-              formControlName="matricule"
-              placeholder="SVC001"
-              [class.invalid]="f['matricule'].invalid && f['matricule'].touched"
-            />
+            <label>Nom du service *</label>
+            <input formControlName="nom" placeholder="Ex: Ressources Humaines" />
           </div>
           <div class="form-group">
-            <label class="form-label">Type</label>
-            <select class="form-control" formControlName="type_service">
+            <label>Matricule *</label>
+            <input formControlName="matricule" placeholder="SVC001" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Type</label>
+            <select formControlName="type_service">
               <option value="Permanent">Permanent</option>
               <option value="Rotatif">Rotatif</option>
             </select>
           </div>
+          <div class="form-group">
+            <label>Statut</label>
+            <div class="toggle-switch">
+              <label class="switch">
+                <input type="checkbox" formControlName="actif" />
+                <span class="slider"></span>
+              </label>
+              <span>{{ form.get('actif')?.value ? 'Actif' : 'Inactif' }}</span>
+            </div>
+          </div>
         </div>
+
         <div class="form-group">
-          <label class="form-label">Description</label>
-          <textarea
-            class="form-control"
-            formControlName="description"
-            rows="3"
-            placeholder="Description du service…"
-          ></textarea>
+          <label>Description</label>
+          <textarea formControlName="description" rows="3" placeholder="Description du service..."></textarea>
         </div>
-        <div class="form-group checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" formControlName="actif" />
-            <span>Service actif</span>
-          </label>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn btn--secondary" (click)="closeForm()">Annuler</button>
-          <button type="submit" class="btn btn--primary" [disabled]="saving()">
-            @if (saving()) {
-              <span class="spinner sm"></span>
+
+        <!-- SECTION RESPONSABLES -->
+        <div class="responsables-section">
+          <div class="section-header">
+            <h3>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              </svg>
+              Équipe encadrante
+            </h3>
+            <span class="section-badge">{{ responsablesSelectionnes().size }} responsable{{ responsablesSelectionnes().size > 1 ? 's' : '' }}</span>
+          </div>
+
+          <p class="section-hint">Sélectionnez les employés responsables de ce service. Ces personnes pourront gérer l'équipe et auront accès aux données de ce service.</p>
+
+          @if (candidatsResponsables().length === 0) {
+            <div class="empty-hint">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span>Aucun employé disponible. Les employés doivent avoir le rôle "Chargé de compte" pour être responsables.</span>
+            </div>
+          }
+
+          <div class="responsables-grid">
+            @for (candidat of candidatsResponsables(); track candidat.id) {
+              <div class="responsable-card" [class.selected]="isResponsableSelected(candidat.id)" (click)="toggleResponsable(candidat.id)">
+                <div class="resp-avatar-lg" [style.background]="getAvatarColor(candidat.id)">
+                  {{ getInitials(candidat) }}
+                </div>
+                <div class="resp-info">
+                  <span class="resp-name">{{ candidat.prenom }} {{ candidat.nom }}</span>
+                  <span class="resp-poste">{{ candidat.poste || 'Employé' }}</span>
+                  <code class="resp-mat">{{ candidat.matricule }}</code>
+                </div>
+                <div class="resp-check">
+                  @if (isResponsableSelected(candidat.id)) {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="m5 13 4 4L19 7" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                  }
+                </div>
+              </div>
             }
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()">Annuler</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="spinner"></span> }
             {{ editingService() ? 'Enregistrer' : 'Créer le service' }}
           </button>
         </div>
@@ -224,167 +321,146 @@
   </div>
 }
 
-<!-- ── Panneau détail service ────────────────────────────────────────────────── -->
+<!-- Panneau détail service -->
 @if (selectedService(); as s) {
   <div class="detail-overlay" (click)="closeDetail()">
     <div class="detail-panel" (click)="$event.stopPropagation()">
-      <div class="detail-panel-header">
-        <div class="detail-title-group">
-          <div class="service-icon-lg">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <rect
-                x="2"
-                y="7"
-                width="20"
-                height="14"
-                rx="2"
-                stroke="currentColor"
-                stroke-width="1.7"
-              />
-              <path
-                d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-              />
+      <div class="detail-header">
+        <div class="detail-title">
+          <div class="service-icon-lg" [style.background]="getServiceColor(s.matricule)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           </div>
           <div>
             <h2>{{ s.nom }}</h2>
-            <span class="detail-sub"
-              ><code>{{ s.matricule }}</code> · {{ s.type_service || 'Permanent' }}</span
-            >
+            <div class="detail-meta">
+              <code>{{ s.matricule }}</code>
+              <span class="dot">•</span>
+              <span>{{ s.type_service || 'Permanent' }}</span>
+              @if (s.actif !== false) {
+                <span class="badge success sm">Actif</span>
+              } @else {
+                <span class="badge neutral sm">Inactif</span>
+              }
+            </div>
           </div>
         </div>
-        <button class="modal-close" (click)="closeDetail()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M18 6 6 18M6 6l12 12"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
+        <button class="close-btn" (click)="closeDetail()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
 
-      <!-- Stats rapides -->
-      <div class="detail-stats">
-        <div class="dstat">
-          <span class="dstat-value">{{ effectif(s.matricule) }}</span>
-          <span class="dstat-label">Employés</span>
+      <!-- Stats détaillées -->
+      <div class="detail-stats-grid">
+        <div class="detail-stat">
+          <span class="stat-value">{{ getEffectif(s.matricule) }}</span>
+          <span class="stat-label">Employés</span>
         </div>
-        <div class="dstat">
-          <span class="dstat-value">{{ tauxPresenceService() }}%</span>
-          <span class="dstat-label">Présents aujourd'hui</span>
+        <div class="detail-stat">
+          <span class="stat-value">{{ getResponsableCountForService(s) }}</span>
+          <span class="stat-label">Responsables</span>
         </div>
-        <div class="dstat">
-          <span class="dstat-value badge badge--{{ s.actif !== false ? 'success' : 'neutral' }}">
-            {{ s.actif !== false ? 'Actif' : 'Inactif' }}
-          </span>
-          <span class="dstat-label">Statut</span>
+        <div class="detail-stat">
+          <span class="stat-value">{{ getTauxPresence(s.matricule) }}%</span>
+          <span class="stat-label">Présence</span>
+        </div>
+        <div class="detail-stat">
+          <span class="stat-value">{{ getServiceEffectifRatio(s.matricule) }}%</span>
+          <span class="stat-label">Ratio</span>
         </div>
       </div>
 
       @if (s.description) {
-        <p class="detail-desc">{{ s.description }}</p>
+        <p class="detail-description">{{ s.description }}</p>
       }
 
-      <!-- Onglets du panneau -->
+      <!-- Responsables section dans le détail -->
+      <div class="detail-responsables">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          </svg>
+          Équipe encadrante
+        </h3>
+        @if (responsablesDuService().length === 0) {
+          <p class="empty-text">Aucun responsable assigné à ce service</p>
+        } @else {
+          <div class="responsables-list-detail">
+            @for (resp of responsablesDuService(); track resp.id) {
+              <div class="resp-detail-item">
+                <div class="resp-avatar-md" [style.background]="getAvatarColor(resp.id)">
+                  {{ getInitials(resp) }}
+                </div>
+                <div class="resp-detail-info">
+                  <strong>{{ resp.prenom }} {{ resp.nom }}</strong>
+                  <span>{{ resp.poste || 'Employé' }}</span>
+                </div>
+                <code class="resp-mat-detail">{{ resp.matricule }}</code>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Onglets -->
       <div class="detail-tabs">
-        <button
-          class="detail-tab"
-          [class.active]="detailTab() === 'employes'"
-          (click)="detailTab.set('employes')"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linecap="round"
-            />
-            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7" />
+        <button [class.active]="detailTab() === 'employes'" (click)="detailTab.set('employes')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/>
           </svg>
           Employés
-          @if (employesDuService().length) {
-            <span class="dtab-badge">{{ employesDuService().length }}</span>
-          }
+          <span class="tab-badge">{{ getEffectif(s.matricule) }}</span>
         </button>
-        <button
-          class="detail-tab"
-          [class.active]="detailTab() === 'planning'"
-          (click)="detailTab.set('planning')"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <rect
-              x="3"
-              y="4"
-              width="18"
-              height="18"
-              rx="2"
-              stroke="currentColor"
-              stroke-width="1.7"
-            />
-            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.7" />
-            <line
-              x1="8"
-              y1="2"
-              x2="8"
-              y2="6"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linecap="round"
-            />
-            <line
-              x1="16"
-              y1="2"
-              x2="16"
-              y2="6"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linecap="round"
-            />
+        <button [class.active]="detailTab() === 'planning'" (click)="detailTab.set('planning')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/>
+            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.7"/>
           </svg>
           Planning
-          @if (selectedService()?.planning?.length) {
-            <span class="dtab-badge">{{ selectedService()?.planning?.length }}j</span>
-          }
         </button>
       </div>
 
       <!-- Tab Employés -->
       @if (detailTab() === 'employes') {
         @if (employesDuService().length === 0) {
-          <p class="detail-empty">Aucun employé assigné à ce service.</p>
-        }
-        <div class="employe-list-detail">
-          @for (e of employesDuService(); track e.id) {
-            <div class="emp-detail-row">
-              <div class="emp-avatar-sm">{{ initials(e) }}</div>
-              <div class="emp-info">
-                <span class="emp-name">{{ e.prenom }} {{ e.nom }}</span>
-                <span class="emp-meta">{{ e.poste || '—' }} · {{ e.matricule }}</span>
+          <div class="empty-state-sm">Aucun employé dans ce service</div>
+        } @else {
+          <div class="employes-table">
+            @for (e of employesDuService(); track e.id) {
+              <div class="employe-row">
+                <div class="emp-avatar-sm" [style.background]="getAvatarColor(e.id)">{{ getInitials(e) }}</div>
+                <div class="emp-info">
+                  <span class="emp-name">{{ e.prenom }} {{ e.nom }}</span>
+                  <span class="emp-poste">{{ e.poste || 'Employé' }}</span>
+                </div>
+                <code class="emp-mat">{{ e.matricule }}</code>
+                <div class="emp-badges">
+                  @if (isEmployeResponsable(e.id, s)) {
+                    <span class="badge resp">Responsable</span>
+                  }
+                  @if (estPresent(e.matricule)) {
+                    <span class="presence-badge present">Présent</span>
+                  } @else {
+                    <span class="presence-badge absent">Absent</span>
+                  }
+                </div>
               </div>
-              <span
-                class="presence-dot"
-                [class.present]="estPresent(e.matricule)"
-                title="{{ estPresent(e.matricule) ? 'Présent' : 'Absent' }}"
-              ></span>
-            </div>
-          }
-        </div>
+            }
+          </div>
+        }
       }
 
       <!-- Tab Planning -->
       @if (detailTab() === 'planning') {
-        <div class="planning-panel-wrap">
-          <p class="detail-empty-sm">
-            Planning par défaut du service. Les employés sans planning individuel héritent de
-            celui-ci.
-          </p>
+        <div class="planning-section">
+          <p class="planning-hint">Planning par défaut du service. Les employés sans planning individuel héritent de celui-ci.</p>
           <app-planning-editor
-            [planning]="selectedService()?.planning || []"
+            [planning]="s.planning || []"
             [saving]="savingPlanning()"
             [readOnly]="!isAdmin"
             (saved)="savePlanningService($event)"

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, adminGuard, publicGuard } from './core/guards';
+import { servicesGuard } from './core/guards/services.guard';
 
 export const routes: Routes = [
   // ── Publiques ──────────────────────────────────────────────────────────────
@@ -57,7 +58,7 @@ export const routes: Routes = [
       import('./features/services/list-services/list-services').then(
         (c) => c.ListServicesComponent,
       ),
-    canActivate: [authGuard],
+    canActivate: [servicesGuard],
     title: 'Services',
   },
   {
