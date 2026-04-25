@@ -154,3 +154,26 @@
   .cartes-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .carte { break-inside: avoid; border: 1px solid #ccc !important; box-shadow: none !important; transform: none !important; }
 }
+// cartes.scss - ajouter
+
+.qr-canvas {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+}
+
+.carte-qr-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+
+  .qr-canvas {
+    width: 46px;
+    height: 46px;
+  }
+}

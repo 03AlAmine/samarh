@@ -1,4 +1,5 @@
 // sidebar/sidebar.scss
+@use 'sass:color';
 
 $sidebar-w: 232px;
 $sidebar-collapsed-w: 72px;
@@ -108,7 +109,9 @@ $accent: #4f7df3;
   font-size: 13.5px;
   font-weight: 500;
   position: relative;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   cursor: pointer;
 
   .sidebar.collapsed & {
@@ -246,7 +249,7 @@ $accent: #4f7df3;
 
   &:hover {
     transform: scale(1.1);
-    background: darken($accent, 10%);
+    background: color.adjust($accent, $lightness: -10%);
   }
 
   svg {

@@ -84,7 +84,7 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
     // ✅ Attendre que toutes les données soient chargées avant de calculer les stats
     const sub = combineLatest([
       this.employeService.employes$,
-      this.employeService.services$
+      this.employeService.services$,
     ]).subscribe(([employes, services]) => {
       this.allEmployes.set(employes);
       this.services.set(services);
@@ -100,7 +100,7 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
     // Charger les présences du jour
     const today = new Date().toISOString().split('T')[0];
     const subPresence = this.pointageService.presencesJour$(today).subscribe((p) => {
-      this.presencesAujourdhui.set(p.map(x => x.matricule));
+      this.presencesAujourdhui.set(p.map((x) => x.matricule));
       if (this.employe()) {
         this.loadServicesGeres();
         this.cdr.detectChanges();
@@ -113,7 +113,7 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     // ✅ Nettoyer les abonnements
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
   private async load(id: string): Promise<void> {
@@ -136,7 +136,6 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
       // ✅ Recharger les services gérés après avoir l'employé
       this.loadServicesGeres();
       this.cdr.detectChanges();
-
     } catch (err) {
       this.accessDenied.set(true);
     } finally {
@@ -152,11 +151,11 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
     const employe = this.employe();
     if (!employe) return;
 
-
     // Vérifier si l'employé est responsable
-    const estResponsable = employe.role === 'Chargé de compte' ||
-                          employe.role === 'Administrateur' ||
-                          employe.estChargeCompte === true;
+    const estResponsable =
+      employe.role === 'Chargé de compte' ||
+      employe.role === 'Administrateur' ||
+      employe.estChargeCompte === true;
     if (!estResponsable || !employe.services?.length) {
       this.servicesGeres.set([]);
       this.totalEmployesGeres.set(0);
@@ -167,7 +166,7 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
     // Récupérer les services correspondants
     const servicesMatricules = employe.services;
 
-    const services = this.services().filter(s => servicesMatricules.includes(s.matricule));
+    const services = this.services().filter((s) => servicesMatricules.includes(s.matricule));
 
     this.servicesGeres.set(services);
 
@@ -176,23 +175,21 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
     let totalPresence = 0;
 
     for (const service of services) {
-      const employesDuService = this.allEmployes().filter(e =>
-        e.service === service.matricule && e.statut !== 'archive' && e.statut !== 'inactif'
+      const employesDuService = this.allEmployes().filter(
+        (e) => e.service === service.matricule && e.statut !== 'archive' && e.statut !== 'inactif',
       );
 
       totalEmployes += employesDuService.length;
 
-      const presents = employesDuService.filter(e =>
-        this.presencesAujourdhui().includes(e.matricule)
+      const presents = employesDuService.filter((e) =>
+        this.presencesAujourdhui().includes(e.matricule),
       ).length;
       totalPresence += presents;
     }
 
-
     this.totalEmployesGeres.set(totalEmployes);
     const taux = totalEmployes > 0 ? Math.round((totalPresence / totalEmployes) * 100) : 0;
     this.tauxPresenceGlobal.set(taux);
-
   }
 
   /**
@@ -208,10 +205,8 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
    * Récupère l'effectif d'un service
    */
   getEffectifService(matricule: string): number {
-    const effectif = this.allEmployes().filter(e =>
-      e.service === matricule &&
-      e.statut !== 'archive' &&
-      e.statut !== 'inactif'
+    const effectif = this.allEmployes().filter(
+      (e) => e.service === matricule && e.statut !== 'archive' && e.statut !== 'inactif',
     ).length;
     return effectif;
   }
@@ -230,8 +225,13 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
   }
 
   async saveEdit(data: Partial<Employe>): Promise<void> {
-    const e = this.employe();
-    if (!e) return;
+    // ✅ Récupérer l'ID depuis la route directement
+    const id = this.route.snapshot.paramMap.get('id');
+
+    if (!id) {
+      this.toast.error('Erreur: Identifiant employé manquant');
+      return;
+    }
 
     if (!this.canEdit) {
       this.toast.error("Vous n'avez pas les droits pour modifier cet employé.");
@@ -241,12 +241,14 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
     this.savingEdit.set(true);
     this.editError.set('');
     try {
-      await this.employeService.update(e.id, data);
-      const updated = await this.employeService.getById(e.id);
+      await this.employeService.update(id, data);
+
+      const updated = await this.employeService.getById(id);
       this.employe.set(updated);
       this.loadServicesGeres();
       this.toast.success('Employé modifié avec succès');
       this.closeEdit();
+      this.cdr.detectChanges();
     } catch (err: any) {
       this.editError.set(err.message || 'Erreur lors de la sauvegarde.');
       this.toast.error(err.message || 'Erreur lors de la sauvegarde.');

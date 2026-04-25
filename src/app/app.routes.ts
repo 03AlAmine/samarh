@@ -73,6 +73,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     title: 'Cartes employés',
   },
+  {
+    path: 'statistiques',
+    loadComponent: () =>
+      import('./features/statistiques/statistiques').then((c) => c.StatistiquesComponent),
+    canActivate: [authGuard],
+    title: 'Statistiques RH',
+  },
 
   // ── Admin SaaS uniquement ──────────────────────────────────────────────────
   {

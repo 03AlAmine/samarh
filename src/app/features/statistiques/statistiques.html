@@ -1,0 +1,354 @@
+<!-- statistiques/statistiques.html -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Statistiques RH</h1>
+    <p class="page-subtitle">Analyse complète des données de la communauté</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn--secondary btn--sm" (click)="exportPDF()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+      </svg>
+      Exporter PDF
+    </button>
+    <button class="btn btn--primary btn--sm" (click)="exportExcel()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+        <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.8" />
+        <line
+          x1="8"
+          y1="13"
+          x2="16"
+          y2="13"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+        <line
+          x1="8"
+          y1="17"
+          x2="16"
+          y2="17"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+      </svg>
+      Exporter Excel
+    </button>
+  </div>
+</div>
+
+<!-- Filtres avancés -->
+<div class="filters-section">
+  <div class="filters-card">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label>Période</label>
+        <div class="period-buttons">
+          <button [class.active]="periode() === 'semaine'" (click)="setPeriode('semaine')">
+            Cette semaine
+          </button>
+          <button [class.active]="periode() === 'mois'" (click)="setPeriode('mois')">
+            Ce mois
+          </button>
+          <button [class.active]="periode() === 'trimestre'" (click)="setPeriode('trimestre')">
+            Ce trimestre
+          </button>
+          <button [class.active]="periode() === 'annee'" (click)="setPeriode('annee')">
+            Cette année
+          </button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Services</label>
+        <select [value]="filtreService()" (change)="filtreService.set($any($event.target).value)">
+          <option value="all">Tous les services</option>
+          @for (s of servicesAutorises(); track s.id) {
+            <option [value]="s.matricule">{{ s.nom }}</option>
+          }
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Type de données</label>
+        <select [value]="typeDonnees()" (change)="typeDonnees.set($any($event.target).value)">
+          <option value="global">Vue globale</option>
+          <option value="services">Par service</option>
+          <option value="employes">Par employé</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chargement -->
+@if (loading()) {
+  <div class="loading-container">
+    <div class="spinner"></div>
+    <p>Chargement des statistiques...</p>
+  </div>
+}
+
+@if (!loading()) {
+  <!-- Cartes KPI -->
+  <div class="stats-kpi-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+            stroke="currentColor"
+            stroke-width="1.7"
+          />
+          <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ statsGlobales().totalEmployes }}</span>
+        <span class="stat-label">Employés actifs</span>
+        <span
+          class="stat-trend"
+          [class.up]="statsGlobales().evolutionEmployes > 0"
+          [class.down]="statsGlobales().evolutionEmployes < 0"
+        >
+          {{ statsGlobales().evolutionEmployes > 0 ? '+' : ''
+          }}{{ statsGlobales().evolutionEmployes }}% vs mois dernier
+        </span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="1.7" />
+          <path d="M22 4 12 14.01l-3-3" stroke="currentColor" stroke-width="1.7" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ statsGlobales().tauxPresenceMoyen }}%</span>
+        <span class="stat-label">Présence moyenne</span>
+        <span class="stat-trend">{{ statsGlobales().joursPresence }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7" />
+          <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ statsGlobales().totalRetards }}</span>
+        <span class="stat-label">Retards totaux</span>
+        <span
+          class="stat-trend"
+          [class.up]="statsGlobales().evolutionRetards > 0"
+          [class.down]="statsGlobales().evolutionRetards < 0"
+        >
+          {{ statsGlobales().evolutionRetards > 0 ? '+' : ''
+          }}{{ statsGlobales().evolutionRetards }}%
+        </span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M3 3v18h18" stroke="currentColor" stroke-width="1.7" />
+          <path
+            d="m7 16 4-4 4 4 4-4"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ statsGlobales().assiduiteMoyenne }}%</span>
+        <span class="stat-label">Assiduité moyenne</span>
+        <span class="stat-trend">{{ statsGlobales().topEmploye }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graphiques principaux -->
+  <div class="charts-grid">
+    <!-- Évolution des présences -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Évolution des présences</h3>
+        <span class="chart-period">{{ periodeLabel() }}</span>
+      </div>
+      <div class="chart-container">
+        <canvas baseChart [data]="evolutionChartData()" [options]="lineChartOptions" type="line">
+        </canvas>
+      </div>
+    </div>
+
+    <!-- Répartition par service -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Répartition par service</h3>
+        <span class="chart-period">Effectifs</span>
+      </div>
+      <div class="chart-container">
+        <canvas baseChart [data]="repartitionChartData()" [options]="barChartOptions" type="bar">
+        </canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap des présences -->
+  <div class="chart-card full-width">
+    <div class="chart-header">
+      <h3>Heatmap des présences (par heure)</h3>
+      <span class="chart-period">Heures d'affluence</span>
+    </div>
+    <div class="heatmap-container">
+      <canvas baseChart [data]="heatmapChartData()" [options]="heatmapOptions" type="bar"> </canvas>
+    </div>
+  </div>
+
+  <!-- Tableau des services -->
+  @if (typeDonnees() === 'services') {
+    <div class="data-table-card">
+      <div class="table-header">
+        <h3>Détail par service</h3>
+        <input
+          type="text"
+          placeholder="Filtrer..."
+          [value]="searchService()"
+          (input)="searchService.set($any($event.target).value)"
+        />
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Effectif</th>
+              <th>Présence moyenne</th>
+              <th>Retards</th>
+              <th>Assiduité</th>
+              <th>Tendance</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of servicesStats(); track s.matricule) {
+              <tr>
+                <td>
+                  <strong>{{ s.nom }}</strong>
+                </td>
+                <td>{{ s.effectif }}</td>
+                <td>
+                  <div class="progress-cell">
+                    <div class="progress-bar" [style.width.%]="s.tauxPresence">
+                      <span>{{ s.tauxPresence }}%</span>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ s.nbRetards }}</td>
+                <td>{{ s.assiduite }}%</td>
+                <td>
+                  <span
+                    class="trend-badge"
+                    [class.up]="s.tendance > 0"
+                    [class.down]="s.tendance < 0"
+                  >
+                    {{ s.tendance > 0 ? '+' : '' }}{{ s.tendance }}%
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Tableau des employés -->
+  @if (typeDonnees() === 'employes') {
+    <div class="data-table-card">
+      <div class="table-header">
+        <h3>Performance par employé</h3>
+        <div class="table-filters">
+          <input
+            type="text"
+            placeholder="Rechercher..."
+            [value]="searchEmploye()"
+            (input)="searchEmploye.set($any($event.target).value)"
+          />
+          <select [value]="triEmployes()" (change)="triEmployes.set($any($event.target).value)">
+            <option value="presence">Trier par présence</option>
+            <option value="retards">Trier par retards</option>
+            <option value="nom">Trier par nom</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Employé</th>
+              <th>Service</th>
+              <th>Poste</th>
+              <th>Jours présents</th>
+              <th>Taux présence</th>
+              <th>Retards</th>
+              <th>Assiduité</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of employesStats(); track e.id) {
+              <tr>
+                <td>
+                  <div class="employe-cell">
+                    <!-- ✅ Utiliser les nouvelles méthodes -->
+                    <div class="avatar-sm" [style.background]="avatarColorFromStats(e.id)">
+                      {{ initialsFromStats(e) }}
+                    </div>
+                    <span>{{ e.prenom }} {{ e.nom }}</span>
+                  </div>
+                </td>
+                <td>{{ nomService(e.service) }}</td>
+                <td>{{ e.poste || '—' }}</td>
+                <td>{{ e.joursPresents }}/{{ e.joursTotal }}</td>
+                <td>
+                  <div class="progress-cell">
+                    <div
+                      class="progress-bar"
+                      [style.width.%]="e.tauxPresence"
+                      [class.high]="e.tauxPresence >= 80"
+                      [class.medium]="e.tauxPresence >= 50 && e.tauxPresence < 80"
+                      [class.low]="e.tauxPresence < 50"
+                    >
+                      <span>{{ e.tauxPresence }}%</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="retard-badge">{{ e.nbRetards }}</span>
+                </td>
+                <td>
+                  <div class="stars">
+                    @for (s of [1, 2, 3, 4, 5]; track s) {
+                      <span class="star" [class.active]="s <= e.assiduite / 20">★</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+}
