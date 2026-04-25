@@ -25,7 +25,7 @@
     <div class="dash-header__left">
       <h1 class="dash-title">
         {{ communauteNom }}
-        <!-- Badge scope pour les chargés de compte -->
+        <!-- Badge scope pour les chargés de compte
         @if (!isAdmin) {
           <span class="scope-badge">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
@@ -35,7 +35,7 @@
             </svg>
             {{ mesServicesNoms }}
           </span>
-        }
+        }-->
       </h1>
       <p class="dash-date">{{ today | titlecase }}</p>
     </div>
@@ -265,7 +265,7 @@
                     <span class="my-svc-pct"
                       [class.c-green]="svc.taux >= 80"
                       [class.c-yellow]="svc.taux >= 50 && svc.taux < 80"
-                      [class.c-red]="svc.taux < 50">
+                      [class.c-blue]="svc.taux < 50">
                       {{ svc.taux }}%
                     </span>
                   </div>
@@ -275,7 +275,7 @@
                         [style.width.%]="svc.pct"
                         [class.svc-fill--green]="svc.taux >= 80"
                         [class.svc-fill--yellow]="svc.taux >= 50 && svc.taux < 80"
-                        [class.svc-fill--red]="svc.taux < 50">
+                        [class.svc-fill--bleu]="svc.taux < 50">
                       </div>
                     </div>
                     <span class="svc-count">{{ svc.presents }}/{{ svc.total }}</span>

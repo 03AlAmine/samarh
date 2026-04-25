@@ -1,0 +1,260 @@
+// sidebar/sidebar.scss
+
+$sidebar-w: 232px;
+$sidebar-collapsed-w: 72px;
+$sidebar-bg: #0b1021;
+$sidebar-text: #a1a8b8;
+$sidebar-active-bg: rgba(255, 255, 255, 0.07);
+$sidebar-active-text: #ffffff;
+$accent: #4f7df3;
+
+:host {
+  display: block;
+}
+
+.sidebar {
+  width: $sidebar-w;
+  min-width: $sidebar-w;
+  height: 100vh;
+  background: $sidebar-bg;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 50;
+  flex-shrink: 0;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Version réduite sur desktop seulement
+  @media (min-width: 1024px) {
+    &.collapsed {
+      width: $sidebar-collapsed-w;
+      min-width: $sidebar-collapsed-w;
+    }
+  }
+
+  // Version mobile
+  @media (max-width: 1023px) {
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+
+    &.open {
+      transform: translateX(0);
+    }
+  }
+}
+
+// Logo
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 20px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  .sidebar.collapsed & {
+    @media (min-width: 1024px) {
+      justify-content: center;
+      padding: 20px 0 18px;
+    }
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: $accent;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-size: 16px;
+    color: #fff;
+    letter-spacing: -0.3px;
+
+    strong {
+      font-weight: 700;
+    }
+  }
+}
+
+// Navigation
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &::-webkit-scrollbar {
+    width: 0;
+  }
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: $sidebar-text;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  position: relative;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+
+  .sidebar.collapsed & {
+    @media (min-width: 1024px) {
+      justify-content: center;
+      padding: 9px;
+    }
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #d1d5e0;
+  }
+
+  &.active {
+    background: $sidebar-active-bg;
+    color: $sidebar-active-text;
+
+    .nav-icon svg {
+      stroke: $accent;
+    }
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      transition: stroke 0.15s;
+    }
+  }
+
+  .nav-label {
+    flex: 1;
+
+    .sidebar.collapsed & {
+      @media (min-width: 1024px) {
+        display: none;
+      }
+    }
+  }
+
+  .nav-indicator {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: $accent;
+    flex-shrink: 0;
+  }
+}
+
+// User section
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+  .sidebar.collapsed & {
+    @media (min-width: 1024px) {
+      justify-content: center;
+      padding: 14px;
+    }
+  }
+
+  .user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, $accent 0%, #7c3aed 100%);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+  }
+
+  .user-meta {
+    flex: 1;
+    min-width: 0;
+
+    .sidebar.collapsed & {
+      @media (min-width: 1024px) {
+        display: none;
+      }
+    }
+
+    .user-name {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e5e7eb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-role {
+      display: block;
+      font-size: 11.5px;
+      color: $sidebar-text;
+      margin-top: 1px;
+    }
+  }
+}
+
+// Bouton collapse/expand
+.sidebar-collapse-btn {
+  position: absolute;
+  bottom: 20px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: $accent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s;
+  z-index: 10;
+
+  &:hover {
+    transform: scale(1.1);
+    background: darken($accent, 10%);
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .sidebar.collapsed & {
+    right: -12px;
+  }
+}

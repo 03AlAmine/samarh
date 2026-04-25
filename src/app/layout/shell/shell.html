@@ -1,122 +1,32 @@
-<!-- ─── SHELL LAYOUT ──────────────────────────────────────────────────────── -->
-<div class="shell" [class.sidebar-open]="sidebarOpen()">
+<!-- shell.html -->
+<div class="shell">
 
-  <!-- ── Overlay mobile ───────────────────────────────────────────────────── -->
-  @if (sidebarOpen()) {
-    <div class="overlay" (click)="toggleSidebar()">
-  <!-- ── Toasts globaux ──────────────────────────────────────────────────────── -->
-  <app-toast></app-toast>
-  <app-confirm-dialog></app-confirm-dialog>
-
-</div>
+  <!-- Overlay mobile -->
+  @if (sidebarOpen() && isMobile()) {
+    <div class="overlay" (click)="toggleSidebar()"></div>
   }
 
-  <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
-  <aside class="sidebar">
+  <!-- Sidebar -->
+  <app-sidebar
+    [user]="user()"
+    [currentRoute]="currentRoute()"
+    [sidebarOpen]="sidebarOpen()"
+    [isCollapsed]="sidebarCollapsed()"
+    (collapsedChange)="onSidebarCollapsedChange($event)"
+  />
 
-    <!-- Logo -->
-    <div class="sidebar-logo">
-      <div class="logo-mark">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L2 7l10 5 10-5-10-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-          <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-          <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <span class="logo-text"><strong>Sama</strong>RH</span>
-    </div>
-
-    <!-- Nav -->
-    <nav class="sidebar-nav">
-      @for (item of navItems(); track item.route) {
-        <a
-          [routerLink]="item.route"
-          class="nav-item"
-          [class.active]="isActive(item.route)"
-          [title]="item.label"
-        >
-          <span class="nav-icon">
-            <ng-container [ngSwitch]="item.icon">
-              <svg *ngSwitchCase="'grid'" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.7"/></svg>
-              <svg *ngSwitchCase="'users'" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              <svg *ngSwitchCase="'briefcase'" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 12v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              <svg *ngSwitchCase="'clock'" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              <svg *ngSwitchCase="'id-card'" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="8" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 10h4M13 14h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-              <svg *ngSwitchCase="'globe'" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10Z" stroke="currentColor" stroke-width="1.7"/></svg>
-              <svg *ngSwitchCase="'shield'" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
-              <svg *ngSwitchCase="'user-plus'" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M19 8v6M22 11h-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              <svg *ngSwitchDefault viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/></svg>
-            </ng-container>
-          </span>
-          <span class="nav-label">{{ item.label }}</span>
-          @if (isActive(item.route)) {
-            <span class="nav-indicator"></span>
-          }
-        </a>
-      }
-    </nav>
-
-    <!-- User section -->
-    <div class="sidebar-user">
-      <div class="user-avatar">{{ userInitials() }}</div>
-      <div class="user-meta">
-        <span class="user-name">{{ userLabel() }}</span>
-        <span class="user-role">{{ roleLabel() }}</span>
-      </div>
-    </div>
-
-  </aside>
-
-  <!-- ── Main area ─────────────────────────────────────────────────────────── -->
-  <div class="main-area">
-
-    <!-- Header -->
-    <header class="topbar">
-      <button class="sidebar-toggle" (click)="toggleSidebar()" aria-label="Menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </button>
-
-      <div class="topbar-spacer"></div>
-
-      <!-- User menu -->
-      <div class="user-menu">
-        <button class="user-menu-trigger" (click)="toggleUserMenu()">
-          <div class="user-avatar sm">{{ userInitials() }}</div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="chevron" [class.rotated]="userMenuOpen()">
-            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-
-        @if (userMenuOpen()) {
-          <div class="user-dropdown">
-            <div class="dropdown-user-info">
-              <div class="user-avatar md">{{ userInitials() }}</div>
-              <div>
-                <p class="dropdown-name">{{ userLabel() }}</p>
-                <p class="dropdown-role">{{ roleLabel() }}</p>
-              </div>
-            </div>
-            <div class="dropdown-divider"></div>
-            <a routerLink="/profil" class="dropdown-item">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.7"/></svg>
-              Mon profil
-            </a>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item danger" (click)="logout()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              Déconnexion
-            </button>
-          </div>
-        }
-      </div>
-    </header>
+  <!-- Main area -->
+  <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed() && !isMobile()">
+    <!-- Topbar -->
+    <app-topbar (toggleSidebar)="toggleSidebar()" />
 
     <!-- Page content -->
     <main class="page-content">
       <router-outlet></router-outlet>
     </main>
-
   </div>
 </div>
+
+<!-- Toasts et confirmations globales -->
+<app-toast></app-toast>
+<app-confirm-dialog></app-confirm-dialog>

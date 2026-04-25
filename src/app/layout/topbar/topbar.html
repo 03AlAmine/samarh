@@ -1,0 +1,207 @@
+<!-- topbar/topbar.html -->
+<header class="topbar">
+  <!-- Bouton hamburger -->
+  <button class="sidebar-toggle" (click)="toggleSidebar.emit()" aria-label="Menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M3 12h18M3 6h18M3 18h18"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+
+  <!-- Section gauche : Bonjour avec icône -->
+  <div class="greeting-section">
+    <div class="greeting-emoji">👋</div>
+    <div class="greeting-content">
+      <div class="greeting-text">
+        <span class="greeting-hello">Bonjour</span>
+        <span class="greeting-name">{{ userFirstName() }}</span>
+      </div>
+      <div class="greeting-date">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        {{ currentDate() }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Séparateur -->
+  <div class="divider-vertical"></div>
+
+  <!-- Barre de recherche améliorée -->
+  <div class="search-wrapper">
+    <div class="search-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7"/>
+        <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      <input
+        type="text"
+        placeholder="Rechercher..."
+        [value]="searchQuery()"
+        (input)="onSearch($any($event.target).value)"
+        (focus)="showSearchResults.set(true)"
+        (blur)="onBlur()"
+      />
+      @if (searchQuery()) {
+        <button class="search-clear" (click)="clearSearch()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      } @else {
+        <kbd class="search-kbd">⌘K</kbd>
+      }
+    </div>
+
+    <!-- Résultats de recherche -->
+    @if (showSearchResults() && searchQuery()) {
+      <div class="search-results-dropdown">
+        <div class="dropdown-header">
+          <span>Résultats de recherche</span>
+          <span class="dropdown-shortcut">↵ pour sélectionner</span>
+        </div>
+        @if (searchResults().length === 0) {
+          <div class="search-empty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.5"/>
+              <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <strong>Aucun résultat</strong>
+              <span>Aucun employé ou service ne correspond à "{{ searchQuery() }}"</span>
+            </div>
+          </div>
+        }
+        @for (result of searchResults(); track result.id) {
+          <a [routerLink]="result.route" class="search-result-item" (click)="clearSearch()">
+            <div class="result-icon" [style.background]="result.iconBg">
+              <ng-container [ngSwitch]="result.type">
+                <svg *ngSwitchCase="'employe'" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                  <circle cx="9" cy="7" r="4" stroke="white" stroke-width="1.5"/>
+                </svg>
+                <svg *ngSwitchCase="'service'" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <rect x="2" y="7" width="20" height="14" rx="2" stroke="white" stroke-width="1.5"/>
+                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </ng-container>
+            </div>
+            <div class="result-info">
+              <span class="result-title">{{ result.title }}</span>
+              <span class="result-subtitle">{{ result.subtitle }}</span>
+            </div>
+            <div class="result-badge">{{ result.type === 'employe' ? 'Employé' : 'Service' }}</div>
+          </a>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="topbar-spacer"></div>
+
+  <!-- Actions rapides -->
+  <div class="actions-group">
+    <button class="action-btn" (click)="openCreateEmploye()" title="Ajouter un employé">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="action-btn" (click)="openQuickPointage()" title="Pointage rapide">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Séparateur -->
+  <div class="divider-vertical"></div>
+
+  <!-- Notifications -->
+  <button class="notif-btn" (click)="toggleNotif()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    @if (unreadCount() > 0) {
+      <span class="notif-badge">{{ unreadCount() }}</span>
+    }
+  </button>
+
+  <!-- User menu modernisé -->
+  <div class="user-menu">
+    <button class="user-menu-trigger" (click)="toggleUserMenu()">
+      <div class="user-avatar sm">
+        {{ userInitials() }}
+        <span class="online-status"></span>
+      </div>
+      <div class="user-info">
+        <span class="user-name">{{ userLabel() }}</span>
+        <span class="user-role">{{ roleLabel() }}</span>
+      </div>
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        class="chevron"
+        [class.rotated]="userMenuOpen()"
+      >
+        <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    @if (userMenuOpen()) {
+      <div class="user-dropdown">
+        <div class="dropdown-header">
+          <div class="user-avatar md">{{ userInitials() }}</div>
+          <div class="dropdown-user-details">
+            <p class="dropdown-name">{{ userLabel() }}</p>
+            <p class="dropdown-email">{{ userEmail() }}</p>
+          </div>
+        </div>
+
+        <div class="dropdown-section">
+          <a routerLink="/profil" class="dropdown-item" (click)="closeMenu()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5"/>
+              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            Mon profil
+          </a>
+          <a routerLink="/parametres" class="dropdown-item" (click)="closeMenu()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.18a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.38.1.71.3 1 .51" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Paramètres
+          </a>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <div class="dropdown-section">
+          <button class="dropdown-item danger" (click)="logout()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Déconnexion
+          </button>
+        </div>
+
+        <div class="dropdown-footer">
+          <span>Version 1.0.0</span>
+        </div>
+      </div>
+    }
+  </div>
+</header>

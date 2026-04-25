@@ -192,10 +192,10 @@ export class DashboardComponent implements OnInit {
               ? 'rgba(16,185,129,0.85)'
               : j.pct >= 50
                 ? 'rgba(245,158,11,0.85)'
-                : 'rgba(239,68,68,0.85)'
+                : 'rgba(6, 17, 55, 0.85)'
           ),
           hoverBackgroundColor: sem.map((j) =>
-            j.pct >= 80 ? 'rgba(16,185,129,1)' : j.pct >= 50 ? 'rgba(245,158,11,1)' : 'rgba(239,68,68,1)'
+            j.pct >= 80 ? 'rgba(16,185,129,1)' : j.pct >= 50 ? 'rgba(245,158,11,1)' : 'rgb(12, 19, 44, 1)'
           ),
           borderRadius: 6,
           borderSkipped: false,

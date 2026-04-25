@@ -1,28 +1,9 @@
-// ─── SHELL LAYOUT STYLES ─────────────────────────────────────────────────────
-// Design : sidebar sombre compacte + contenu clair
-// Police : system-ui pour la lisibilité, sobre et fonctionnel
-
-// ── Tokens ───────────────────────────────────────────────────────────────────
+// shell/shell.scss
 
 :host {
   display: block;
   height: 100vh;
 }
-
-$sidebar-w: 232px;
-$topbar-h: 56px;
-$sidebar-bg: #0f1117;
-$sidebar-text: #a1a8b8;
-$sidebar-active-bg: rgba(255, 255, 255, 0.07);
-$sidebar-active-text: #ffffff;
-$accent: #4f7df3;
-$surface: #ffffff;
-$border: #e8eaf0;
-$text-primary: #111827;
-$text-secondary: #6b7280;
-$radius: 10px;
-
-// ── Shell container ───────────────────────────────────────────────────────────
 
 .shell {
   display: flex;
@@ -31,8 +12,7 @@ $radius: 10px;
   font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
 }
 
-// ── Overlay mobile ────────────────────────────────────────────────────────────
-
+// Overlay mobile
 .overlay {
   position: fixed;
   inset: 0;
@@ -44,199 +24,10 @@ $radius: 10px;
 
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-
-.sidebar {
-  width: $sidebar-w;
-  min-width: $sidebar-w;
-  height: 100vh;
-  background: $sidebar-bg;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  z-index: 50;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-
-  @media (max-width: 1023px) {
-    position: fixed;
-    left: 0;
-    top: 0;
-    transform: translateX(-100%);
-
-    .shell.sidebar-open & {
-      transform: translateX(0);
-    }
-  }
-}
-
-// Logo
-.sidebar-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 20px 20px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-
-  .logo-mark {
-    width: 36px;
-    height: 36px;
-    background: $accent;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    flex-shrink: 0;
-  }
-
-  .logo-text {
-    font-size: 16px;
-    color: #fff;
-    letter-spacing: -0.3px;
-
-    strong {
-      font-weight: 700;
-    }
-  }
-}
-
-// Navigation
-.sidebar-nav {
-  flex: 1;
-  padding: 12px 10px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-
-  &::-webkit-scrollbar { width: 0; }
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 9px 12px;
-  border-radius: 8px;
-  color: $sidebar-text;
-  text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 500;
-  position: relative;
-  transition: background 0.15s, color 0.15s;
-  cursor: pointer;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #d1d5e0;
-  }
-
-  &.active {
-    background: $sidebar-active-bg;
-    color: $sidebar-active-text;
-
-    .nav-icon svg {
-      stroke: $accent;
-    }
-  }
-
-  .nav-icon {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    svg {
-      width: 16px;
-      height: 16px;
-      stroke: currentColor;
-      transition: stroke 0.15s;
-    }
-  }
-
-  .nav-label {
-    flex: 1;
-  }
-
-  .nav-indicator {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: $accent;
-    flex-shrink: 0;
-  }
-}
-
-// Sidebar user
-.sidebar-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-
-  .user-meta {
-    flex: 1;
-    min-width: 0;
-
-    .user-name {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: #e5e7eb;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .user-role {
-      display: block;
-      font-size: 11.5px;
-      color: $sidebar-text;
-      margin-top: 1px;
-    }
-  }
-}
-
-// ── Avatar (partagé) ──────────────────────────────────────────────────────────
-
-.user-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, $accent 0%, #7c3aed 100%);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  letter-spacing: 0.5px;
-
-  &.sm {
-    width: 30px;
-    height: 30px;
-    font-size: 11px;
-    border-radius: 8px;
-  }
-
-  &.md {
-    width: 40px;
-    height: 40px;
-    font-size: 14px;
-    border-radius: 10px;
-  }
-}
-
-// ── Main area ─────────────────────────────────────────────────────────────────
-
+// Main area
 .main-area {
   flex: 1;
   min-width: 0;
@@ -245,156 +36,10 @@ $radius: 10px;
   height: 100vh;
   overflow: hidden;
   background: #f5f6fa;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-// ── Topbar ────────────────────────────────────────────────────────────────────
-
-.topbar {
-  height: $topbar-h;
-  min-height: $topbar-h;
-  background: $surface;
-  border-bottom: 1px solid $border;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  gap: 12px;
-  position: relative;
-  z-index: 10;
-  flex-shrink: 0;
-}
-
-.sidebar-toggle {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  color: $text-secondary;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-
-  &:hover {
-    background: #f0f2f7;
-    color: $text-primary;
-  }
-
-  // Masquer sur desktop si on veut garder la sidebar toujours visible
-  @media (min-width: 1024px) {
-    display: flex; // toujours visible pour pouvoir réduire
-  }
-}
-
-.topbar-spacer { flex: 1; }
-
-// ── User menu dans le topbar ──────────────────────────────────────────────────
-
-.user-menu {
-  position: relative;
-}
-
-.user-menu-trigger {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px 4px 4px;
-  border: none;
-  background: transparent;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.15s;
-
-  &:hover {
-    background: #f0f2f7;
-  }
-
-  .chevron {
-    color: $text-secondary;
-    transition: transform 0.2s;
-
-    &.rotated { transform: rotate(180deg); }
-  }
-}
-
-.user-dropdown {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  width: 220px;
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-  z-index: 100;
-  animation: dropIn 0.15s ease;
-
-  @keyframes dropIn {
-    from { opacity: 0; transform: translateY(-6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-}
-
-.dropdown-user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 14px 12px;
-
-  .dropdown-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: $text-primary;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .dropdown-role {
-    font-size: 11.5px;
-    color: $text-secondary;
-    margin: 2px 0 0;
-  }
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: $border;
-  margin: 2px 0;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  padding: 9px 14px;
-  font-size: 13px;
-  font-weight: 500;
-  color: $text-primary;
-  text-decoration: none;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.12s;
-  text-align: left;
-
-  svg { color: $text-secondary; flex-shrink: 0; }
-
-  &:hover { background: #f5f6fa; }
-
-  &.danger {
-    color: #dc2626;
-    svg { color: #dc2626; }
-    &:hover { background: #fef2f2; }
-  }
-}
-
-// ── Page content ──────────────────────────────────────────────────────────────
-
+// Page content
 .page-content {
   flex: 1;
   overflow-y: auto;
@@ -403,4 +48,11 @@ $radius: 10px;
   @media (max-width: 767px) {
     padding: 16px;
   }
+}
+.main-area {
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar {
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
