@@ -1,4 +1,4 @@
-// employe-form.ts - version corrigée
+// employe-form.ts - version complète avec gestion du code PIN
 import {
   Component, Input, Output, EventEmitter,
   OnInit, inject, ChangeDetectionStrategy, signal,
@@ -29,6 +29,7 @@ export class EmployeFormComponent implements OnInit {
 
   activeTab  = signal<Tab>('infos');
   hashing    = false;
+  showPin    = signal(false); // ✅ Pour afficher/masquer le PIN
 
   // ── Services sélectionnés pour les permissions ────────────────────────────
   selectedServices = signal<Set<string>>(new Set());
@@ -47,10 +48,10 @@ export class EmployeFormComponent implements OnInit {
     statut:       ['actif'],
     login:        [''],
     password:     [''],
+    pin:          ['', [Validators.pattern('^[0-9]{4}$')]], // ✅ Code PIN 4 chiffres
   });
 
   ngOnInit(): void {
-
     if (this.employe) {
       this.form.patchValue({
         nom:          this.employe.nom          || '',
@@ -64,11 +65,11 @@ export class EmployeFormComponent implements OnInit {
         dateEmbauche: this.employe.dateEmbauche || '',
         statut:       this.employe.statut       || 'actif',
         login:        this.employe.login        || '',
+        pin:          this.employe.pin          || '', // ✅ Récupérer le PIN existant
       });
 
       // ── Charger les permissions existantes ────────────────────────────────
       const emp = this.employe as any;
-
 
       // services[] = liste des matricules de services gérés
       if (emp.services === 'Tous' || emp.role === 'Administrateur') {
@@ -120,9 +121,47 @@ export class EmployeFormComponent implements OnInit {
     }
   }
 
-  // ── Soumission corrigée avec plus de logs ─────────────────────────────────
-  async submit(): Promise<void> {
+  // ── Gestion du Code PIN ───────────────────────────────────────────────────
 
+  /**
+   * Génère un code PIN aléatoire à 4 chiffres
+   */
+  generateRandomPin(): void {
+    const pin = Math.floor(1000 + Math.random() * 9000).toString();
+    this.form.patchValue({ pin });
+
+    // Animation feedback
+    const pinInput = document.querySelector('.pin-input') as HTMLInputElement;
+    if (pinInput) {
+      pinInput.classList.add('pin-generated');
+      setTimeout(() => pinInput.classList.remove('pin-generated'), 500);
+    }
+  }
+
+  /**
+   * Valide et nettoie le format du PIN (uniquement chiffres, max 4)
+   */
+  validatePin(event: any): void {
+    let value = event.target.value;
+    value = value.replace(/[^0-9]/g, '');
+    if (value.length > 4) value = value.slice(0, 4);
+    this.form.patchValue({ pin: value });
+  }
+
+  /**
+   * Affiche ou masque le code PIN
+   */
+  togglePinVisibility(): void {
+    this.showPin.update(v => !v);
+    const pinInput = document.querySelector('.pin-input') as HTMLInputElement;
+    if (pinInput) {
+      pinInput.type = this.showPin() ? 'text' : 'password';
+    }
+  }
+
+  // ── Soumission ────────────────────────────────────────────────────────────
+
+  async submit(): Promise<void> {
     // Vérifier les champs invalides
     if (this.form.invalid) {
       Object.keys(this.form.controls).forEach(key => {
@@ -136,7 +175,6 @@ export class EmployeFormComponent implements OnInit {
 
     const val = { ...this.form.value } as any;
     const rawPassword: string = val.password || '';
-
 
     if (rawPassword) {
       this.hashing = true;
@@ -166,6 +204,14 @@ export class EmployeFormComponent implements OnInit {
       val.services        = [];
       val.role            = 'Employé';
       val.estChargeCompte = false;
+    }
+
+    // ✅ Ajouter le PIN (s'il est défini)
+    if (val.pin && val.pin.length === 4) {
+      val.pinDefined = true;
+      val.pinLastUpdate = new Date().toISOString();
+    } else {
+      delete val.pin;
     }
 
     this.saved.emit(val as Partial<Employe>);

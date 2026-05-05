@@ -484,3 +484,63 @@ select.form-control {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+// employe-form.scss - ajouter ces styles
+
+.pin-hint {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+.pin-input-group {
+  display: flex;
+  gap: 8px;
+
+  .pin-input {
+    flex: 1;
+    letter-spacing: 4px;
+    font-size: 18px;
+    font-family: monospace;
+    text-align: center;
+
+    &::placeholder {
+      letter-spacing: 0;
+      font-size: 14px;
+    }
+  }
+}
+
+.btn-generate-pin,
+.btn-show-pin {
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent-soft);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.pin-eye {
+  opacity: 0.7;
+}
+
+.pin-info {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 4px;
+}

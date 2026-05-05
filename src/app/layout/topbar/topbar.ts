@@ -1,4 +1,4 @@
-// topbar/topbar.ts
+// topbar.ts - version corrigée
 import { Component, inject, output, signal, OnInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -21,7 +21,7 @@ interface SearchResult {
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './topbar.html',
-  styleUrl: './topbar.scss',
+  styleUrls: ['./topbar.scss'],
 })
 export class TopbarComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
@@ -36,7 +36,9 @@ export class TopbarComponent implements OnInit, OnDestroy {
   // Recherche
   searchQuery = signal('');
   showSearchResults = signal(false);
+  searchLoading = signal(false);
   searchResults = signal<SearchResult[]>([]);
+  private searchCache = new Map<string, SearchResult[]>();
   allEmployes: any[] = [];
   allServices: any[] = [];
 
@@ -66,23 +68,39 @@ export class TopbarComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     document.addEventListener('keydown', this.handleKeyboardShortcut.bind(this));
+    document.addEventListener('click', this.handleOutsideClick.bind(this));
+
+    setInterval(() => {
+      if (this.searchCache.size > 50) {
+        this.searchCache.clear();
+      }
+    }, 60000);
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
     document.removeEventListener('keydown', this.handleKeyboardShortcut.bind(this));
+    document.removeEventListener('click', this.handleOutsideClick.bind(this));
   }
 
   private handleKeyboardShortcut(e: KeyboardEvent): void {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
       const searchInput = document.querySelector('.search-bar input') as HTMLInputElement;
-      if (searchInput) {
-        searchInput.focus();
-      }
+      if (searchInput) searchInput.focus();
     }
     if (e.key === 'Escape') {
+      this.showSearchResults.set(false);
+    }
+  }
+
+  private handleOutsideClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.user-menu-trigger') && !target.closest('.user-dropdown')) {
+      this.userMenuOpen.set(false);
+    }
+    if (!target.closest('.search-wrapper')) {
       this.showSearchResults.set(false);
     }
   }
@@ -98,23 +116,36 @@ export class TopbarComponent implements OnInit, OnDestroy {
     if (input) input.focus();
   }
 
-  private performSearch(query: string): void {
+  onBlur(): void {
+    setTimeout(() => {
+      this.showSearchResults.set(false);
+    }, 200);
+  }
+
+  private async performSearch(query: string): Promise<void> {
     if (!query || query.length < 2) {
       this.searchResults.set([]);
       return;
     }
 
+    if (this.searchCache.has(query)) {
+      this.searchResults.set(this.searchCache.get(query)!);
+      return;
+    }
+
+    this.searchLoading.set(true);
+
     const lowerQuery = query.toLowerCase();
     const results: SearchResult[] = [];
 
-    const employesMatch = this.allEmployes
-      .filter(
-        (e) =>
-          e.prenom?.toLowerCase().includes(lowerQuery) ||
-          e.nom?.toLowerCase().includes(lowerQuery) ||
-          e.matricule?.toLowerCase().includes(lowerQuery) ||
-          `${e.prenom} ${e.nom}`.toLowerCase().includes(lowerQuery),
-      )
+    const limitedEmployes = this.allEmployes.slice(0, 100);
+
+    const employesMatch = limitedEmployes
+      .filter((e) => {
+        const fullName = `${e.prenom} ${e.nom}`.toLowerCase();
+        const matricule = e.matricule?.toLowerCase() || '';
+        return fullName.includes(lowerQuery) || matricule.includes(lowerQuery);
+      })
       .slice(0, 5);
 
     employesMatch.forEach((e) => {
@@ -129,11 +160,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
     });
 
     const servicesMatch = this.allServices
-      .filter(
-        (s) =>
-          s.nom?.toLowerCase().includes(lowerQuery) ||
-          s.matricule?.toLowerCase().includes(lowerQuery),
-      )
+      .filter((s) => s.nom?.toLowerCase().includes(lowerQuery))
       .slice(0, 5);
 
     servicesMatch.forEach((s) => {
@@ -147,7 +174,10 @@ export class TopbarComponent implements OnInit, OnDestroy {
       });
     });
 
-    this.searchResults.set(results.slice(0, 8));
+    const finalResults = results.slice(0, 8);
+    this.searchCache.set(query, finalResults);
+    this.searchResults.set(finalResults);
+    this.searchLoading.set(false);
   }
 
   private getEffectifService(matricule: string): number {
@@ -166,12 +196,11 @@ export class TopbarComponent implements OnInit, OnDestroy {
     return colors[idx % colors.length];
   }
 
+  // ✅ Converti en méthodes (pas en getters)
   userFirstName(): string {
     const u = this.user() as any;
     if (!u) return '';
-    if (u.firstName) return u.firstName;
-    if (u.prenom) return u.prenom;
-    return 'Utilisateur';
+    return u.firstName || u.prenom || 'Utilisateur';
   }
 
   currentDate(): string {
@@ -195,12 +224,9 @@ export class TopbarComponent implements OnInit, OnDestroy {
     const u = this.user() as any;
     if (!u) return '';
     if (u.isCommunauteUser) {
-      if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
-      if (u.prenom && u.nom) return `${u.prenom} ${u.nom}`;
-      return u.login || u.matricule || 'Employé';
+      return u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.login || u.matricule || 'Employé';
     }
-    if (u.userType === 'company') return u.companyName || 'Entreprise';
-    return `${u.firstName} ${u.lastName}`;
+    return u.userType === 'company' ? u.companyName || 'Entreprise' : `${u.firstName} ${u.lastName}`;
   }
 
   roleLabel(): string {
@@ -211,12 +237,15 @@ export class TopbarComponent implements OnInit, OnDestroy {
     if (u.isCommunauteUser && u.role === 'Chargé de compte') return 'Chargé de compte';
     if (u.isCommunauteUser && u.role === 'Administrateur') return 'Admin';
     if (u.isCommunauteUser) return u.poste || 'Employé';
-    if (u.userType === 'company') return 'Gérant';
-    return 'Individuel';
+    return u.userType === 'company' ? 'Gérant' : 'Individuel';
+  }
+
+  userEmail(): string {
+    return (this.user() as any)?.email || '';
   }
 
   toggleUserMenu(): void {
-    this.userMenuOpen.update((v) => !v);
+    this.userMenuOpen.update(v => !v);
   }
 
   closeMenu(): void {
@@ -233,18 +262,6 @@ export class TopbarComponent implements OnInit, OnDestroy {
 
   openQuickPointage(): void {
     this.router.navigate(['/pointages']);
-  }
-
-  userEmail(): string {
-    const u = this.user() as any;
-    if (!u) return '';
-    return u.email || '';
-  }
-
-  onBlur(): void {
-    setTimeout(() => {
-      this.showSearchResults.set(false);
-    }, 200);
   }
 
   async logout(): Promise<void> {

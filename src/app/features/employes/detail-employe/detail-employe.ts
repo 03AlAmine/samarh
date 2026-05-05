@@ -198,6 +198,34 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     }
   }
+  // detail-employe.ts - ajouter ces méthodes
+
+  /**
+   * Copie le PIN dans le presse-papier
+   */
+  async copyPinToClipboard(pin: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(pin);
+      this.toast.success('PIN copié dans le presse-papier');
+    } catch {
+      this.toast.error('Impossible de copier');
+    }
+  }
+
+  /**
+   * Génère un nouveau PIN pour un employé
+   */
+  async generatePinForEmploye(id: string): Promise<void> {
+    const pin = this.employeService.generateRandomPin();
+    try {
+      await this.employeService.updatePin(id, pin);
+      const updated = await this.employeService.getById(id);
+      this.employe.set(updated);
+      this.toast.success(`PIN généré : ${pin}`, 5000);
+    } catch (error) {
+      this.toast.error('Erreur lors de la génération du PIN');
+    }
+  }
 
   /**
    * Charge les services que l'employé gère (en tant que responsable)

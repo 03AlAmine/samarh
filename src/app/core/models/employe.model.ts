@@ -48,6 +48,10 @@ export interface Employe {
 
   // Pour compatibilité avec l'existant
   estChargeCompte?: boolean;
+
+  pin?: string; // Code PIN à 4 chiffres
+  pinDefined?: boolean; // Flag si le PIN est défini
+  pinLastUpdate?: string;
 }
 
 // employe.model.ts - ajouter/modifier l'interface Service

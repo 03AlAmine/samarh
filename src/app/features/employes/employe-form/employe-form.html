@@ -1,5 +1,7 @@
+<!-- employe-form.html - avec champ PIN ajouté -->
 <!-- ─── FORMULAIRE EMPLOYÉ ────────────────────────────────────────────────── -->
-<form [formGroup]="form" (ngSubmit)="submit()" class="emp-form">
+<form [formGroup]="form" (ngSubmit)="submit()" class="emp-form" autocomplete="off" novalidate>
+
   <!-- ── Onglets ─────────────────────────────────────────────────────────── -->
   <div class="form-tabs">
     <button
@@ -38,7 +40,6 @@
     </button>
   </div>
 
-  <!-- ── Tab Informations ────────────────────────────────────────────────── -->
   <!-- ── Tab Informations ────────────────────────────────────────────────── -->
   @if (activeTab() === 'infos') {
     <div class="form-grid">
@@ -156,9 +157,35 @@
           autocomplete="new-password"
           name="emp_password_{{ employe?.id || 'new' }}"
         />
-        <!--  @if (employe) {
-          <small class="form-hint">Laissez vide pour conserver le mot de passe actuel</small>
-        }-->
+      </div>
+
+      <!-- ✅ Code PIN -->
+      <div class="form-group">
+        <label class="form-label">
+          Code PIN (4 chiffres)
+          <span class="pin-hint">pour pointage sans badge</span>
+        </label>
+        <div class="pin-input-group">
+          <input
+            class="form-control pin-input"
+            [type]="showPin() ? 'text' : 'password'"
+            formControlName="pin"
+            maxlength="4"
+            placeholder="••••"
+            autocomplete="off"
+            name="emp_pin_{{ employe?.id || 'new' }}"
+            (input)="validatePin($event)"
+          />
+          <button type="button" class="btn-generate-pin" (click)="generateRandomPin()" title="Générer un PIN aléatoire">
+            🎲
+          </button>
+          <button type="button" class="btn-show-pin" (click)="togglePinVisibility()" title="Afficher/Masquer">
+            <span class="pin-eye">{{ showPin() ? '👁' : '👁‍🗨' }}</span>
+          </button>
+        </div>
+        <small class="form-hint pin-info">
+          Code confidentiel pour pointer sans badge en cas d'oubli de carte
+        </small>
       </div>
     </div>
   }

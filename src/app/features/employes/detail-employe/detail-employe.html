@@ -48,7 +48,7 @@
       </div>
       <div class="stat-divider"></div>
       <div class="stat-mini">
-        <span class="stat-value">{{ e.dateEmbauche | date:'dd/MM/yyyy'  }}</span>
+        <span class="stat-value">{{ e.dateEmbauche | date: 'dd/MM/yyyy' }}</span>
         <span class="stat-label">Ancienneté</span>
       </div>
     </div>
@@ -218,9 +218,39 @@
               ><span>{{ e.salaireBase | number }} FCFA</span>
             </div>
           }
+          <!-- detail-employe.html - ajouter dans la section Informations professionnelles -->
+
           <div class="info-row">
             <span class="info-key">Login app</span><span>{{ e.login || '—' }}</span>
           </div>
+
+          <!-- ✅ Ajouter l'affichage du PIN (admin uniquement) -->
+          @if (isAdmin) {
+            <div class="info-row">
+              <span class="info-key">Code PIN</span>
+              <span class="pin-value">
+                <code>{{ e.pin || 'Non défini' }}</code>
+                @if (e.pin) {
+                  <button
+                    class="btn-copy-pin"
+                    (click)="copyPinToClipboard(e.pin)"
+                    title="Copier le PIN"
+                  >
+                    📋
+                  </button>
+                }
+                @if (!e.pin) {
+                  <button
+                    class="btn-generate-pin"
+                    (click)="generatePinForEmploye(e.id)"
+                    title="Générer un PIN"
+                  >
+                    🎲 Générer
+                  </button>
+                }
+              </span>
+            </div>
+          }
           <!-- ✅ Affichage du rôle -->
           <div class="info-row">
             <span class="info-key">Rôle</span>

@@ -19,7 +19,7 @@ export class EmployeService {
 
   /** Tous les employés actifs (temps réel) */
   employes$: Observable<Employe[]> = this.fb.clientReady$.pipe(
-    filter(ready => ready),
+    filter((ready) => ready),
     take(1),
     switchMap(() => this.fb.clientListenList<Employe>('Employe')),
     map((list) => list.filter((e) => e.statut !== 'archive')),
@@ -28,7 +28,7 @@ export class EmployeService {
 
   /** Tous les services (temps réel) */
   services$: Observable<Service[]> = this.fb.clientReady$.pipe(
-    filter(ready => ready),
+    filter((ready) => ready),
     take(1),
     switchMap(() => this.fb.clientListenList<Service>('Service')),
     shareReplay(1),
@@ -78,14 +78,13 @@ export class EmployeService {
     const employes = await this.getAll();
 
     // Trouver l'employé par login (insensible à la casse pour plus de tolérance)
-    const employe = employes.find(
-      (e) => e.login?.toLowerCase() === login.toLowerCase().trim(),
-    );
+    const employe = employes.find((e) => e.login?.toLowerCase() === login.toLowerCase().trim());
 
     if (!employe) return null;
 
     // Le hash stocké peut être dans mdp, password ou motDePasse
-    const storedHash: string = (employe as any).mdp || employe.password || (employe as any).motDePasse || '';
+    const storedHash: string =
+      (employe as any).mdp || employe.password || (employe as any).motDePasse || '';
 
     if (!storedHash) return null;
 
@@ -143,5 +142,51 @@ export class EmployeService {
         e.matricule?.toLowerCase().includes(q) ||
         e.poste?.toLowerCase().includes(q),
     );
+  }
+
+  // employe.service.ts - ajouter cette méthode
+
+  /**
+   * Vérifie le code PIN d'un employé
+   * @param matricule Matricule de l'employé
+   * @param pin Code PIN à 4 chiffres
+   */
+  async verifyEmployePin(matricule: string, pin: string): Promise<Employe | null> {
+    console.log('🔍 Vérification PIN pour matricule:', matricule);
+
+    const employes = await this.getAll();
+    const employe = employes.find((e) => e.matricule === matricule);
+
+    if (!employe) {
+      console.log('❌ Employé non trouvé');
+      return null;
+    }
+
+    // Vérifier le PIN (comparaison directe pour l'instant)
+    if (employe.pin === pin) {
+      console.log('✅ PIN valide pour:', employe.prenom, employe.nom);
+      return employe;
+    }
+
+    console.log('❌ PIN invalide');
+    return null;
+  }
+
+  /**
+   * Génère un PIN aléatoire pour un employé
+   */
+  generateRandomPin(): string {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  }
+
+  /**
+   * Met à jour le PIN d'un employé
+   */
+  async updatePin(id: string, pin: string): Promise<void> {
+    await this.update(id, {
+      pin,
+      pinDefined: true,
+      pinLastUpdate: new Date().toISOString(),
+    });
   }
 }
