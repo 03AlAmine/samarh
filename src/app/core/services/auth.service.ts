@@ -1,6 +1,4 @@
-// ─── AUTH SERVICE ─────────────────────────────────────────────────────────────
-// Gère l'authentification Firebase ET la session employé (sans Firebase Auth).
-// Remplace : auth.service, firebase-config.service (logique session)
+// auth.service.ts - version corrigée
 
 import { Injectable, inject } from '@angular/core';
 import {
@@ -15,11 +13,11 @@ import {
 } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, filter, firstValueFrom } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { AppUser, EmployeeUser, Communaute, FirebaseClientConfig } from '../models/user.model';
+import { AppUser, EmployeeUser, Communaute } from '../models/user.model';
 import { FirebaseService } from './firebase.service';
 
-const SESSION_KEY = 'communauteSession';
+const EMPLOYEE_SESSION_KEY = 'communauteSession';
+const ADMIN_SESSION_KEY = 'adminSession';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -28,63 +26,117 @@ export class AuthService {
   private fb = inject(FirebaseService);
 
   private userSubject = new BehaviorSubject<AppUser | null>(null);
-  /** Stream de l'utilisateur courant */
   user$ = this.userSubject.asObservable();
-
-  /** Vrai dès que l'initialisation est terminée (guards peuvent passer) */
   authReady$ = new BehaviorSubject<boolean>(false);
-  authInitialized: any;
+
+  private isAuthInitialized = false;
 
   constructor() {
     this.init();
   }
 
-  // ── INIT ──────────────────────────────────────────────────────────────────
-
   private async init(): Promise<void> {
-    // 1. Restaurer session communauté (synchrone, pas de flash)
-    const restored = this.restoreSessionFromStorage();
+    if (this.isAuthInitialized) return;
+    this.isAuthInitialized = true;
 
-    if (!restored) {
-      // 2. Écouter Firebase Auth pour les admins / gérants
-      this.auth.onAuthStateChanged(async (firebaseUser) => {
-        if (firebaseUser) {
-          const userData = await this.fb.adminGet<AppUser>(`users/${firebaseUser.uid}`);
-          if (userData) {
-            this.userSubject.next(userData);
-            await this.loadCommunauteDb(userData);
+    // 1. D'abord, essayer de restaurer une session admin
+    const adminRestored = this.restoreAdminSession();
+
+    if (!adminRestored) {
+      // 2. Sinon, essayer de restaurer une session employé
+      const employeeRestored = this.restoreEmployeeSession();
+
+      if (!employeeRestored) {
+        // 3. Enfin, écouter Firebase Auth
+        this.auth.onAuthStateChanged(async (firebaseUser) => {
+          console.log('🔐 onAuthStateChanged - firebaseUser:', firebaseUser?.uid);
+
+          if (firebaseUser) {
+            const userData = await this.fb.adminGet<AppUser>(`users/${firebaseUser.uid}`);
+            console.log('👤 userData récupéré:', userData?.userType);
+
+            if (userData) {
+              const userWithId = { ...userData, uid: firebaseUser.uid };
+              this.userSubject.next(userWithId);
+              this.saveAdminSession(userWithId);
+              await this.loadCommunauteDb(userWithId);
+            } else {
+              this.userSubject.next(null);
+            }
+          } else {
+            this.userSubject.next(null);
           }
-        } else {
-          this.userSubject.next(null);
-        }
-        this.authReady$.next(true);
-      });
+          this.authReady$.next(true);
+        });
+      }
     }
-    // Si restored=true, authReady$ est émis dans restoreSessionFromStorage()
-    // après l'initialisation de la base client (voir .then() ci-dessus)
   }
 
-  // ── SESSION COMMUNAUTÉ (employé sans Firebase Auth) ───────────────────────
+  // ✅ Session Admin
+  private saveAdminSession(user: AppUser): void {
+    const sessionData = {
+      uid: (user as any).uid,
+      userType: user.userType,
+      communauteId: (user as any).communauteId,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      timestamp: Date.now(),
+      isAdmin: true,
+    };
+    sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData));
+    // Nettoyer toute session employé existante
+    sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
+  }
 
-  private restoreSessionFromStorage(): boolean {
+  private restoreAdminSession(): boolean {
     try {
-      const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+      const raw = sessionStorage.getItem(ADMIN_SESSION_KEY);
+      if (!raw) return false;
+
+      const session = JSON.parse(raw);
+      if (!session.uid) return false;
+
+      // Session expirée après 24h
+      if (session.timestamp && session.timestamp < Date.now() - 24 * 60 * 60 * 1000) {
+        sessionStorage.removeItem(ADMIN_SESSION_KEY);
+        return false;
+      }
+
+      const user: any = {
+        uid: session.uid,
+        userType: session.userType,
+        email: session.email,
+        firstName: session.firstName,
+        lastName: session.lastName,
+        communauteId: session.communauteId,
+      };
+
+      this.userSubject.next(user);
+      console.log('✅ Session admin restaurée');
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // ✅ Session Employé
+  private restoreEmployeeSession(): boolean {
+    try {
+      const raw = sessionStorage.getItem(EMPLOYEE_SESSION_KEY) || localStorage.getItem(EMPLOYEE_SESSION_KEY);
       if (!raw) return false;
 
       const session = JSON.parse(raw);
       if (!session.communauteId || !session.login) return false;
 
-      // Expiration localStorage
       if (session.expiry && session.expiry < Date.now()) {
-        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(EMPLOYEE_SESSION_KEY);
         return false;
       }
 
       const user: EmployeeUser = this.buildEmployeeUser(session);
       this.userSubject.next(user);
 
-      // Charger la DB client — authReady ne passe à true qu'APRÈS init
-      // pour éviter la race condition "Base client non initialisée"
       this.fb
         .adminGet<Communaute>(`communautes/${session.communauteId}`)
         .then(async (communaute) => {
@@ -94,48 +146,21 @@ export class AuthService {
           this.authReady$.next(true);
         })
         .catch(() => {
-          this.authReady$.next(true); // laisser passer même en cas d'erreur réseau
+          this.authReady$.next(true);
         });
 
-      // NE PAS émettre authReady$ ici — c'est fait dans le .then() ci-dessus
+      console.log('✅ Session employé restaurée');
       return true;
     } catch {
       return false;
     }
   }
 
-  /** Connexion d'un employé via login/mot de passe communauté */
-  async loginCommunaute(employe: any, communauteId: string, rememberMe = false): Promise<void> {
-    const user: EmployeeUser = this.buildEmployeeUser({ ...employe, communauteId });
-    this.userSubject.next(user);
-
-    // Charger la base Firebase de la communauté
-    const communaute = await this.fb.adminGet<Communaute>(`communautes/${communauteId}`);
-    if (communaute?.firebaseConfig) {
-      await this.fb.initClientDatabase(communaute.firebaseConfig, communauteId);
-    }
-
-    // Sauvegarder la session
-    const sessionData = {
-      uid: employe.id || '',
-      login: employe.login || '',
-      nom: employe.nom || '',
-      prenom: employe.prenom || '',
-      matricule: employe.matricule || '',
-      services: employe.services || [],
-      communauteId,
-      communauteNom: communaute?.nom || '',
-      timestamp: Date.now(),
-      ...(rememberMe ? { expiry: Date.now() + 30 * 24 * 60 * 60 * 1000 } : {}),
-    };
-
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-    if (rememberMe) localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-  }
-
-  // ── FIREBASE AUTH (admin / gérant) ────────────────────────────────────────
+  // ── CONNEXION ADMIN ────────────────────────────────────────────────────────
 
   async login(email: string, password: string, rememberMe = false): Promise<void> {
+    console.log('🔐 Connexion admin:', email);
+
     const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
     await setPersistence(this.auth, persistence);
 
@@ -149,8 +174,49 @@ export class AuthService {
 
     await this.fb.adminUpdate(`users/${cred.user.uid}`, { lastLogin: new Date().toISOString() });
     await this.loadCommunauteDb(userData);
-    this.userSubject.next(userData);
+
+    const userWithUid = { ...userData, uid: cred.user.uid };
+    this.saveAdminSession(userWithUid);
+    this.userSubject.next(userWithUid);
+
+    console.log('✅ Admin connecté, session sauvegardée');
   }
+
+  // ── CONNEXION EMPLOYÉ ──────────────────────────────────────────────────────
+
+  async loginCommunaute(employe: any, communauteId: string, rememberMe = false): Promise<void> {
+    // Nettoyer toute session admin existante
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+
+    const user: EmployeeUser = this.buildEmployeeUser({ ...employe, communauteId });
+    this.userSubject.next(user);
+
+    const communaute = await this.fb.adminGet<Communaute>(`communautes/${communauteId}`);
+    if (communaute?.firebaseConfig) {
+      await this.fb.initClientDatabase(communaute.firebaseConfig, communauteId);
+    }
+
+    const sessionData = {
+      uid: employe.id || '',
+      login: employe.login || '',
+      nom: employe.nom || '',
+      prenom: employe.prenom || '',
+      matricule: employe.matricule || '',
+      services: employe.services || [],
+      role: employe.role || '',
+      communauteId,
+      communauteNom: communaute?.nom || '',
+      timestamp: Date.now(),
+      ...(rememberMe ? { expiry: Date.now() + 30 * 24 * 60 * 60 * 1000 } : {}),
+    };
+
+    sessionStorage.setItem(EMPLOYEE_SESSION_KEY, JSON.stringify(sessionData));
+    if (rememberMe) localStorage.setItem(EMPLOYEE_SESSION_KEY, JSON.stringify(sessionData));
+
+    console.log('✅ Employé connecté, session sauvegardée');
+  }
+
+  // ── INSCRIPTION ────────────────────────────────────────────────────────────
 
   async register(userData: any): Promise<void> {
     const cred = await createUserWithEmailAndPassword(this.auth, userData.email, userData.password);
@@ -177,26 +243,7 @@ export class AuthService {
     }
   }
 
-  async logout(): Promise<void> {
-    sessionStorage.removeItem(SESSION_KEY);
-    // Conserver la session "se souvenir de moi" seulement si expiry > now
-    const local = localStorage.getItem(SESSION_KEY);
-    if (local) {
-      const parsed = JSON.parse(local);
-      if (!parsed.expiry || parsed.expiry < Date.now()) {
-        localStorage.removeItem(SESSION_KEY);
-      }
-    }
-
-    if (this.auth.currentUser) {
-      await signOut(this.auth);
-    }
-
-    this.userSubject.next(null);
-    this.router.navigate(['/login']);
-  }
-
-  // ── GESTION INSCRIPTIONS ──────────────────────────────────────────────────
+  // ── GESTION DES INSCRIPTIONS ───────────────────────────────────────────────
 
   async approveUser(userId: string, adminId: string): Promise<void> {
     const userData = await this.fb.adminGet<any>(`users/${userId}`);
@@ -211,17 +258,17 @@ export class AuthService {
       [`pending_users/${userId}/reviewDate`]: now,
     };
 
-    // Créer une communauté si ce n'est pas un employé
     if (userData.userType !== 'employee') {
       const communauteId = await this.createCommunaute(userData);
       updates[`users/${userId}/communauteId`] = communauteId;
     }
 
     await this.fb.adminUpdate('', updates);
+
     await this.fb.adminSet(`notifications/${userId}/${Date.now()}`, {
       type: 'account_approved',
       title: 'Compte activé',
-      message: 'Votre compte a été approuvé.',
+      message: 'Votre compte a été approuvé. Vous pouvez maintenant vous connecter.',
       createdAt: now,
       read: false,
     });
@@ -233,12 +280,45 @@ export class AuthService {
       [`users/${userId}/status`]: 'rejected',
       [`users/${userId}/rejectedAt`]: now,
       [`users/${userId}/rejectionReason`]: reason,
+      [`users/${userId}/rejectedBy`]: adminId,
       [`pending_users/${userId}/status`]: 'rejected',
       [`pending_users/${userId}/reviewDate`]: now,
+      [`pending_users/${userId}/rejectionReason`]: reason,
+    });
+
+    await this.fb.adminSet(`notifications/${userId}/${Date.now()}`, {
+      type: 'account_rejected',
+      title: 'Compte refusé',
+      message: `Votre demande d'inscription a été refusée. Raison: ${reason}`,
+      createdAt: now,
+      read: false,
     });
   }
 
-  // ── HELPERS ───────────────────────────────────────────────────────────────
+  // ── DÉCONNEXION ────────────────────────────────────────────────────────────
+
+  async logout(): Promise<void> {
+    // Nettoyer toutes les sessions
+    sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+
+    const local = localStorage.getItem(EMPLOYEE_SESSION_KEY);
+    if (local) {
+      const parsed = JSON.parse(local);
+      if (!parsed.expiry || parsed.expiry < Date.now()) {
+        localStorage.removeItem(EMPLOYEE_SESSION_KEY);
+      }
+    }
+
+    if (this.auth.currentUser) {
+      await signOut(this.auth);
+    }
+
+    this.userSubject.next(null);
+    this.router.navigate(['/login']);
+  }
+
+  // ── HELPERS ────────────────────────────────────────────────────────────────
 
   private async loadCommunauteDb(user: AppUser): Promise<void> {
     const communauteId = (user as any).communauteId;
@@ -250,10 +330,9 @@ export class AuthService {
   }
 
   private async createCommunaute(userData: any): Promise<string> {
-    const nom =
-      userData.userType === 'company'
-        ? userData.companyName
-        : `${userData.firstName} ${userData.lastName}`;
+    const nom = userData.userType === 'company'
+      ? userData.companyName
+      : `${userData.firstName} ${userData.lastName}`;
 
     const id = await this.fb.adminPush('communautes', {
       uidAdmin: userData.uid,
@@ -268,20 +347,13 @@ export class AuthService {
   }
 
   private buildEmployeeUser(session: any): EmployeeUser {
-    // Gérer le cas où prenom est vide mais nom contient le nom complet
     let firstName = session.prenom || '';
     let lastName = session.nom || '';
 
-    // Si prenom est vide mais nom contient un espace (ex: "Aminata Thiam")
     if (!firstName && lastName && lastName.includes(' ')) {
       const parts = lastName.trim().split(/\s+/);
-      firstName = parts[0]; // "Aminata"
-      lastName = parts.slice(1).join(' '); // "Thiam"
-    }
-
-    // Si prenom est vide et nom n'a pas d'espace, on met tout dans lastName
-    if (!firstName && lastName) {
-      // lastName reste tel quel, firstName reste vide
+      firstName = parts[0];
+      lastName = parts.slice(1).join(' ');
     }
 
     return {
@@ -304,7 +376,8 @@ export class AuthService {
       communauteNom: session.communauteNom || '',
     };
   }
-  // ── GETTERS ───────────────────────────────────────────────────────────────
+
+  // ── GETTERS ────────────────────────────────────────────────────────────────
 
   get currentUser(): AppUser | null {
     return this.userSubject.value;
@@ -314,21 +387,14 @@ export class AuthService {
     return this.userSubject.value !== null;
   }
 
-  /**
-   * Retourne true si l'utilisateur peut gérer un service donné.
-   * Admin communauté → tous les services.
-   * Chargé de compte → uniquement les services listés dans u.services[].
-   */
   canManageService(serviceMatricule: string): boolean {
     if (this.isAdmin) return true;
     const u = this.userSubject.value as any;
     if (!u) return false;
-    // services est un array de matricules de services
     if (Array.isArray(u.services) && u.services.includes(serviceMatricule)) return true;
     return false;
   }
 
-  /** True si l'utilisateur peut ajouter/modifier des employés (admin ou chargé d'au moins 1 service) */
   get canEditEmployes(): boolean {
     if (this.isAdmin) return true;
     const u = this.userSubject.value as any;
@@ -339,22 +405,15 @@ export class AuthService {
   get isAdmin(): boolean {
     const u = this.userSubject.value as any;
     if (!u) return false;
+
     // Super admin SaaS
     if (u.userType === 'admin') return true;
-    // Employé communauté avec rôle admin :
-    //   - services = "Tous" (string)  ← cas Firebase réel
-    //   - services = ["Tous"] (array) ← cas normalisé
-    //   - role = "Administrateur"     ← champ role explicite
+
+    // Admin communauté via rôle
     if (u.services === 'Tous') return true;
     if (Array.isArray(u.services) && u.services[0] === 'Tous') return true;
     if (u.role === 'Administrateur' || u.role === 'admin') return true;
-    // Gérant de communauté connecté via Firebase Auth (company ou individual avec communauteId)
-    if (
-      !u.isCommunauteUser &&
-      u.communauteId &&
-      (u.userType === 'company' || u.userType === 'individual')
-    )
-      return true;
+
     return false;
   }
 
@@ -366,7 +425,6 @@ export class AuthService {
     return (this.userSubject.value as any)?.communauteId ?? null;
   }
 
-  /** Route par défaut selon le rôle */
   getDefaultRoute(): string {
     const user: any = this.currentUser;
     if (!user) return '/login';
@@ -376,7 +434,6 @@ export class AuthService {
     return '/dashboard';
   }
 
-  /** Attend que l'auth soit prête (pour les guards) */
   waitForAuth(): Promise<boolean> {
     return firstValueFrom(this.authReady$.pipe(filter((ready) => ready)));
   }

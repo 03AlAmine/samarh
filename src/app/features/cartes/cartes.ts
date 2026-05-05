@@ -1,16 +1,11 @@
-// cartes.ts - version avec impression directe (sans popup)
 import {
   Component,
   inject,
   signal,
   computed,
   OnInit,
-  AfterViewInit,
   ChangeDetectionStrategy,
   DestroyRef,
-  ElementRef,
-  ViewChildren,
-  QueryList,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,7 +13,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import * as QRCode from 'qrcode';
 import { EmployeService } from '../../core/services/employe.service';
 import { AuthService } from '../../core/services/auth.service';
-import { RoleFilterService } from '../../core/services/role-filter.service';
 import { Employe, Service } from '../../core/models/employe.model';
 
 type Style = 'moderne' | 'minimal' | 'premium';
@@ -32,13 +26,10 @@ type Format = 'paysage' | 'portrait';
   templateUrl: './cartes.html',
   styleUrls: ['./cartes.scss'],
 })
-export class CartesComponent implements OnInit, AfterViewInit {
+export class CartesComponent implements OnInit {
   private employeService = inject(EmployeService);
   private destroyRef = inject(DestroyRef);
   private auth = inject(AuthService);
-  private roleFilter = inject(RoleFilterService);
-
-  @ViewChildren('qrCanvas') qrCanvases!: QueryList<ElementRef<HTMLCanvasElement>>;
 
   allEmployes = signal<Employe[]>([]);
   allServices = signal<Service[]>([]);
@@ -50,8 +41,12 @@ export class CartesComponent implements OnInit, AfterViewInit {
   couleur = signal('#4f7df3');
   selected = signal<Set<string>>(new Set());
   page = signal(1);
-  readonly PAGE = 12;
 
+  // ── Map id → data URL PNG du QR code ─────────────────────────────────────
+  // Généré une fois, jamais de canvas dans le template
+  qrDataUrls = signal<Map<string, string>>(new Map());
+
+  readonly PAGE = 12;
   readonly presetColors = [
     '#4f7df3',
     '#10b981',
@@ -67,28 +62,32 @@ export class CartesComponent implements OnInit, AfterViewInit {
     return this.auth.isAdmin;
   }
 
-  get canEdit() {
-    return this.auth.canEditEmployes;
-  }
-
+  // Services visibles selon le rôle
   servicesVisibles = computed((): Service[] => {
-    return this.roleFilter.filterServices(this.allServices());
+    if (this.isAdmin) return this.allServices();
+    const u = (this.auth as any)['userSubject']?.value as any;
+    if (!u || !Array.isArray(u.services)) return [];
+    return this.allServices().filter((s) => u.services.includes(s.matricule));
   });
 
+  // Employés visibles selon le rôle
   employesVisibles = computed((): Employe[] => {
-    return this.roleFilter.filterEmployes(this.allEmployes());
+    if (this.isAdmin) return this.allEmployes();
+    const u = (this.auth as any)['userSubject']?.value as any;
+    if (!u || !Array.isArray(u.services) || u.services.length === 0) return [];
+    return this.allEmployes().filter((e) => u.services.includes(e.service));
   });
 
   filtered = computed(() => {
     const q = this.search().toLowerCase();
     const svc = this.filterSvc();
     return this.employesVisibles().filter((e) => {
-      const ok =
+      const okQ =
         !q ||
         `${e.prenom} ${e.nom}`.toLowerCase().includes(q) ||
         (e.matricule || '').toLowerCase().includes(q);
       const okSvc = !svc || e.service === svc;
-      return ok && okSvc;
+      return okQ && okSvc;
     });
   });
 
@@ -103,7 +102,7 @@ export class CartesComponent implements OnInit, AfterViewInit {
     this.employeService.employes$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((list) => {
       this.allEmployes.set(list);
       this.loading.set(false);
-      setTimeout(() => this.generateQRCodes(), 500);
+      this.generateQRCodes(list);
     });
 
     this.employeService.services$
@@ -111,54 +110,56 @@ export class CartesComponent implements OnInit, AfterViewInit {
       .subscribe((list) => this.allServices.set(list));
   }
 
-  ngAfterViewInit(): void {
-    this.qrCanvases.changes.subscribe(() => {
-      setTimeout(() => this.generateQRCodes(), 100);
-    });
-    setTimeout(() => this.generateQRCodes(), 100);
+  // ── Génération QR codes en data URL ──────────────────────────────────────
+  // cartes.ts - modifier la méthode generateQRCodes
+
+  private async generateQRCodes(employes: Employe[]): Promise<void> {
+    const map = new Map<string, string>();
+
+    await Promise.all(
+      employes.map(async (e) => {
+        if (!e.id) return;
+        // ✅ Le QR code contient le MATRICULE (pas une URL)
+        const content = e.matricule || e.id;
+        try {
+          const dataUrl = await QRCode.toDataURL(content, {
+            width: 64,
+            margin: 1,
+            color: { dark: '#111827', light: '#ffffff' },
+          });
+          map.set(e.id, dataUrl);
+        } catch {
+          /* ignore */
+        }
+      }),
+    );
+
+    this.qrDataUrls.set(map);
   }
 
-  generateQRCodes(): void {
-    const canvases = this.qrCanvases.toArray();
-    for (const canvas of canvases) {
-      const matricule = canvas.nativeElement.getAttribute('data-matricule');
-      if (matricule && canvas.nativeElement && matricule !== '—') {
-        const url = `${window.location.origin}/employes/${matricule}`;
-        QRCode.toCanvas(canvas.nativeElement, url, {
-          width: 46,
-          margin: 0.5,
-          color: {
-            dark: '#000000',
-            light: '#ffffff',
-          },
-        }).catch((err) => console.error('QR Code generation error:', err));
-      }
-    }
+  getQR(id: string): string {
+    return this.qrDataUrls().get(id) || '';
   }
 
+  // ── Sélection ─────────────────────────────────────────────────────────────
   toggleSelect(id: string): void {
-    const employe = this.employesVisibles().find((e) => e.id === id);
-    if (!employe) return;
-
     this.selected.update((s) => {
       const n = new Set(s);
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });
   }
-
   isSelected(id: string): boolean {
     return this.selected().has(id);
   }
-
   selectAll(): void {
-    this.selected.update(() => new Set(this.filtered().map((e) => e.id)));
+    this.selected.set(new Set(this.filtered().map((e) => e.id)));
   }
-
   clearSelection(): void {
     this.selected.set(new Set());
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
   getServiceNom(matricule?: string): string {
     if (!matricule) return '';
     return this.allServices().find((s) => s.matricule === matricule)?.nom || '';
@@ -180,293 +181,131 @@ export class CartesComponent implements OnInit, AfterViewInit {
   }
 
   initials(e: Employe): string {
-    if (e.prenom) {
-      return `${e.prenom[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
-    }
+    if (e.prenom) return `${e.prenom[0]}${(e.nom || '')[0] || ''}`.toUpperCase();
     const parts = (e.nom || '').trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     return (e.nom || '').substring(0, 2).toUpperCase();
   }
 
-  /**
-   * Impression directe - sans popup
-   * Injecte un iframe caché qui contient les cartes à imprimer
-   */
-  imprimerSelection(): void {
-    const cartesASelect = this.selected().size > 0
-      ? this.filtered().filter(e => this.selected().has(e.id))
-      : this.filtered();
+  getCouleurStyle(): string {
+    return this.couleur();
+  }
 
-    if (cartesASelect.length === 0) {
+  // ── Impression ────────────────────────────────────────────────────────────
+  imprimerSelection(): void {
+    const cibles =
+      this.selected().size > 0
+        ? this.filtered().filter((e) => this.selected().has(e.id))
+        : this.filtered();
+
+    if (cibles.length === 0) {
       alert('Aucune carte à imprimer');
       return;
     }
 
-    // Créer un iframe caché
     const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
+    iframe.style.cssText = 'position:absolute;width:0;height:0;border:none';
     document.body.appendChild(iframe);
 
-    const html = this.generatePrintHTML(cartesASelect);
-    const iframeDoc = iframe.contentWindow?.document;
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
 
-    if (iframeDoc) {
-      iframeDoc.open();
-      iframeDoc.write(html);
-      iframeDoc.close();
+    doc.open();
+    doc.write(this.buildPrintHTML(cibles));
+    doc.close();
 
-      // Attendre que les QR codes soient générés
-      setTimeout(() => {
-        iframe.contentWindow?.print();
-
-        // Supprimer l'iframe après impression
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 100);
-      }, 1000);
-    }
+    // Les data URLs sont déjà dans le HTML, pas besoin d'attendre
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      setTimeout(() => document.body.removeChild(iframe), 500);
+    }, 300);
   }
 
-  private generatePrintHTML(employes: Employe[]): string {
-    let cartesHTML = '';
+  private buildPrintHTML(employes: Employe[]): string {
+    const couleur = this.couleur();
+    const style = this.styleCarte();
+    const isPort = this.format() === 'portrait';
 
-    for (const e of employes) {
-      const hasPhoto = e.image && e.image.trim() !== '';
-      const serviceNom = this.getServiceNom(e.service);
-      const avatarBg = this.avatarColor(e.id);
-      const initials = this.initials(e);
-      const isPortrait = this.format() === 'portrait';
+    const cartes = employes
+      .map((e) => {
+        const qr = this.getQR(e.id);
+        const svcNom = this.getServiceNom(e.service);
+        const bg = this.avatarColor(e.id);
+        const ini = this.initials(e);
 
-      cartesHTML += `
-        <div class="carte ${this.styleCarte()} ${isPortrait ? 'portrait' : ''}">
+        return `
+        <div class="carte ${style}${isPort ? ' portrait' : ''}">
           <div class="carte-header">
-            ${hasPhoto ? `
-              <img class="carte-photo" src="${e.image}" alt="${e.prenom} ${e.nom}">
-            ` : `
-              <div class="carte-avatar" style="background:${avatarBg}">${initials}</div>
-            `}
+            ${
+              e.image
+                ? `<img class="carte-photo" src="${e.image}" alt="${this.esc(e.prenom)} ${this.esc(e.nom)}">`
+                : `<div class="carte-avatar" style="background:${bg}">${ini}</div>`
+            }
             <div class="carte-id">
-              <span class="carte-nom">${this.escapeHtml(e.prenom)} ${this.escapeHtml(e.nom)}</span>
-              <span class="carte-poste">${this.escapeHtml(e.poste || 'Employé')}</span>
+              <span class="carte-nom">${this.esc(e.prenom)} ${this.esc(e.nom)}</span>
+              <span class="carte-poste">${this.esc(e.poste || 'Employé')}</span>
             </div>
           </div>
           <div class="carte-body">
-            ${serviceNom ? `<div class="carte-service">${this.escapeHtml(serviceNom)}</div>` : ''}
+            ${svcNom ? `<div class="carte-service">${this.esc(svcNom)}</div>` : ''}
             <div class="carte-matricule">${e.matricule || '—'}</div>
-            <div class="carte-qr-placeholder">
-              <canvas class="qr-canvas" data-matricule="${e.matricule}" width="46" height="46"></canvas>
-              <span class="qr-label">${e.matricule}</span>
-            </div>
+            ${
+              style !== 'minimal' && qr
+                ? `
+              <div class="carte-qr">
+                <img src="${qr}" width="52" height="52" alt="QR ${e.matricule}">
+                <span class="qr-label">${e.matricule || ''}</span>
+              </div>`
+                : ''
+            }
           </div>
           <div class="carte-footer">
             <span class="carte-org">SamaRH</span>
-            <span class="carte-badge valid">Valide</span>
+            <span class="carte-badge">Valide</span>
           </div>
-        </div>
-      `;
-    }
+        </div>`;
+      })
+      .join('');
 
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Cartes employés - SamaRH</title>
-        <meta charset="UTF-8">
-        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: white;
-            padding: 20px;
-          }
-          @media print {
-            body { padding: 0; }
-            .carte { break-inside: avoid; page-break-inside: avoid; }
-          }
-
-          /* Grille des cartes */
-          .cartes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 16px;
-          }
-
-          /* Carte de base */
-          .carte {
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid #e2e8f0;
-            background: white;
-          }
-
-          /* Style Portrait */
-          .carte.portrait .carte-header {
-            flex-direction: column;
-            text-align: center;
-            padding: 20px 14px 12px;
-          }
-          .carte.portrait .carte-photo,
-          .carte.portrait .carte-avatar {
-            width: 58px;
-            height: 58px;
-          }
-
-          /* Style Moderne */
-          .carte.moderne .carte-header {
-            background: ${this.couleur()};
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-          }
-          .carte.moderne .carte-body { padding: 12px 14px; }
-          .carte.moderne .carte-footer { padding: 8px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
-
-          /* Style Minimal */
-          .carte.minimal .carte-header {
-            background: #f8fafc;
-            padding: 14px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-          }
-          .carte.minimal .carte-nom { color: #1e293b !important; }
-          .carte.minimal .carte-poste { color: #64748b !important; }
-
-          /* Style Premium */
-          .carte.premium .carte-header {
-            background: linear-gradient(135deg, ${this.couleur()}, #7c3aed);
-            padding: 18px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-          }
-          .carte.premium .carte-footer {
-            padding: 10px 14px;
-            background: linear-gradient(90deg, #f8fafc, white);
-            border-top: 1px solid #e2e8f0;
-          }
-
-          /* Éléments communs */
-          .carte-photo, .carte-avatar {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            object-fit: cover;
-            flex-shrink: 0;
-          }
-          .carte-avatar {
-            color: white;
-            font-size: 16px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid rgba(255,255,255,0.3);
-          }
-          .carte-id { flex: 1; min-width: 0; }
-          .carte-nom {
-            display: block;
-            font-size: 14px;
-            font-weight: 700;
-            color: white;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-          .carte-poste {
-            display: block;
-            font-size: 11.5px;
-            color: rgba(255,255,255,0.8);
-            margin-top: 2px;
-          }
-          .carte-service {
-            font-size: 11.5px;
-            font-weight: 600;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 4px;
-          }
-          .carte-matricule {
-            font-family: monospace;
-            font-size: 13px;
-            font-weight: 700;
-            color: #1e293b;
-          }
-          .carte-qr-placeholder {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
-            padding: 6px 8px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-          }
-          .qr-canvas { width: 46px; height: 46px; border-radius: 6px; }
-          .qr-label { font-family: monospace; font-size: 10px; color: #64748b; }
-          .carte-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          }
-          .carte-org {
-            font-size: 11px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-          }
-          .carte-badge {
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 20px;
-            background: #dcfce7;
-            color: #166534;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="cartes-grid">
-          ${cartesHTML}
-        </div>
-        <script>
-          (function() {
-            const canvases = document.querySelectorAll('.qr-canvas');
-            canvases.forEach(function(canvas) {
-              const matricule = canvas.getAttribute('data-matricule');
-              if (matricule && matricule !== '—') {
-                const url = window.location.origin + '/employes/' + encodeURIComponent(matricule);
-                QRCode.toCanvas(canvas, url, { width: 46, height: 46, margin: 0.5 })
-                  .catch(err => console.error('QR Error:', err));
-              }
-            });
-          })();
-        <\/script>
-      </body>
-      </html>
-    `;
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>Cartes employés — SamaRH</title>
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:system-ui,sans-serif;background:#fff;padding:16px}
+      @media print{body{padding:0}.no-print{display:none}}
+      .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+      .carte{border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0}
+      .carte-header{display:flex;align-items:center;gap:12px;padding:14px;background:${couleur}}
+      .carte.minimal .carte-header{background:#f8fafc;border-bottom:1px solid #e2e8f0}
+      .carte.premium .carte-header{background:linear-gradient(135deg,${couleur},#7c3aed)}
+      .carte.portrait .carte-header{flex-direction:column;text-align:center;padding:20px 14px 12px}
+      .carte-photo,.carte-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0}
+      .carte-avatar{color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center}
+      .carte.minimal .carte-avatar{color:#374151}
+      .carte-id{flex:1;min-width:0}
+      .carte-nom{display:block;font-size:13.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .carte.minimal .carte-nom{color:#111827}
+      .carte-poste{display:block;font-size:11px;color:rgba(255,255,255,.8);margin-top:2px}
+      .carte.minimal .carte-poste{color:#6b7280}
+      .carte-body{padding:10px 14px;background:#fff}
+      .carte-service{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+      .carte-matricule{font-family:monospace;font-size:13px;font-weight:700;color:#111827}
+      .carte-qr{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 8px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0}
+      .carte-qr img{border-radius:4px}
+      .qr-label{font-family:monospace;font-size:10px;color:#6b7280}
+      .carte-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#f8fafc;border-top:1px solid #e2e8f0}
+      .carte-org{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase}
+      .carte-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#166534}
+    </style>
+    </head><body><div class="grid">${cartes}</div></body></html>`;
   }
 
-  private escapeHtml(str: string): string {
-    if (!str) return '';
-    return str
+  private esc(s: string): string {
+    return (s || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
-  }
-
-  getCouleurStyle(): string {
-    return this.couleur();
   }
 }

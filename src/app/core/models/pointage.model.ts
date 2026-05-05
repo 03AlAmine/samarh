@@ -44,8 +44,8 @@ export interface PointageCalcule {
   _employeNom?: string;
 }
 
-/** Statistiques individuelles sur une période */
-export interface StatistiquesEmploye {
+/** Statistiques individuelles sur une période (pour les calculs internes) */
+export interface StatistiquesEmployeInterne {
   joursPresents: number;
   joursAbsents: number;
   heuresTravaillees: number;
@@ -56,11 +56,45 @@ export interface StatistiquesEmploye {
   joursRepos: number;
 }
 
+/** Statistiques complètes pour l'affichage (dashboard employé) */
+export interface StatistiquesEmploye {
+  tauxPresence: number;
+  joursPresents: number;
+  joursTotal: number;
+  joursAbsents: number;
+  tauxAbsence: number;
+  nbRetards: number;
+  retardMoyen: number;
+  noteAssiduite: number;
+  heuresTotales: number;
+  meilleureSemaine: string;
+  meilleureSemainePresence: number;
+  tendance: number;
+  classementService: number;
+  totalService: number;
+  heuresTravaillees: number;
+  tauxAssiduite: number;
+  joursFeries: number;
+  joursConges: number;
+  joursRepos: number;
+}
+
+/** Statistiques mensuelles */
+export interface StatsMensuelle {
+  mois: string;
+  joursOuverts: number;
+  presents: number;
+  absents: number;
+  retards: number;
+  tauxPresence: number;
+  evolution: number;
+}
+
 /** Agrégat employé + pointages + stats */
 export interface EmployePointages {
   employe: import('./employe.model').Employe;
   pointages: PointageCalcule[];
-  statistiques: StatistiquesEmploye;
+  statistiques: StatistiquesEmployeInterne;
   tauxPresence: number;
   heuresTotales: number;
   joursAbsents: number;

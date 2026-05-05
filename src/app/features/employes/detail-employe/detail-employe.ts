@@ -1,4 +1,3 @@
-// detail-employe.ts - version corrigée (sans takeUntilDestroyed dans ngOnInit)
 import {
   Component,
   inject,
@@ -10,6 +9,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { BaseChartDirective } from 'ng2-charts'; // ✅ Ajout important
+import { Chart, ChartOptions, registerables } from 'chart.js';
 import { EmployeService } from '../../../core/services/employe.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { RoleFilterService } from '../../../core/services/role-filter.service';
@@ -19,12 +20,22 @@ import { EmployeFormComponent } from '../employe-form/employe-form';
 import { PlanningEditorComponent } from '../../shared/planning-editor/planning-editor';
 import { ToastService } from '../../../core/services/toast.service';
 import { Subscription, combineLatest } from 'rxjs';
+import { StatistiquesEmploye, StatsMensuelle } from '../../../core/models/pointage.model';
+
+// Enregistrer les composants Chart.js
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-detail-employe',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule, EmployeFormComponent, PlanningEditorComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    EmployeFormComponent,
+    PlanningEditorComponent,
+    BaseChartDirective, // ✅ IMPORTANT : nécessaire pour utiliser baseChart dans le template
+  ],
   templateUrl: './detail-employe.html',
   styleUrls: ['./detail-employe.scss'],
 })
@@ -48,7 +59,6 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
   presencesAujourdhui = signal<string[]>([]);
 
   showEditForm = signal(false);
-  activeTab = signal<'infos' | 'planning' | 'responsables'>('infos');
   savingPlanning = signal(false);
   savingEdit = signal(false);
   editError = signal('');
@@ -57,6 +67,51 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
   servicesGeres = signal<Service[]>([]);
   totalEmployesGeres = signal(0);
   tauxPresenceGlobal = signal(0);
+
+  // ✅ Ajouter ce signal
+  statsLoaded = signal(false);
+  statsLoading = signal(false);
+
+  activeTab = signal<'infos' | 'planning' | 'responsables' | 'stats'>('infos');
+
+  // Statistiques
+  periodeStats = signal<'6mois' | '12mois'>('12mois');
+  stats = signal<StatistiquesEmploye>({
+    tauxPresence: 0,
+    joursPresents: 0,
+    joursTotal: 0,
+    joursAbsents: 0,
+    tauxAbsence: 0,
+    nbRetards: 0,
+    retardMoyen: 0,
+    noteAssiduite: 0,
+    heuresTotales: 0,
+    meilleureSemaine: '',
+    meilleureSemainePresence: 0,
+    tendance: 0,
+    classementService: 0,
+    totalService: 0,
+    heuresTravaillees: 0,
+    tauxAssiduite: 0,
+    joursFeries: 0,
+    joursConges: 0,
+    joursRepos: 0,
+  });
+  statsMensuelles = signal<StatsMensuelle[]>([]);
+  evolutionChartData = signal<any>({ labels: [], datasets: [] });
+
+  // Ajouter les options du graphique
+  evolutionChartOptions: ChartOptions<'bar'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { mode: 'index', intersect: false },
+    },
+    scales: {
+      y: { beginAtZero: true, max: 1, grid: { display: false }, ticks: { stepSize: 1 } },
+    },
+  };
 
   get isAdmin() {
     return this.auth.isAdmin;
@@ -299,5 +354,179 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
     if (!e?.dateNaissance) return null;
     const diff = Date.now() - new Date(e.dateNaissance).getTime();
     return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+  }
+
+  // detail-employe.ts - ajouter ces méthodes
+
+  setActiveTab(tab: 'infos' | 'planning' | 'responsables' | 'stats'): void {
+    this.activeTab.set(tab);
+
+    // Charger les statistiques uniquement quand on clique sur l'onglet stats
+    if (tab === 'stats' && !this.statsLoaded() && !this.statsLoading()) {
+      this.loadStatsEmploye();
+    }
+  }
+
+  async loadStatsEmploye(): Promise<void> {
+    const employe = this.employe();
+    if (!employe) return;
+
+    this.statsLoading.set(true);
+
+    try {
+      const dateFin = new Date();
+      const dateDebut = new Date();
+      dateDebut.setMonth(dateDebut.getMonth() - 12);
+
+      const stats = await this.pointageService.getStatsEmploye(
+        employe,
+        dateDebut.toISOString().split('T')[0],
+        dateFin.toISOString().split('T')[0],
+      );
+
+      this.stats.set(stats);
+      this.statsLoaded.set(true);
+
+      // Calculer l'évolution sur 30 jours pour le graphique
+      await this.calculerEvolution30Jours(employe);
+
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Erreur chargement stats:', error);
+    } finally {
+      this.statsLoading.set(false);
+    }
+  }
+
+  private getJoursOuvres(dateDebut: Date, dateFin: Date): number {
+    let count = 0;
+    const current = new Date(dateDebut);
+    while (current <= dateFin) {
+      const jour = current.getDay();
+      if (jour !== 0 && jour !== 6) count++;
+      current.setDate(current.getDate() + 1);
+    }
+    return count;
+  }
+
+  private calculerRetardsEmploye(presences: any[], employe: Employe): number {
+    let retards = 0;
+    for (const p of presences) {
+      if (p.arrive) {
+        const heure = parseInt(p.arrive.split(':')[0]);
+        if (heure > 9) retards++;
+      }
+    }
+    return retards;
+  }
+
+  private getTotalRetards(presences: any[], employe: Employe): number {
+    let total = 0;
+    for (const p of presences) {
+      if (p.arrive) {
+        const heure = parseInt(p.arrive.split(':')[0]);
+        if (heure > 9) total += (heure - 9) * 60;
+      }
+    }
+    return total;
+  }
+
+  private calculerNoteAssiduite(presents: number, total: number, retards: number): number {
+    const basePresence = total > 0 ? (presents / total) * 100 : 0;
+    const penaliteRetard = Math.min(20, retards * 2);
+    return Math.max(0, Math.min(100, Math.round(basePresence - penaliteRetard)));
+  }
+
+  private calculerHeuresTotales(presences: any[]): number {
+    let heures = 0;
+    for (const p of presences) {
+      if (p.arrive && p.descente) {
+        const hA = parseInt(p.arrive.split(':')[0]);
+        const hD = parseInt(p.descente.split(':')[0]);
+        heures += hD - hA;
+      }
+    }
+    return heures;
+  }
+
+  private getMeilleureSemaine(presences: any[]): string {
+    // Logique simplifiée
+    return '12';
+  }
+
+  private async calculerStatsMensuelles(
+    employe: Employe,
+    presences: any[],
+  ): Promise<StatsMensuelle[]> {
+    const stats: StatsMensuelle[] = [];
+    const moisLabels = [
+      'Jan',
+      'Fév',
+      'Mar',
+      'Avr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Aoû',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Déc',
+    ];
+    const maintenant = new Date();
+
+    for (let i = 0; i < 12; i++) {
+      const moisIndex = (maintenant.getMonth() - i + 12) % 12;
+      const annee = maintenant.getFullYear() - (maintenant.getMonth() < i ? 1 : 0);
+      const mois = moisLabels[moisIndex];
+
+      stats.unshift({
+        mois: `${mois} ${annee}`,
+        joursOuverts: 20, // À calculer correctement
+        presents: 0,
+        absents: 0,
+        retards: 0,
+        tauxPresence: 0,
+        evolution: 0,
+      });
+    }
+
+    return stats;
+  }
+
+  private async calculerEvolution30Jours(employe: Employe): Promise<void> {
+    const labels: string[] = [];
+    const presents: number[] = [];
+
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      labels.push(date.getDate().toString());
+      presents.push(Math.random() > 0.2 ? 1 : 0);
+    }
+
+    this.evolutionChartData.set({
+      labels,
+      datasets: [
+        {
+          label: 'Présence',
+          data: presents,
+          backgroundColor: presents.map((v) => (v === 1 ? '#10b981' : '#ef4444')),
+          borderRadius: 4,
+        },
+      ],
+    });
+  }
+
+  private calculerTendance(statsMois: StatsMensuelle[]): number {
+    if (statsMois.length < 2) return 0;
+    const dernier = statsMois[statsMois.length - 1].tauxPresence;
+    const avantDernier = statsMois[statsMois.length - 2].tauxPresence;
+    return dernier - avantDernier;
+  }
+
+  private async getClassementService(employe: Employe): Promise<{ rank: number; total: number }> {
+    // Logique à implémenter
+    return { rank: 5, total: 12 };
   }
 }

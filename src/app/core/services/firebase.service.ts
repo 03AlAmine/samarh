@@ -5,6 +5,7 @@
 import { Injectable, inject, Injector, runInInjectionContext, OnDestroy } from '@angular/core';
 import { Database } from '@angular/fire/database';
 import { initializeApp, getApps, deleteApp, FirebaseApp } from 'firebase/app';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import {
   getDatabase,
   ref,
@@ -105,6 +106,17 @@ export class FirebaseService implements OnDestroy {
     this.clientApp = initializeApp(config, CLIENT_APP_NAME);
     this.clientDatabase = getDatabase(this.clientApp, config.databaseURL);
     this.currentCommunauteId = communauteId;
+
+    // Les employés utilisent un login bcrypt custom (pas Firebase Auth).
+    // Firebase RTDB exige auth != null pour lire/écrire → on signe anonymement.
+    // Activer "Connexion anonyme" dans Firebase Console → Authentication.
+    try {
+      const clientAuth = getAuth(this.clientApp);
+      await signInAnonymously(clientAuth);
+    } catch {
+      // Si l'auth anonyme est désactivée, les règles doivent être ".read/.write: true"
+    }
+
     this.clientReady$.next(true);
   }
 

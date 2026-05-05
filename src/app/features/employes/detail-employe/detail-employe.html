@@ -18,32 +18,52 @@
     </svg>
     <span>{{ e.prenom }} {{ e.nom }}</span>
   </div>
-
-  <div class="card profile-header">
-    <div class="profile-avatar">{{ initials(e) }}</div>
-    <div class="profile-main">
-      <h1>{{ e.prenom }} {{ e.nom }}</h1>
-      <div class="profile-meta">
-        <span>{{ e.poste || 'Poste non défini' }}</span>
-        @if (e.service) {
-          <span class="sep">·</span><span>{{ nomService(e.service) }}</span>
-        }
-        <span class="sep">·</span>
-        <code class="mono-sm">{{ e.matricule }}</code>
+  <!-- Remplacer le .profile-header par : -->
+  <div class="profile-header">
+    <div class="profile-left">
+      <div class="profile-avatar-sm">{{ initials(e) }}</div>
+      <div class="profile-info">
+        <h1>{{ e.prenom }} {{ e.nom }}</h1>
+        <div class="profile-meta">
+          <span>{{ e.poste || 'Poste non défini' }}</span>
+          @if (e.service) {
+            <span>·</span>
+            <span>{{ nomService(e.service) }}</span>
+          }
+          <span>·</span>
+          <code class="mono-sm">{{ e.matricule }}</code>
+        </div>
       </div>
     </div>
-    <div class="profile-actions">
+
+    <div class="profile-stats-compact">
+      <div class="stat-mini">
+        <span class="stat-value">{{ age || '—' }}</span>
+        <span class="stat-label">Âge</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-mini">
+        <span class="stat-value">{{ e.typeContrat || 'CDI' }}</span>
+        <span class="stat-label">Contrat</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-mini">
+        <span class="stat-value">{{ e.dateEmbauche | date:'dd/MM/yyyy'  }}</span>
+        <span class="stat-label">Ancienneté</span>
+      </div>
+    </div>
+
+    <div class="profile-actions-compact">
       <span class="badge badge--{{ (e.statut || 'actif') === 'actif' ? 'success' : 'neutral' }}">
         {{ e.statut || 'actif' }}
       </span>
       @if (canEdit) {
         <button class="btn btn--secondary btn--sm" (click)="openEdit()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path
               d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
               stroke="currentColor"
               stroke-width="1.7"
-              stroke-linecap="round"
             />
             <path
               d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"
@@ -57,12 +77,13 @@
     </div>
   </div>
 
-  <!-- ✅ Onglets élargis avec Responsables -->
+  <!-- detail-employe.html - modifier les onglets -->
+
   <div class="emp-tabs">
     <button
       class="emp-tab"
       [class.active]="activeTab() === 'infos'"
-      (click)="activeTab.set('infos')"
+      (click)="setActiveTab('infos')"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7" />
@@ -75,10 +96,11 @@
       </svg>
       Informations
     </button>
+
     <button
       class="emp-tab"
       [class.active]="activeTab() === 'responsables'"
-      (click)="activeTab.set('responsables')"
+      (click)="setActiveTab('responsables')"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
         <path
@@ -93,16 +115,40 @@
         <span class="tab-badge">{{ servicesGeres().length }}</span>
       }
     </button>
+
     <button
       class="emp-tab"
       [class.active]="activeTab() === 'planning'"
-      (click)="activeTab.set('planning')"
+      (click)="setActiveTab('planning')"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
         <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7" />
         <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.7" />
       </svg>
       Planning
+    </button>
+
+    <button
+      class="emp-tab"
+      [class.active]="activeTab() === 'stats'"
+      (click)="setActiveTab('stats')"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M21 16v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2M7 10l3-3 3 3 4-4"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+        />
+        <path d="M17 10V4h-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
+      Statistiques
+      @if (stats().tauxPresence > 0 && !statsLoading()) {
+        <span class="tab-badge">{{ stats().tauxPresence }}%</span>
+      }
+      @if (statsLoading()) {
+        <span class="tab-badge loading">...</span>
+      }
     </button>
   </div>
 
@@ -203,25 +249,6 @@
       }
     </div>
   }
-
-  <!-- Tab Planning existant -->
-  @if (activeTab() === 'planning') {
-    <div class="card">
-      <div class="planning-card-header">
-        <h2 class="section-title">Planning hebdomadaire</h2>
-        <p class="planning-card-sub">
-          Définissez les jours et heures de travail de {{ e.prenom }}.
-        </p>
-      </div>
-      <app-planning-editor
-        [planning]="e.planning || []"
-        [saving]="savingPlanning()"
-        [readOnly]="!isAdmin"
-        (saved)="savePlanning($event)"
-      />
-    </div>
-  }
-
   <!-- ✅ NOUVEL ONGLET : Responsables -->
   @if (activeTab() === 'responsables') {
     <div class="responsables-detail-container">
@@ -364,6 +391,312 @@
           </div>
         </div>
       }
+    </div>
+  }
+
+  <!-- ✅ ONGLET : Statistiques de l'employé -->
+  @if (activeTab() === 'stats') {
+    <div class="stats-employe-container">
+      <!-- État de chargement -->
+      @if (statsLoading()) {
+        <div class="stats-loading">
+          <div class="spinner"></div>
+          <p>Chargement des statistiques...</p>
+        </div>
+      }
+
+      <!-- Affichage des stats une fois chargées -->
+      @if (!statsLoading() && statsLoaded()) {
+        <!-- Cartes KPI principales -->
+        <div class="stats-kpi-grid">
+          <div class="stats-card">
+            <div class="stats-icon presence">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M22 11.08V12a10 10 0 1 1-5.93-9.14"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M22 4 12 14.01l-3-3"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div class="stats-info">
+              <span class="stats-value">{{ stats().tauxPresence }}%</span>
+              <span class="stats-label">Taux de présence</span>
+              <span class="stats-detail"
+                >{{ stats().joursPresents }}/{{ stats().joursTotal }} jours</span
+              >
+            </div>
+          </div>
+
+          <div class="stats-card">
+            <div class="stats-icon absence">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.7" />
+                <path
+                  d="M15 9l-6 6M9 9l6 6"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div class="stats-info">
+              <span class="stats-value">{{ stats().joursAbsents }}</span>
+              <span class="stats-label">Jours d'absence</span>
+              <span class="stats-detail">{{ stats().tauxAbsence }}% du temps</span>
+            </div>
+          </div>
+
+          <div class="stats-card">
+            <div class="stats-icon retard">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7" />
+                <path
+                  d="M12 7v5l3 3"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div class="stats-info">
+              <span class="stats-value">{{ stats().nbRetards }}</span>
+              <span class="stats-label">Retards</span>
+              <span class="stats-detail">Moy. {{ stats().retardMoyen }} min</span>
+            </div>
+          </div>
+
+          <div class="stats-card">
+            <div class="stats-icon ponctualite">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="stats-info">
+              <span class="stats-value">{{ stats().noteAssiduite }}/100</span>
+              <span class="stats-label">Note d'assiduité</span>
+              <span
+                class="stats-detail"
+                [class]="
+                  stats().noteAssiduite >= 80
+                    ? 'good'
+                    : stats().noteAssiduite >= 60
+                      ? 'medium'
+                      : 'bad'
+                "
+              >
+                {{
+                  stats().noteAssiduite >= 80
+                    ? 'Excellent'
+                    : stats().noteAssiduite >= 60
+                      ? 'Bon'
+                      : 'À améliorer'
+                }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Graphique d'évolution 30 jours -->
+        <div class="stats-chart-card">
+          <div class="chart-header">
+            <h3>Évolution des présences (30 derniers jours)</h3>
+            <div class="chart-legend">
+              <span class="leg-item present">Présent</span>
+              <span class="leg-item absent">Absent</span>
+              <span class="leg-item retard">Retard</span>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas
+              baseChart
+              [data]="evolutionChartData()"
+              [options]="evolutionChartOptions"
+              type="bar"
+              height="200"
+            >
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Tableau des statistiques par mois -->
+        <div class="stats-table-card">
+          <div class="table-header">
+            <h3>Détail mensuel</h3>
+            <div class="period-selector">
+              <button
+                [class.active]="periodeStats() === '6mois'"
+                (click)="periodeStats.set('6mois')"
+              >
+                6 mois
+              </button>
+              <button
+                [class.active]="periodeStats() === '12mois'"
+                (click)="periodeStats.set('12mois')"
+              >
+                12 mois
+              </button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="stats-table">
+              <thead>
+                <tr>
+                  <th>Mois</th>
+                  <th>Jours ouvrés</th>
+                  <th>Présents</th>
+                  <th>Absents</th>
+                  <th>Retards</th>
+                  <th>Taux présence</th>
+                  <th>Évolution</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (mois of statsMensuelles(); track mois.mois) {
+                  <tr>
+                    <td>
+                      <strong>{{ mois.mois }}</strong>
+                    </td>
+                    <td>{{ mois.joursOuverts }}</td>
+                    <td class="present-cell">{{ mois.presents }}</td>
+                    <td class="absent-cell">{{ mois.absents }}</td>
+                    <td class="retard-cell">{{ mois.retards }}</td>
+                    <td>
+                      <div class="progress-cell">
+                        <div
+                          class="progress-bar"
+                          [style.width.%]="mois.tauxPresence"
+                          [class.high]="mois.tauxPresence >= 80"
+                          [class.medium]="mois.tauxPresence >= 60 && mois.tauxPresence < 80"
+                          [class.low]="mois.tauxPresence < 60"
+                        >
+                          <span>{{ mois.tauxPresence }}%</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        class="trend-badge"
+                        [class.up]="mois.evolution > 0"
+                        [class.down]="mois.evolution < 0"
+                      >
+                        @if (mois.evolution > 0) {
+                          ↑
+                        } @else if (mois.evolution < 0) {
+                          ↓
+                        } @else {
+                          →
+                        }
+                        {{ mois.evolution > 0 ? '+' : '' }}{{ mois.evolution }}%
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Informations complémentaires -->
+        <div class="stats-footer-grid">
+          <div class="info-card">
+            <div class="info-icon">⏱️</div>
+            <div class="info-content">
+              <span class="info-label">Heures totales travaillées</span>
+              <span class="info-value">{{ stats().heuresTotales }}h</span>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-icon">📅</div>
+            <div class="info-content">
+              <span class="info-label">Meilleure semaine</span>
+              <span class="info-value">Semaine {{ stats().meilleureSemaine }}</span>
+              <span class="info-detail">{{ stats().meilleureSemainePresence }}% de présence</span>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-icon">📈</div>
+            <div class="info-content">
+              <span class="info-label">Tendance récente</span>
+              <span
+                class="info-value"
+                [class.up]="stats().tendance > 0"
+                [class.down]="stats().tendance < 0"
+              >
+                {{ stats().tendance > 0 ? '+' : '' }}{{ stats().tendance }}%
+              </span>
+              <span class="info-detail">vs mois précédent</span>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-icon">🏆</div>
+            <div class="info-content">
+              <span class="info-label">Classement service</span>
+              <span class="info-value"
+                >{{ stats().classementService
+                }}<span class="small">/{{ stats().totalService }}</span></span
+              >
+              <span class="info-detail">{{
+                stats().classementService === 1
+                  ? 'Meilleur employé'
+                  : stats().classementService <= 3
+                    ? 'Top 3'
+                    : ''
+              }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Avertissement si pas assez de données -->
+        @if (stats().joursTotal === 0) {
+          <div class="warning-card">
+            <div class="warning-content">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
+                <path
+                  d="M12 8v4M12 16h.01"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span
+                >Données insuffisantes. Les statistiques s'afficheront après quelques jours de
+                pointage.</span
+              >
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+  <!-- Tab Planning existant -->
+  @if (activeTab() === 'planning') {
+    <div class="card">
+      <div class="planning-card-header">
+        <h2 class="section-title">Planning hebdomadaire</h2>
+        <p class="planning-card-sub">
+          Définissez les jours et heures de travail de {{ e.prenom }}.
+        </p>
+      </div>
+      <app-planning-editor
+        [planning]="e.planning || []"
+        [saving]="savingPlanning()"
+        [readOnly]="!isAdmin"
+        (saved)="savePlanning($event)"
+      />
     </div>
   }
 }

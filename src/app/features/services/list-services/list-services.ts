@@ -442,4 +442,12 @@ export class ListServicesComponent implements OnInit {
   get f() {
     return this.form.controls;
   }
+
+  // Calcul de la présence moyenne globale
+  presenceMoyenneGlobale = computed(() => {
+    const services = this.servicesFiltres();
+    if (services.length === 0) return 0;
+    const total = services.reduce((sum, s) => sum + this.getTauxPresence(s.matricule), 0);
+    return Math.round(total / services.length);
+  });
 }
