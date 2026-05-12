@@ -1,30 +1,30 @@
+<!-- cartes.html -->
 <div class="page-header">
   <div>
     <h1 class="page-title">Cartes employés</h1>
     <p class="page-subtitle">
       {{ filtered().length }} carte{{ filtered().length > 1 ? 's' : '' }}
-      @if (selected().size > 0) {
-        · <strong>{{ selected().size }}</strong> sélectionnée{{ selected().size > 1 ? 's' : '' }}
+      @if (selectedIds().size > 0) {
+        · <strong>{{ selectedIds().size }}</strong> sélectionnée{{
+          selectedIds().size > 1 ? 's' : ''
+        }}
       }
     </p>
   </div>
   <div class="header-actions">
     <button class="btn btn--ghost btn--sm" (click)="selectAll()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/>
-        <path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-      </svg>
+      <i class="fas fa-check-square"></i>
       Tout sélectionner
     </button>
-    @if (selected().size > 0) {
-      <button class="btn btn--ghost btn--sm" (click)="clearSelection()">Désélectionner</button>
+    @if (selectedIds().size > 0) {
+      <button class="btn btn--ghost btn--sm" (click)="clearSelection()">
+        <i class="fas fa-times-circle"></i>
+        Désélectionner
+      </button>
     }
     <button class="btn btn--primary btn--sm" (click)="imprimerSelection()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-        <rect x="6" y="14" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.7"/>
-      </svg>
-      Imprimer{{ selected().size > 0 ? ' (' + selected().size + ')' : ' tout' }}
+      <i class="fas fa-print"></i>
+      Imprimer{{ selectedIds().size > 0 ? ' (' + selectedIds().size + ')' : ' tout' }}
     </button>
   </div>
 </div>
@@ -33,15 +33,19 @@
 <div class="controls-bar card">
   <div class="filters-row">
     <div class="search-wrap">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7"/>
-        <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-      </svg>
-      <input class="search-input" placeholder="Nom, prénom, matricule…"
-        [value]="search()" (input)="search.set($any($event.target).value); page.set(1)"/>
+      <i class="fas fa-search"></i>
+      <input
+        class="search-input"
+        placeholder="Nom, prénom, matricule…"
+        [value]="search()"
+        (input)="search.set($any($event.target).value); page.set(1)"
+      />
     </div>
-    <select class="filter-select" [value]="filterSvc()"
-      (change)="filterSvc.set($any($event.target).value); page.set(1)">
+    <select
+      class="filter-select"
+      [value]="filterSvc()"
+      (change)="filterSvc.set($any($event.target).value); page.set(1)"
+    >
       <option value="">Tous les services</option>
       @for (s of servicesVisibles(); track s.id) {
         <option [value]="s.matricule">{{ s.nom }}</option>
@@ -53,24 +57,40 @@
     <div class="style-group">
       <span class="style-label">Style</span>
       <div class="btn-group">
-        <button [class.active]="styleCarte() === 'moderne'" (click)="styleCarte.set('moderne')">Moderne</button>
-        <button [class.active]="styleCarte() === 'minimal'" (click)="styleCarte.set('minimal')">Minimal</button>
-        <button [class.active]="styleCarte() === 'premium'" (click)="styleCarte.set('premium')">Premium</button>
+        <button [class.active]="styleCarte() === 'moderne'" (click)="styleCarte.set('moderne')">
+          Moderne
+        </button>
+        <button [class.active]="styleCarte() === 'minimal'" (click)="styleCarte.set('minimal')">
+          Minimal
+        </button>
+        <button [class.active]="styleCarte() === 'premium'" (click)="styleCarte.set('premium')">
+          Premium
+        </button>
       </div>
     </div>
     <div class="style-group">
       <span class="style-label">Format</span>
       <div class="btn-group">
-        <button [class.active]="format() === 'paysage'" (click)="format.set('paysage')">Paysage</button>
-        <button [class.active]="format() === 'portrait'" (click)="format.set('portrait')">Portrait</button>
+        <button [class.active]="format() === 'paysage'" (click)="format.set('paysage')">
+          <i class="fas fa-arrow-left"></i>
+          Paysage
+        </button>
+        <button [class.active]="format() === 'portrait'" (click)="format.set('portrait')">
+          <i class="fas fa-arrow-up"></i>
+          Portrait
+        </button>
       </div>
     </div>
     <div class="style-group">
       <span class="style-label">Couleur</span>
       <div class="color-row">
         @for (c of presetColors; track c) {
-          <button class="color-dot" [class.active]="couleur() === c"
-            [style.background]="c" (click)="couleur.set(c)"></button>
+          <button
+            class="color-dot"
+            [class.active]="couleur() === c"
+            [style.background]="c"
+            (click)="couleur.set(c)"
+          ></button>
         }
       </div>
     </div>
@@ -80,68 +100,81 @@
 <!-- Grille -->
 @if (loading()) {
   <div class="skeleton-grid">
-    @for (i of [1,2,3,4,5,6]; track i) { <div class="card-skeleton"></div> }
+    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+      <div class="card-skeleton"></div>
+    }
   </div>
 }
 
 @if (!loading()) {
   @if (filtered().length === 0) {
-    <div class="card empty-state"><p>Aucun employé trouvé</p></div>
+    <div class="card empty-state">
+      <p><i class="fas fa-user-slash"></i> Aucun employé trouvé</p>
+    </div>
   }
 
   <div class="cartes-grid" [class.portrait]="format() === 'portrait'">
     @for (e of paginated(); track e.id) {
-      <div class="carte {{ styleCarte() }} {{ format() }}"
+      <div
+        class="carte {{ styleCarte() }} {{ format() }}"
         [class.selected]="isSelected(e.id)"
         (click)="toggleSelect(e.id)"
-        [style.--accent]="getCouleurStyle()">
-
+        [style.--accent]="getCouleurStyle()"
+      >
+        <div class="selection-badge" [class.visible]="isSelected(e.id)">
+          <i class="fas fa-check-circle"></i>
+        </div>
         <div class="carte-header">
           @if (e.image) {
-            <img class="carte-photo" [src]="e.image" [alt]="e.prenom + ' ' + e.nom" loading="lazy"/>
+            <img
+              class="carte-photo"
+              [src]="e.image"
+              [alt]="e.prenom + ' ' + e.nom"
+              loading="lazy"
+            />
           } @else {
             <div class="carte-avatar" [style.background]="avatarColor(e.id)">{{ initials(e) }}</div>
           }
           <div class="carte-id">
-            <span class="carte-nom">{{ e.prenom }} {{ e.nom }}</span>
-            <span class="carte-poste">{{ e.poste || 'Employé' }}</span>
-          </div>
-          <div class="carte-check" [class.visible]="isSelected(e.id)">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="m5 13 4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
+            <div class="carte-nom">{{ e.prenom }} {{ e.nom }}</div>
+            <div class="carte-poste">
+              {{ e.poste | slice: 0 : 25 }}{{ (e.poste?.length || 0) > 25 ? '...' : '' }}
+            </div>
+            <div class="carte-meta">
+              <span class="carte-service-chip">{{ getServiceNom(e.service) || '—' }}</span>
+            </div>
           </div>
         </div>
 
         <div class="carte-body">
-          @if (getServiceNom(e.service)) {
-            <div class="carte-service">{{ getServiceNom(e.service) }}</div>
-          }
-          <div class="carte-matricule">{{ e.matricule || '—' }}</div>
-
-          @if (styleCarte() !== 'minimal') {
-            <div class="carte-qr">
-              @if (getQR(e.id)) {
-                <!-- data URL PNG → pas de canvas, pas de ViewChildren, marche avec OnPush -->
-                <img [src]="getQR(e.id)" width="52" height="52" [alt]="'QR ' + e.matricule" class="qr-img"/>
-              } @else {
-                <div class="qr-placeholder">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" opacity=".25">
-                    <path d="M3 3h7v7H3zm1 1v5h5V4zm1 1h3v3H5zM14 3h7v7h-7zm1 1v5h5V4zm1 1h3v3h-3zM3 14h7v7H3zm1 1v5h5v-5zm1 1h3v3H5zM14 14h2v2h-2zm2 0h2v2h-2zm2 2h2v2h-2zm0 2h-2v2h2zm-4 0h2v2h-2zm0-4h-2v2h2zm-2 4h-2v2h2z"/>
-                  </svg>
-                </div>
-              }
-              <span class="qr-label">{{ e.matricule }}</span>
-            </div>
-          }
+          <div class="carte-qr">
+            @if (getQR(e.id)) {
+              <img
+                [src]="getQR(e.id)"
+                width="60"
+                height="60"
+                [alt]="'QR ' + e.matricule"
+                class="qr-img"
+              />
+            } @else {
+              <div class="qr-placeholder">
+                <i class="fas fa-qrcode" style="font-size: 32px; opacity: 0.25;"></i>
+              </div>
+            }
+            <span class="qr-label">{{ e.matricule }}</span>
+          </div>
         </div>
 
         <div class="carte-footer">
-          <span class="carte-org">SamaRH</span>
+          <span class="carte-org"><i class="fas fa-id-card"></i> SamaRH</span>
           @if (e.statut === 'actif' || !e.statut) {
-            <span class="carte-badge valid">Valide</span>
+            <span class="carte-badge valid">
+              <i class="fas fa-check-circle"></i> Valide
+            </span>
           } @else {
-            <span class="carte-badge invalid">{{ e.statut }}</span>
+            <span class="carte-badge invalid">
+              <i class="fas fa-exclamation-triangle"></i> {{ e.statut }}
+            </span>
           }
         </div>
       </div>
@@ -150,9 +183,13 @@
 
   @if (totalPages() > 1) {
     <div class="pagination card">
-      <button class="page-btn" [disabled]="page() === 1" (click)="page.set(page() - 1)">←</button>
+      <button class="page-btn" [disabled]="page() === 1" (click)="page.set(page() - 1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
       <span class="page-info">{{ page() }} / {{ totalPages() }}</span>
-      <button class="page-btn" [disabled]="page() === totalPages()" (click)="page.set(page() + 1)">→</button>
+      <button class="page-btn" [disabled]="page() === totalPages()" (click)="page.set(page() + 1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
     </div>
   }
 }

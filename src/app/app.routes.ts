@@ -68,6 +68,16 @@ export const routes: Routes = [
     title: 'Pointages',
   },
   {
+    path: 'pointages/historique/:id',
+    loadComponent: () =>
+      import('./features/pointages/historique-pointage/historique-pointages.component').then(
+        (m) => m.HistoriquePointagesComponent,
+      ),
+    canActivate: [authGuard],
+    title: 'Historique pointages',
+  },
+
+  {
     path: 'cartes',
     loadComponent: () => import('./features/cartes/cartes').then((c) => c.CartesComponent),
     canActivate: [authGuard],

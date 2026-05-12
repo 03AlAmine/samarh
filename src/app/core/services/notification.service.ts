@@ -1,335 +1,151 @@
-// src/app/core/services/notification.service.ts
-import { Injectable, inject, NgZone, Injector, runInInjectionContext } from '@angular/core';
-import {
-  Database,
-  ref,
-  set,
-  push,
-  query,
-  orderByChild,
-  equalTo,
-  onValue,
-  update,
-  remove,
-} from '@angular/fire/database';
-import { AuthService } from './auth.service';
+// ─── NOTIFICATION SERVICE ─────────────────────────────────────────────────────
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map, shareReplay, filter, take, switchMap } from 'rxjs/operators';
+import { FirebaseService } from './firebase.service';
 
-export interface Notification {
-  id?: string;
-  userId: string;
-  title: string;
-  message: string;
-  type: 'course' | 'payment' | 'system' | 'chat' | 'approval' | 'rejection';
-  read: boolean;
-  createdAt: string;
+export type NotifType =
+  | 'retard' | 'absence' | 'validation'
+  | 'approval' | 'rejection' | 'system';
+
+export interface AppNotification {
+  id:         string;
+  type:       NotifType;
+  title:      string;
+  message:    string;
+  read:       boolean;
+  createdAt:  string;
   actionUrl?: string;
-  data?: any;
+  data?:      any;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private database = inject(Database);
-  private authService = inject(AuthService);
-  private ngZone = inject(NgZone);
-  private injector = inject(Injector);
+  private fb = inject(FirebaseService);
 
-  constructor() {
-  }
+  // ── Streams temps réel ────────────────────────────────────────────────────
+  // IMPORTANT : attendre clientReady$ avant de s'abonner à Firebase
+  // (même pattern que employe.service et pointage.service)
 
-  /**
-   * Envoie une notification
-   */
-  async sendNotification(notification: any): Promise<string> {
-    return runInInjectionContext(this.injector, async () => {
-      try {
-        const notificationRef = ref(this.database, 'notifications');
-        const newNotificationRef = push(notificationRef);
+  notifications$: Observable<AppNotification[]> = this.fb.clientReady$.pipe(
+    filter(ready => ready),
+    take(1),
+    switchMap(() => this.fb.clientListenList<AppNotification>('Notification')),
+    map((list: AppNotification[]) =>
+      list
+        .filter(n => n && n.createdAt) // ignorer les entrées malformées
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 50)
+    ),
+    shareReplay(1),
+  );
 
-        const fullNotification: Notification = {
-          ...notification,
-          id: newNotificationRef.key!,
-          read: false,
-          createdAt: new Date().toISOString(),
-        };
+  unreadCount$: Observable<number> = this.notifications$.pipe(
+    map(list => list.filter(n => !n.read).length),
+    shareReplay(1),
+  );
 
-        await set(newNotificationRef, fullNotification);
-        return newNotificationRef.key!;
-      } catch (error) {
-        console.error('Erreur envoi notification:', error);
-        throw error;
-      }
+  // ── Écriture ──────────────────────────────────────────────────────────────
+
+  async send(notif: Omit<AppNotification, 'id' | 'read' | 'createdAt'>): Promise<void> {
+    await this.fb.clientPush('Notification', {
+      ...notif,
+      read:      false,
+      createdAt: new Date().toISOString(),
     });
   }
 
-  /**
-   * Récupère les notifications d'un utilisateur (Observable)
-   */
-  getUserNotifications(userId: string): Observable<Notification[]> {
-    return new Observable((observer) => {
-      runInInjectionContext(this.injector, () => {
-        const notificationsRef = query(
-          ref(this.database, 'notifications'),
-          orderByChild('userId'),
-          equalTo(userId),
-        );
-
-        const unsubscribe = onValue(
-          notificationsRef,
-          (snapshot) => {
-            this.ngZone.run(() => {
-              const notifications: Notification[] = [];
-              snapshot.forEach((childSnapshot) => {
-                notifications.push({
-                  id: childSnapshot.key,
-                  ...childSnapshot.val(),
-                });
-              });
-
-              notifications.sort(
-                (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-              );
-              observer.next(notifications);
-            });
-          },
-          (error) => {
-            this.ngZone.run(() => {
-              console.error('Erreur récupération notifications:', error);
-              observer.error(error);
-            });
-          },
-        );
-
-        return () => unsubscribe();
-      });
+  /** Alias pour error.interceptor.ts */
+  async sendNotification(params: {
+    userId?:   string;
+    title:     string;
+    message:   string;
+    type?:     string;
+    priority?: string;
+  }): Promise<void> {
+    await this.send({
+      type:    (params.type as NotifType) || 'system',
+      title:   params.title,
+      message: params.message,
     });
   }
 
-  /**
-   * Marque une notification comme lue
-   */
-  async markAsRead(notificationId: string): Promise<void> {
-    return runInInjectionContext(this.injector, async () => {
-      try {
-        await update(ref(this.database, `notifications/${notificationId}`), {
-          read: true,
-        });
-      } catch (error) {
-        console.error('Erreur marquage notification:', error);
-      }
+  async markRead(id: string): Promise<void> {
+    await this.fb.clientUpdate(`Notification/${id}`, { read: true });
+  }
+
+  async markAllRead(notifications: AppNotification[]): Promise<void> {
+    const updates: Record<string, any> = {};
+    notifications.filter(n => !n.read).forEach(n => {
+      updates[`Notification/${n.id}/read`] = true;
+    });
+    if (Object.keys(updates).length > 0) {
+      await this.fb.clientUpdate('', updates);
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.fb.clientRemove(`Notification/${id}`);
+  }
+
+  // ── Helpers RH ────────────────────────────────────────────────────────────
+
+  async notifyRetard(nomEmploye: string, minutesRetard: number, employeId: string): Promise<void> {
+    await this.send({
+      type:      'retard',
+      title:     'Retard signalé',
+      message:   `${nomEmploye} est arrivé avec ${minutesRetard} min de retard.`,
+      actionUrl: `/employes/${employeId}`,
     });
   }
 
-  /**
-   * Marque toutes les notifications d'un utilisateur comme lues
-   */
-  async markAllAsRead(userId: string): Promise<void> {
-    return runInInjectionContext(this.injector, async () => {
-      try {
-        const notifications = await this.getUserNotificationsOnce(userId);
-        const updates: any = {};
-
-        notifications.forEach((notification) => {
-          if (!notification.read && notification.id) {
-            updates[`notifications/${notification.id}/read`] = true;
-          }
-        });
-
-        if (Object.keys(updates).length > 0) {
-          await update(ref(this.database), updates);
-        }
-      } catch (error) {
-        console.error('Erreur marquage toutes notifications:', error);
-      }
+  async notifyAbsence(nomEmploye: string, date: string, employeId: string): Promise<void> {
+    await this.send({
+      type:      'absence',
+      title:     'Absence non justifiée',
+      message:   `${nomEmploye} est absent le ${date} sans justification.`,
+      actionUrl: `/employes/${employeId}`,
     });
   }
 
-  /**
-   * Supprime une notification
-   */
-  async deleteNotification(notificationId: string): Promise<void> {
-    return runInInjectionContext(this.injector, async () => {
-      try {
-        await remove(ref(this.database, `notifications/${notificationId}`));
-      } catch (error) {
-        console.error('Erreur suppression notification:', error);
-      }
-    });
+  timeAgo(dateStr: string): string {
+    // Garde-fou : dateStr invalide ou undefined
+    if (!dateStr) return '';
+    const ts = new Date(dateStr).getTime();
+    if (isNaN(ts)) return '';
+
+    const diff = Date.now() - ts;
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return 'À l\'instant';
+    if (m < 60) return `Il y a ${m} min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `Il y a ${h}h`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `Il y a ${d}j`;
+    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   }
 
-  /**
-   * Récupère le nombre de notifications non lues (Observable)
-   */
-  getUnreadCount(userId: string): Observable<number> {
-    return new Observable((observer) => {
-      runInInjectionContext(this.injector, () => {
-        const notificationsRef = query(
-          ref(this.database, 'notifications'),
-          orderByChild('userId'),
-          equalTo(userId),
-        );
-
-        const unsubscribe = onValue(
-          notificationsRef,
-          (snapshot) => {
-            this.ngZone.run(() => {
-              let unreadCount = 0;
-              snapshot.forEach((childSnapshot) => {
-                const notification = childSnapshot.val();
-                if (!notification.read) {
-                  unreadCount++;
-                }
-              });
-              observer.next(unreadCount);
-            });
-          },
-          (error) => {
-            this.ngZone.run(() => {
-              console.error('Erreur récupération compteur:', error);
-              observer.error(error);
-            });
-          },
-        );
-
-        return () => unsubscribe();
-      });
-    });
+  colorFor(type: NotifType): string {
+    const colors: Record<NotifType, string> = {
+      retard:     '#f59e0b',
+      absence:    '#ef4444',
+      validation: '#10b981',
+      approval:   '#4f7df3',
+      rejection:  '#ef4444',
+      system:     '#6b7280',
+    };
+    return colors[type] || '#6b7280';
   }
 
-  /**
-   * Récupère les notifications d'un utilisateur (Promise - one time)
-   */
-  private async getUserNotificationsOnce(userId: string): Promise<Notification[]> {
-    return runInInjectionContext(this.injector, async () => {
-      return new Promise((resolve) => {
-        const notificationsRef = query(
-          ref(this.database, 'notifications'),
-          orderByChild('userId'),
-          equalTo(userId),
-        );
-
-        const unsubscribe = onValue(
-          notificationsRef,
-          (snapshot) => {
-            this.ngZone.run(() => {
-              const notifications: Notification[] = [];
-              snapshot.forEach((childSnapshot) => {
-                notifications.push({
-                  id: childSnapshot.key,
-                  ...childSnapshot.val(),
-                });
-              });
-              unsubscribe();
-              resolve(notifications);
-            });
-          },
-          (error) => {
-            this.ngZone.run(() => {
-              console.error('Erreur récupération notifications one-time:', error);
-              unsubscribe();
-              resolve([]);
-            });
-          },
-        );
-      });
-    });
-  }
-
-  // ==================== NOTIFICATIONS PRÉDÉFINIES ====================
-
-  /**
-   * Notification d'inscription à un cours
-   */
-  async notifyCourseEnrollment(
-    studentId: string,
-    courseTitle: string,
-    courseId: string,
-  ): Promise<void> {
-    await this.sendNotification({
-      userId: studentId,
-      title: 'Inscription confirmée',
-      message: `Vous êtes maintenant inscrit au cours "${courseTitle}"`,
-      type: 'course',
-      actionUrl: `/courses/${courseId}`,
-    });
-  }
-
-  /**
-   * Notification de paiement réussi
-   */
-  async notifyPaymentSuccess(
-    studentId: string,
-    courseTitle: string,
-    amount: number,
-  ): Promise<void> {
-    await this.sendNotification({
-      userId: studentId,
-      title: 'Paiement confirmé',
-      message: `Votre paiement de ${amount} XOF pour "${courseTitle}" a été accepté`,
-      type: 'payment',
-    });
-  }
-
-  /**
-   * Rappel de cours
-   */
-  async notifyClassReminder(
-    studentId: string,
-    courseTitle: string,
-    classTime: string,
-  ): Promise<void> {
-    await this.sendNotification({
-      userId: studentId,
-      title: 'Rappel de cours',
-      message: `Vous avez un cours de "${courseTitle}" à ${classTime}`,
-      type: 'course',
-    });
-  }
-
-  /**
-   * Notification d'approbation de compte
-   */
-  async notifyAccountApproval(userId: string, userFullName: string): Promise<void> {
-    await this.sendNotification({
-      userId: userId,
-      title: 'Compte approuvé',
-      message: `Félicitations ${userFullName}, votre compte a été approuvé. Vous pouvez maintenant vous connecter.`,
-      type: 'approval',
-    });
-  }
-
-  /**
-   * Notification de rejet de compte
-   */
-  async notifyAccountRejection(
-    userId: string,
-    userFullName: string,
-    reason: string,
-  ): Promise<void> {
-    await this.sendNotification({
-      userId: userId,
-      title: 'Compte rejeté',
-      message: `Votre compte a été rejeté pour la raison suivante: ${reason}`,
-      type: 'rejection',
-      data: { reason },
-    });
-  }
-
-  // ==================== MÉTHODES SIMPLIFIÉES POUR L'UI ====================
-
-  showSuccess(message: string): void {
-  }
-
-  showError(message: string): void {
-    console.error('❌ Error:', message);
-  }
-
-  showWarning(message: string): void {
-    console.warn('⚠️ Warning:', message);
-  }
-
-  showInfo(message: string): void {
+  iconFor(type: NotifType): string {
+    const icons: Record<NotifType, string> = {
+      retard:     'clock',
+      absence:    'user-x',
+      validation: 'check-circle',
+      approval:   'shield-check',
+      rejection:  'x-circle',
+      system:     'bell',
+    };
+    return icons[type] || 'bell';
   }
 }

@@ -152,23 +152,19 @@ export class EmployeService {
    * @param pin Code PIN à 4 chiffres
    */
   async verifyEmployePin(matricule: string, pin: string): Promise<Employe | null> {
-    console.log('🔍 Vérification PIN pour matricule:', matricule);
 
     const employes = await this.getAll();
     const employe = employes.find((e) => e.matricule === matricule);
 
     if (!employe) {
-      console.log('❌ Employé non trouvé');
       return null;
     }
 
     // Vérifier le PIN (comparaison directe pour l'instant)
     if (employe.pin === pin) {
-      console.log('✅ PIN valide pour:', employe.prenom, employe.nom);
       return employe;
     }
 
-    console.log('❌ PIN invalide');
     return null;
   }
 

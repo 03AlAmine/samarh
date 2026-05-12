@@ -1,4 +1,5 @@
-<!-- pointages.html - version complète (inchangée, le filtrage est dans le TS) -->
+<!-- pointages.html  -->
+
 <div class="page-header">
   <div>
     <h1 class="page-title">Pointages</h1>
@@ -6,70 +7,160 @@
       {{ lignesFiltrees().length }} employé{{ lignesFiltrees().length > 1 ? 's' : '' }}
     </p>
   </div>
-  <button
-    class="btn btn--secondary btn--sm"
-    (click)="exportCSV()"
-    [disabled]="lignesFiltrees().length === 0"
-  >
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-      />
-    </svg>
-    Exporter CSV
-  </button>
+</div>
+<!-- Stats -->
+<div class="grid-stats" style="margin-bottom: 20px">
+  <div class="stat-card clickable" (click)="filtreStatut.set('')">
+    <div class="stat-icon-wrap blue">
+      <i class="fas fa-users"></i>
+    </div>
+    <div>
+      <p class="stat-label">Total</p>
+      <p class="stat-value">{{ stats().total }}</p>
+    </div>
+  </div>
+  <div class="stat-card clickable" (click)="filtreStatut.set('present')">
+    <div class="stat-icon-wrap green">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div>
+      <p class="stat-label">Présents</p>
+      <p class="stat-value">{{ stats().presents }}</p>
+    </div>
+  </div>
+  <div class="stat-card clickable" (click)="filtreStatut.set('retard')">
+    <div class="stat-icon-wrap yellow">
+      <i class="fas fa-clock"></i>
+    </div>
+    <div>
+      <p class="stat-label">Retards</p>
+      <p class="stat-value">{{ stats().retards }}</p>
+    </div>
+  </div>
+  <div class="stat-card clickable" (click)="filtreStatut.set('absent')">
+    <div class="stat-icon-wrap red">
+      <i class="fas fa-user-slash"></i>
+    </div>
+    <div>
+      <p class="stat-label">Absents</p>
+      <p class="stat-value">{{ stats().absents }}</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon-wrap purple">
+      <i class="fas fa-chart-line"></i>
+    </div>
+    <div>
+      <p class="stat-label">Taux présence</p>
+      <p class="stat-value">{{ stats().taux }}%</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Aperçu / Export -->
+<div class="modal-overlay" *ngIf="showPrintPreview" (click)="closePrintPreview()">
+  <div class="modal-print" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><i class="fas fa-eye"></i> Aperçu avant impression</h3>
+      <div class="modal-actions">
+        <button class="btn-print" (click)="printFromPreview()"><i class="fas fa-print"></i> Imprimer</button>
+        <button class="btn-save" (click)="saveAsPDF()"><i class="fas fa-save"></i> Sauvegarder PDF</button>
+        <button class="btn-close" (click)="closePrintPreview()"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="print-preview" [innerHTML]="printContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast-notification" *ngIf="toastMessage" [class]="toastType">
+  <i class="fas fa-info-circle"></i> {{ toastMessage }}
 </div>
 
 <!-- Filtres -->
 <div class="filters-container">
   <!-- Première ligne : Périodes et date -->
-  <div class="filters-row">
-    <div class="periodes-rapides">
-      @for (
-        p of [
-          { key: 'today', label: "Aujourd'hui" },
-          { key: 'yesterday', label: 'Hier' },
-          { key: 'week', label: 'Semaine' },
-          { key: 'month', label: 'Ce mois' },
-          { key: 'prev-month', label: 'Mois préc.' },
-        ];
-        track p.key
-      ) {
+  <div class="filters-row" style="margin-top: 12px; background: var(--bg-secondary)">
+    <div class="period-export">
+      <span class="export-label"><i class="fas fa-file-pdf"></i> Export PDF :</span>
+      <div class="period-buttons">
         <button
-          class="periode-chip"
-          [class.active]="periodeRapide() === p.key"
-          (click)="setPeriodeRapide(p.key)"
+          class="period-chip"
+          [class.active]="periodeExport() === 'today'"
+          (click)="setPeriodeExport('today')"
         >
-          {{ p.label }}
+          Aujourd'hui
         </button>
+        <button
+          class="period-chip"
+          [class.active]="periodeExport() === 'week'"
+          (click)="setPeriodeExport('week')"
+        >
+          Cette semaine
+        </button>
+        <button
+          class="period-chip"
+          [class.active]="periodeExport() === 'month'"
+          (click)="setPeriodeExport('month')"
+        >
+          Ce mois
+        </button>
+        <button
+          class="period-chip"
+          [class.active]="periodeExport() === 'custom'"
+          (click)="setPeriodeExport('custom')"
+        >
+          Personnalisé
+        </button>
+      </div>
+      @if (periodeExport() === 'custom') {
+        <div class="custom-dates">
+          <input type="date" [(ngModel)]="dateExportDebut" (change)="updateExportRange()" />
+          <span><i class="fas fa-arrow-right"></i></span>
+          <input type="date" [(ngModel)]="dateExportFin" (change)="updateExportRange()" />
+        </div>
       }
     </div>
-
-    <div class="filter-sep"></div>
-
-    <div class="date-nav">
-      <button class="nav-btn" (click)="jourPrecedent()" title="Jour précédent">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
+    <div class="header-actions">
+      <button
+        class="btn btn--ghost btn--sm"
+        (click)="openPrintPreview()"
+        [disabled]="lignesFiltrees().length === 0"
+        title="Aperçu avant impression"
+      >
+        <i class="fas fa-eye"></i>
+        Aperçu
       </button>
-      <input
-        class="date-input"
-        type="date"
-        [value]="dateSelectionnee()"
-        (change)="onDateChange($any($event.target).value)"
-      />
-      <button class="nav-btn" (click)="jourSuivant()" [disabled]="isToday" title="Jour suivant">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
+
+      <button
+        class="btn btn--secondary btn--sm"
+        (click)="printDirect()"
+        [disabled]="lignesFiltrees().length === 0"
+        title="Impression directe"
+      >
+        <i class="fas fa-print"></i>
+        Imprimer
       </button>
-      @if (isToday) {
-        <span class="today-badge">Aujourd'hui</span>
-      }
+
+      <button
+        class="btn btn--primary btn--sm"
+        (click)="openExportModal()"
+        [disabled]="lignesFiltrees().length === 0"
+      >
+        <i class="fas fa-file-pdf"></i>
+        Export PDF
+      </button>
+
+      <button
+        class="btn btn--secondary btn--sm"
+        (click)="exportCSV()"
+        [disabled]="lignesFiltrees().length === 0"
+      >
+        <i class="fas fa-file-csv"></i>
+        CSV
+      </button>
     </div>
   </div>
 
@@ -99,102 +190,11 @@
   </div>
 </div>
 
-<!-- Stats -->
-<div class="grid-stats" style="margin-bottom: 20px">
-  <div class="stat-card clickable" (click)="filtreStatut.set('')">
-    <div class="stat-icon-wrap blue">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
-          stroke="currentColor"
-          stroke-width="1.7"
-          stroke-linecap="round"
-        />
-        <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7" />
-      </svg>
-    </div>
-    <div>
-      <p class="stat-label">Total</p>
-      <p class="stat-value">{{ stats().total }}</p>
-    </div>
-  </div>
-  <div class="stat-card clickable" (click)="filtreStatut.set('present')">
-    <div class="stat-icon-wrap green">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M22 11.08V12a10 10 0 1 1-5.93-9.14"
-          stroke="currentColor"
-          stroke-width="1.7"
-          stroke-linecap="round"
-        />
-        <path
-          d="M22 4 12 14.01l-3-3"
-          stroke="currentColor"
-          stroke-width="1.7"
-          stroke-linecap="round"
-        />
-      </svg>
-    </div>
-    <div>
-      <p class="stat-label">Présents</p>
-      <p class="stat-value">{{ stats().presents }}</p>
-    </div>
-  </div>
-  <div class="stat-card clickable" (click)="filtreStatut.set('retard')">
-    <div class="stat-icon-wrap yellow">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7" />
-        <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-      </svg>
-    </div>
-    <div>
-      <p class="stat-label">Retards</p>
-      <p class="stat-value">{{ stats().retards }}</p>
-    </div>
-  </div>
-  <div class="stat-card clickable" (click)="filtreStatut.set('absent')">
-    <div class="stat-icon-wrap red">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7" />
-        <path
-          d="M15 9l-6 6M9 9l6 6"
-          stroke="currentColor"
-          stroke-width="1.7"
-          stroke-linecap="round"
-        />
-      </svg>
-    </div>
-    <div>
-      <p class="stat-label">Absents</p>
-      <p class="stat-value">{{ stats().absents }}</p>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon-wrap purple">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M18 20V10M12 20V4M6 20v-6"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-        />
-      </svg>
-    </div>
-    <div>
-      <p class="stat-label">Taux présence</p>
-      <p class="stat-value">{{ stats().taux }}%</p>
-    </div>
-  </div>
-</div>
-
 <!-- Table -->
 <div class="card table-wrapper">
   @if (lignesFiltrees().length === 0) {
     <div class="empty-state">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" />
-        <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-      </svg>
+      <i class="fas fa-clock" style="font-size: 32px;"></i>
       <p>Aucun pointage pour cette sélection</p>
     </div>
   }
@@ -213,7 +213,7 @@
       </thead>
       <tbody>
         @for (l of lignesFiltrees(); track l.matricule) {
-          <tr>
+          <tr class="clickable-row" (click)="voirHistorique(l.matricule)" style="cursor: pointer">
             <td data-label="Employé">
               <div class="cell-employe">
                 <div class="emp-avatar-sm">{{ initiales(l) }}</div>
@@ -241,7 +241,7 @@
             </td>
             <td data-label="Retard">
               @if (l.retard > 0) {
-                <span class="retard-badge">+{{ l.retard }} min</span>
+                <span class="retard-badge"><i class="fas fa-exclamation-triangle"></i> +{{ l.retard }} min</span>
               } @else {
                 <span style="color: var(--text-muted)">—</span>
               }

@@ -1,24 +1,22 @@
-<!-- detail-employe.html - avec onglet Responsables ajouté -->
+<!-- detail-employe.html - version Font Awesome -->
 
 @if (!loading() && !employe()) {
   <div class="page-header"><h1 class="page-title">Employé introuvable</h1></div>
   <div class="card empty-state">
     <p>Cet employé n'existe pas ou a été supprimé.</p>
-    <a routerLink="/employes" class="btn btn--secondary" style="margin-top: 12px"
-      >Retour à la liste</a
-    >
+    <a routerLink="/employes" class="btn btn--secondary" style="margin-top: 12px">
+      <i class="fas fa-arrow-left"></i> Retour à la liste
+    </a>
   </div>
 }
 
 @if (!loading() && employe(); as e) {
   <div class="breadcrumb">
     <a routerLink="/employes">Employés</a>
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-    </svg>
+    <i class="fas fa-chevron-right" style="font-size: 12px;"></i>
     <span>{{ e.prenom }} {{ e.nom }}</span>
   </div>
-  <!-- Remplacer le .profile-header par : -->
+
   <div class="profile-header">
     <div class="profile-left">
       <div class="profile-avatar-sm">{{ initials(e) }}</div>
@@ -59,41 +57,21 @@
       </span>
       @if (canEdit) {
         <button class="btn btn--secondary btn--sm" (click)="openEdit()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-              stroke="currentColor"
-              stroke-width="1.7"
-            />
-            <path
-              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"
-              stroke="currentColor"
-              stroke-width="1.7"
-            />
-          </svg>
+          <i class="fas fa-pen"></i>
           Modifier
         </button>
       }
     </div>
   </div>
 
-  <!-- detail-employe.html - modifier les onglets -->
-
+  <!-- Onglets -->
   <div class="emp-tabs">
     <button
       class="emp-tab"
       [class.active]="activeTab() === 'infos'"
       (click)="setActiveTab('infos')"
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7" />
-        <path
-          d="M4 20c0-4 3.6-7 8-7s8 3 8 7"
-          stroke="currentColor"
-          stroke-width="1.7"
-          stroke-linecap="round"
-        />
-      </svg>
+      <i class="fas fa-user"></i>
       Informations
     </button>
 
@@ -102,14 +80,7 @@
       [class.active]="activeTab() === 'responsables'"
       (click)="setActiveTab('responsables')"
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
-          stroke="currentColor"
-          stroke-width="1.7"
-          stroke-linejoin="round"
-        />
-      </svg>
+      <i class="fas fa-star"></i>
       Responsabilités
       @if (servicesGeres().length > 0) {
         <span class="tab-badge">{{ servicesGeres().length }}</span>
@@ -121,10 +92,7 @@
       [class.active]="activeTab() === 'planning'"
       (click)="setActiveTab('planning')"
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7" />
-        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.7" />
-      </svg>
+      <i class="fas fa-calendar-alt"></i>
       Planning
     </button>
 
@@ -133,15 +101,7 @@
       [class.active]="activeTab() === 'stats'"
       (click)="setActiveTab('stats')"
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M21 16v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2M7 10l3-3 3 3 4-4"
-          stroke="currentColor"
-          stroke-width="1.7"
-          stroke-linecap="round"
-        />
-        <path d="M17 10V4h-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-      </svg>
+      <i class="fas fa-chart-line"></i>
       Statistiques
       @if (stats().tauxPresence > 0 && !statsLoading()) {
         <span class="tab-badge">{{ stats().tauxPresence }}%</span>
@@ -152,82 +112,81 @@
     </button>
   </div>
 
-  <!-- Tab Informations existant -->
+  <!-- Tab Informations -->
   @if (activeTab() === 'infos') {
     <div class="detail-grid">
       <div class="card">
-        <h2 class="section-title">Informations personnelles</h2>
+        <h2 class="section-title"><i class="fas fa-address-card"></i> Informations personnelles</h2>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-key">Email</span><span>{{ e.email || '—' }}</span>
+            <span class="info-key"><i class="fas fa-envelope"></i> Email</span><span>{{ e.email || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key">Téléphone</span><span>{{ e.telephone || '—' }}</span>
+            <span class="info-key"><i class="fas fa-phone"></i> Téléphone</span><span>{{ e.telephone || '—' }}</span>
           </div>
           @if (age) {
             <div class="info-row">
-              <span class="info-key">Âge</span><span>{{ age }} ans</span>
+              <span class="info-key"><i class="fas fa-birthday-cake"></i> Âge</span><span>{{ age }} ans</span>
             </div>
           }
           <div class="info-row">
-            <span class="info-key">Date de naissance</span><span>{{ e.dateNaissance || '—' }}</span>
+            <span class="info-key"><i class="fas fa-calendar"></i> Date de naissance</span><span>{{ e.dateNaissance || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key">CIN</span><span>{{ e.cin || '—' }}</span>
+            <span class="info-key"><i class="fas fa-id-card"></i> CIN</span><span>{{ e.cin || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key">Adresse</span
+            <span class="info-key"><i class="fas fa-map-marker-alt"></i> Adresse</span
             ><span>{{ e.adresse || '—' }}{{ e.ville ? ', ' + e.ville : '' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key">Civilité</span><span>{{ e.civilite || '—' }}</span>
+            <span class="info-key"><i class="fas fa-venus-mars"></i> Civilité</span><span>{{ e.civilite || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key">Situation familiale</span
+            <span class="info-key"><i class="fas fa-heart"></i> Situation familiale</span
             ><span>{{ e.situationFamiliale || '—' }}</span>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <h2 class="section-title">Informations professionnelles</h2>
+        <h2 class="section-title"><i class="fas fa-briefcase"></i> Informations professionnelles</h2>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-key">Poste</span><span>{{ e.poste || '—' }}</span>
+            <span class="info-key"><i class="fas fa-tag"></i> Poste</span><span>{{ e.poste || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key">Service</span><span>{{ nomService(e.service) }}</span>
+            <span class="info-key"><i class="fas fa-building"></i> Service</span><span>{{ nomService(e.service) }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key">Type de contrat</span><span>{{ e.typeContrat || '—' }}</span>
+            <span class="info-key"><i class="fas fa-file-signature"></i> Type de contrat</span><span>{{ e.typeContrat || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key">Date d'embauche</span><span>{{ e.dateEmbauche || '—' }}</span>
+            <span class="info-key"><i class="fas fa-calendar-plus"></i> Date d'embauche</span><span>{{ e.dateEmbauche || '—' }}</span>
           </div>
           @if (e.dateFinContrat) {
             <div class="info-row">
-              <span class="info-key">Fin de contrat</span><span>{{ e.dateFinContrat }}</span>
+              <span class="info-key"><i class="fas fa-calendar-times"></i> Fin de contrat</span><span>{{ e.dateFinContrat }}</span>
             </div>
           }
           <div class="info-row">
-            <span class="info-key">N° CNSS</span><span>{{ e.numCNSS || '—' }}</span>
+            <span class="info-key"><i class="fas fa-shield-alt"></i> N° CNSS</span><span>{{ e.numCNSS || '—' }}</span>
           </div>
           @if (e.salaireBase) {
             <div class="info-row">
-              <span class="info-key">Salaire de base</span
+              <span class="info-key"><i class="fas fa-money-bill-wave"></i> Salaire de base</span
               ><span>{{ e.salaireBase | number }} FCFA</span>
             </div>
           }
-          <!-- detail-employe.html - ajouter dans la section Informations professionnelles -->
 
           <div class="info-row">
-            <span class="info-key">Login app</span><span>{{ e.login || '—' }}</span>
+            <span class="info-key"><i class="fas fa-user-circle"></i> Login app</span><span>{{ e.login || '—' }}</span>
           </div>
 
-          <!-- ✅ Ajouter l'affichage du PIN (admin uniquement) -->
+          <!-- Affichage du PIN (admin uniquement) -->
           @if (isAdmin) {
             <div class="info-row">
-              <span class="info-key">Code PIN</span>
+              <span class="info-key"><i class="fas fa-key"></i> Code PIN</span>
               <span class="pin-value">
                 <code>{{ e.pin || 'Non défini' }}</code>
                 @if (e.pin) {
@@ -236,7 +195,7 @@
                     (click)="copyPinToClipboard(e.pin)"
                     title="Copier le PIN"
                   >
-                    📋
+                    <i class="fas fa-copy"></i>
                   </button>
                 }
                 @if (!e.pin) {
@@ -251,16 +210,17 @@
               </span>
             </div>
           }
-          <!-- ✅ Affichage du rôle -->
+
+          <!-- Affichage du rôle -->
           <div class="info-row">
-            <span class="info-key">Rôle</span>
+            <span class="info-key"><i class="fas fa-user-shield"></i> Rôle</span>
             <span>
               @if (e.role === 'Administrateur') {
-                <span class="badge badge--admin">Administrateur</span>
+                <span class="badge badge--admin"><i class="fas fa-crown"></i> Administrateur</span>
               } @else if (e.role === 'Chargé de compte' || e.estChargeCompte) {
-                <span class="badge badge--manager">Chargé de compte</span>
+                <span class="badge badge--manager"><i class="fas fa-user-tie"></i> Chargé de compte</span>
               } @else {
-                <span class="badge badge--employee">Employé</span>
+                <span class="badge badge--employee"><i class="fas fa-user"></i> Employé</span>
               }
             </span>
           </div>
@@ -269,7 +229,7 @@
 
       @if (e.competences?.length) {
         <div class="card full-width">
-          <h2 class="section-title">Compétences</h2>
+          <h2 class="section-title"><i class="fas fa-graduation-cap"></i> Compétences</h2>
           <div class="tags">
             @for (c of e.competences; track c) {
               <span class="tag">{{ c }}</span>
@@ -279,46 +239,24 @@
       }
     </div>
   }
-  <!-- ✅ NOUVEL ONGLET : Responsables -->
+
+  <!-- ONGLET : Responsables -->
   @if (activeTab() === 'responsables') {
     <div class="responsables-detail-container">
-      <!-- Section 1: Services que l'employé gère (en tant que responsable) -->
+      <!-- Section 1: Services que l'employé gère -->
       <div class="card">
         <div class="section-header-with-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <rect
-              x="2"
-              y="7"
-              width="20"
-              height="14"
-              rx="2"
-              stroke="currentColor"
-              stroke-width="1.7"
-            />
-            <path
-              d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linecap="round"
-            />
-          </svg>
+          <i class="fas fa-building"></i>
           <h2 class="section-title">Services gérés</h2>
         </div>
 
         @if (servicesGeres().length === 0) {
           <div class="empty-responsable-state">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <i class="fas fa-star" style="font-size: 40px; opacity: 0.5;"></i>
             <p>{{ e.prenom }} {{ e.nom }} n'est responsable d'aucun service.</p>
             @if (canEdit) {
               <button class="btn btn--secondary btn--sm" (click)="openEdit()">
-                Modifier pour ajouter des responsabilités
+                <i class="fas fa-pen"></i> Modifier pour ajouter des responsabilités
               </button>
             }
           </div>
@@ -334,23 +272,7 @@
                   class="service-icon-small"
                   [style.background]="getServiceColor(service.matricule)"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <rect
-                      x="2"
-                      y="7"
-                      width="20"
-                      height="14"
-                      rx="2"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                    />
-                    <path
-                      d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                    />
-                  </svg>
+                  <i class="fas fa-building"></i>
                 </div>
                 <div class="service-info">
                   <span class="service-name">{{ service.nom }}</span>
@@ -358,41 +280,21 @@
                 </div>
                 <div class="service-stats-mini">
                   <span class="stat-badge"
-                    >{{ getEffectifService(service.matricule) }} employés</span
+                    ><i class="fas fa-users"></i> {{ getEffectifService(service.matricule) }} employés</span
                   >
                 </div>
-                <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M9 18l6-6-6-6"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                  />
-                </svg>
+                <i class="fas fa-chevron-right arrow-icon"></i>
               </div>
             }
           </div>
         }
       </div>
 
-      <!-- Section 2: Si l'employé est chargé de compte mais n'a pas de services -->
+      <!-- Section 2: Avertissement -->
       @if ((e.role === 'Chargé de compte' || e.estChargeCompte) && servicesGeres().length === 0) {
         <div class="card warning-card">
           <div class="warning-content">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12 9v4M12 17h.01"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-              />
-            </svg>
+            <i class="fas fa-exclamation-triangle"></i>
             <div>
               <strong>Attention</strong>
               <p>
@@ -409,29 +311,29 @@
         <div class="stats-cards-row">
           <div class="stat-mini-card">
             <span class="stat-number">{{ servicesGeres().length }}</span>
-            <span class="stat-label">Services gérés</span>
+            <span class="stat-label"><i class="fas fa-building"></i> Services gérés</span>
           </div>
           <div class="stat-mini-card">
             <span class="stat-number">{{ totalEmployesGeres() }}</span>
-            <span class="stat-label">Employés supervisés</span>
+            <span class="stat-label"><i class="fas fa-users"></i> Employés supervisés</span>
           </div>
           <div class="stat-mini-card">
             <span class="stat-number">{{ tauxPresenceGlobal() }}%</span>
-            <span class="stat-label">Présence moyenne</span>
+            <span class="stat-label"><i class="fas fa-chart-line"></i> Présence moyenne</span>
           </div>
         </div>
       }
     </div>
   }
 
-  <!-- ✅ ONGLET : Statistiques de l'employé -->
+  <!-- ONGLET : Statistiques de l'employé -->
   @if (activeTab() === 'stats') {
     <div class="stats-employe-container">
       <!-- État de chargement -->
       @if (statsLoading()) {
         <div class="stats-loading">
           <div class="spinner"></div>
-          <p>Chargement des statistiques...</p>
+          <p><i class="fas fa-spinner fa-spin"></i> Chargement des statistiques...</p>
         </div>
       }
 
@@ -441,20 +343,7 @@
         <div class="stats-kpi-grid">
           <div class="stats-card">
             <div class="stats-icon presence">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M22 11.08V12a10 10 0 1 1-5.93-9.14"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                />
-                <path
-                  d="M22 4 12 14.01l-3-3"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <i class="fas fa-check-circle"></i>
             </div>
             <div class="stats-info">
               <span class="stats-value">{{ stats().tauxPresence }}%</span>
@@ -467,15 +356,7 @@
 
           <div class="stats-card">
             <div class="stats-icon absence">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.7" />
-                <path
-                  d="M15 9l-6 6M9 9l6 6"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <i class="fas fa-times-circle"></i>
             </div>
             <div class="stats-info">
               <span class="stats-value">{{ stats().joursAbsents }}</span>
@@ -486,15 +367,7 @@
 
           <div class="stats-card">
             <div class="stats-icon retard">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7" />
-                <path
-                  d="M12 7v5l3 3"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <i class="fas fa-clock"></i>
             </div>
             <div class="stats-info">
               <span class="stats-value">{{ stats().nbRetards }}</span>
@@ -505,14 +378,7 @@
 
           <div class="stats-card">
             <div class="stats-icon ponctualite">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linejoin="round"
-                />
-              </svg>
+              <i class="fas fa-star"></i>
             </div>
             <div class="stats-info">
               <span class="stats-value">{{ stats().noteAssiduite }}/100</span>
@@ -539,14 +405,14 @@
           </div>
         </div>
 
-        <!-- Graphique d'évolution 30 jours -->
+        <!-- Graphique d'évolution -->
         <div class="stats-chart-card">
           <div class="chart-header">
-            <h3>Évolution des présences (30 derniers jours)</h3>
+            <h3><i class="fas fa-chart-bar"></i> Évolution des présences (30 derniers jours)</h3>
             <div class="chart-legend">
-              <span class="leg-item present">Présent</span>
-              <span class="leg-item absent">Absent</span>
-              <span class="leg-item retard">Retard</span>
+              <span class="leg-item present"><i class="fas fa-check-circle"></i> Présent</span>
+              <span class="leg-item absent"><i class="fas fa-times-circle"></i> Absent</span>
+              <span class="leg-item retard"><i class="fas fa-clock"></i> Retard</span>
             </div>
           </div>
           <div class="chart-container">
@@ -564,7 +430,7 @@
         <!-- Tableau des statistiques par mois -->
         <div class="stats-table-card">
           <div class="table-header">
-            <h3>Détail mensuel</h3>
+            <h3><i class="fas fa-calendar-alt"></i> Détail mensuel</h3>
             <div class="period-selector">
               <button
                 [class.active]="periodeStats() === '6mois'"
@@ -623,11 +489,11 @@
                         [class.down]="mois.evolution < 0"
                       >
                         @if (mois.evolution > 0) {
-                          ↑
+                          <i class="fas fa-arrow-up"></i>
                         } @else if (mois.evolution < 0) {
-                          ↓
+                          <i class="fas fa-arrow-down"></i>
                         } @else {
-                          →
+                          <i class="fas fa-minus"></i>
                         }
                         {{ mois.evolution > 0 ? '+' : '' }}{{ mois.evolution }}%
                       </span>
@@ -649,7 +515,7 @@
             </div>
           </div>
           <div class="info-card">
-            <div class="info-icon">📅</div>
+            <div class="info-icon"><i class="fas fa-calendar-week"></i></div>
             <div class="info-content">
               <span class="info-label">Meilleure semaine</span>
               <span class="info-value">Semaine {{ stats().meilleureSemaine }}</span>
@@ -657,7 +523,7 @@
             </div>
           </div>
           <div class="info-card">
-            <div class="info-icon">📈</div>
+            <div class="info-icon"><i class="fas fa-chart-line"></i></div>
             <div class="info-content">
               <span class="info-label">Tendance récente</span>
               <span
@@ -671,7 +537,7 @@
             </div>
           </div>
           <div class="info-card">
-            <div class="info-icon">🏆</div>
+            <div class="info-icon"><i class="fas fa-trophy"></i></div>
             <div class="info-content">
               <span class="info-label">Classement service</span>
               <span class="info-value"
@@ -689,19 +555,11 @@
           </div>
         </div>
 
-        <!-- Avertissement si pas assez de données -->
+        <!-- Avertissement -->
         @if (stats().joursTotal === 0) {
           <div class="warning-card">
             <div class="warning-content">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
-                <path
-                  d="M12 8v4M12 16h.01"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <i class="fas fa-info-circle"></i>
               <span
                 >Données insuffisantes. Les statistiques s'afficheront après quelques jours de
                 pointage.</span
@@ -712,11 +570,12 @@
       }
     </div>
   }
-  <!-- Tab Planning existant -->
+
+  <!-- Tab Planning -->
   @if (activeTab() === 'planning') {
     <div class="card">
       <div class="planning-card-header">
-        <h2 class="section-title">Planning hebdomadaire</h2>
+        <h2 class="section-title"><i class="fas fa-calendar-week"></i> Planning hebdomadaire</h2>
         <p class="planning-card-sub">
           Définissez les jours et heures de travail de {{ e.prenom }}.
         </p>
@@ -731,25 +590,18 @@
   }
 }
 
-<!-- Modal d'édition (inchangé) -->
+<!-- Modal d'édition -->
 @if (showEditForm() && employe()) {
   <div class="modal-overlay" (click)="closeEdit()">
     <div class="modal-box" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Modifier l'employé</h3>
+        <h3><i class="fas fa-pen"></i> Modifier l'employé</h3>
         <button class="modal-close" (click)="closeEdit()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M18 6 6 18M6 6l12 12"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
+          <i class="fas fa-times"></i>
         </button>
       </div>
       @if (editError()) {
-        <div class="form-alert">{{ editError() }}</div>
+        <div class="form-alert"><i class="fas fa-exclamation-triangle"></i> {{ editError() }}</div>
       }
       <app-employe-form
         [employe]="employe()"

@@ -111,3 +111,17 @@ export interface StatistiquesService {
   employePlusAssidu: EmployePointages | null;
   employeMoinsAssidu: EmployePointages | null;
 }
+// pointages.ts - ajouter cette interface
+
+export interface DetailPointageExport {
+  prenom: string;
+  nom: string;
+  matricule: string;
+  service: string;
+  poste: string;
+  arrive: string;
+  depart: string;
+  heures: number;
+  retard: number;
+  statut: 'present' | 'retard' | 'absent';
+}

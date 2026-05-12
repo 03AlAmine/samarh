@@ -1,11 +1,10 @@
-// pointages.ts - version refactorisée avec RoleFilterService
+// pointages.ts - version complète et corrigée
 import {
   Component,
   inject,
   signal,
   computed,
   OnInit,
-  effect,
   ChangeDetectionStrategy,
   DestroyRef,
 } from '@angular/core';
@@ -13,12 +12,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 import { EmployeService } from '../../core/services/employe.service';
 import { PointageService } from '../../core/services/pointage.service';
 import { AuthService } from '../../core/services/auth.service';
 import { RoleFilterService } from '../../core/services/role-filter.service';
 import { Employe, Service } from '../../core/models/employe.model';
-import { PresenceBrute } from '../../core/models/pointage.model';
+import { PresenceBrute, DetailPointageExport } from '../../core/models/pointage.model';
 
 interface LignePointage {
   matricule: string;
@@ -47,19 +47,29 @@ export class PointagesComponent implements OnInit {
   private pointageService = inject(PointageService);
   private auth = inject(AuthService);
   private roleFilter = inject(RoleFilterService);
+  private router = inject(Router);
 
   // Filtres
   dateSelectionnee = signal(new Date().toISOString().split('T')[0]);
   filtreService = signal('');
   filtreStatut = signal('');
-  periodeRapide = signal(''); // 'today' | 'week' | 'month' | 'prev-month' | ''
+  periodeRapide = signal('');
 
   // Données
   allEmployes = signal<Employe[]>([]);
   allServices = signal<Service[]>([]);
   presences = signal<PresenceBrute[]>([]);
 
-  // Abonnement courant au stream de présences (change quand la date change)
+  // ── Export PDF ─────────────────────────────────────────────────────────────
+  periodeExport = signal<'today' | 'week' | 'month' | 'custom'>('month');
+  dateExportDebut = '';
+  dateExportFin = '';
+  showPrintPreview = false;
+  printContent = '';
+  toastMessage = '';
+  toastType = '';
+
+  // Abonnement courant au stream de présences
   private presencesSub: Subscription | null = null;
 
   get isAdmin() {
@@ -70,23 +80,14 @@ export class PointagesComponent implements OnInit {
     return this.auth.canEditEmployes;
   }
 
-  /**
-   * Services visibles selon le rôle
-   */
   servicesVisibles = computed((): Service[] => {
     return this.roleFilter.filterServices(this.allServices());
   });
 
-  /**
-   * Employés visibles selon le rôle
-   */
   employesVisibles = computed((): Employe[] => {
     return this.roleFilter.filterEmployes(this.allEmployes());
   });
 
-  /**
-   * Lignes de pointage calculées (uniquement sur les employés visibles)
-   */
   lignes = computed<LignePointage[]>(() => {
     const employes = this.employesVisibles().filter((e) => e.statut !== 'archive');
     const presences = this.presences();
@@ -122,9 +123,6 @@ export class PointagesComponent implements OnInit {
     });
   });
 
-  /**
-   * Lignes filtrées par service et statut
-   */
   lignesFiltrees = computed(() => {
     let list = this.lignes();
     const svc = this.filtreService();
@@ -134,9 +132,6 @@ export class PointagesComponent implements OnInit {
     return list;
   });
 
-  /**
-   * Statistiques basées sur les employés visibles
-   */
   stats = computed(() => {
     const l = this.lignes();
     const presents = l.filter((x) => x.statut === 'present').length;
@@ -152,9 +147,6 @@ export class PointagesComponent implements OnInit {
     };
   });
 
-  /**
-   * Noms des services disponibles (uniquement ceux des employés visibles)
-   */
   nomsServices = computed(() =>
     [
       ...new Set(
@@ -166,7 +158,6 @@ export class PointagesComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    // Employés et services (temps réel, petites collections)
     this.employeService.employes$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((e) => this.allEmployes.set(e));
@@ -175,7 +166,6 @@ export class PointagesComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((s) => this.allServices.set(s));
 
-    // S'abonner aux présences de la date sélectionnée
     this.abonnerPresences(this.dateSelectionnee());
   }
 
@@ -191,28 +181,26 @@ export class PointagesComponent implements OnInit {
       : l.nom.substring(0, 2).toUpperCase();
   }
 
-  // Appelé quand l'utilisateur change la date
   onDateChange(date: string): void {
     this.dateSelectionnee.set(date);
     this.filtreService.set('');
     this.filtreStatut.set('');
-    // Reset période rapide si l'utilisateur change la date manuellement
     if (!['today', 'yesterday', 'week', 'month', 'prev-month'].includes(this.periodeRapide())) {
       this.periodeRapide.set('');
     }
-    // Ré-abonner au nouveau stream filtré (le cache du service réutilise si déjà chargé)
     this.abonnerPresences(date);
   }
 
   private abonnerPresences(date: string): void {
     this.presencesSub?.unsubscribe();
-    this.presences.set([]); // reset immédiat → pas de données de l'ancienne date
-    this.presencesSub = this.pointageService
-      .presencesJour$(date)
-      .subscribe((p) => this.presences.set(p));
+    this.presences.set([]);
+    if (date) {
+      this.presencesSub = this.pointageService
+        .presencesJour$(date)
+        .subscribe((p) => this.presences.set(p));
+    }
   }
 
-  // Navigation jour précédent / suivant
   jourPrecedent(): void {
     const d = new Date(this.dateSelectionnee());
     d.setDate(d.getDate() - 1);
@@ -231,8 +219,6 @@ export class PointagesComponent implements OnInit {
     return this.dateSelectionnee() === new Date().toISOString().split('T')[0];
   }
 
-  // ── Périodes rapides ─────────────────────────────────────────────────────
-
   setPeriodeRapide(p: string): void {
     const today = new Date();
     let date = today.toISOString().split('T')[0];
@@ -244,7 +230,6 @@ export class PointagesComponent implements OnInit {
       y.setDate(y.getDate() - 1);
       date = y.toISOString().split('T')[0];
     } else if (p === 'week') {
-      // Lundi de cette semaine
       const d = new Date(today);
       d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
       date = d.toISOString().split('T')[0];
@@ -260,6 +245,24 @@ export class PointagesComponent implements OnInit {
     this.onDateChange(date);
   }
 
+  setPeriodeExport(periode: 'today' | 'week' | 'month' | 'custom'): void {
+    this.periodeExport.set(periode);
+    const today = new Date();
+
+    if (periode === 'custom') {
+      const monthAgo = new Date();
+      monthAgo.setMonth(today.getMonth() - 1);
+      this.dateExportDebut = monthAgo.toISOString().split('T')[0];
+      this.dateExportFin = today.toISOString().split('T')[0];
+    }
+  }
+
+  updateExportRange(): void {
+    if (this.showPrintPreview) {
+      this.openPrintPreview();
+    }
+  }
+
   get labelPeriode(): string {
     const p = this.periodeRapide();
     const labels: Record<string, string> = {
@@ -271,8 +274,6 @@ export class PointagesComponent implements OnInit {
     };
     return labels[p] || '';
   }
-
-  // ── Export CSV (uniquement les données visibles) ─────────────────────────
 
   exportCSV(): void {
     const rows = [
@@ -308,8 +309,6 @@ export class PointagesComponent implements OnInit {
     }).click();
     URL.revokeObjectURL(url);
   }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
 
   formatHeure(iso: string): string {
     if (!iso) return '';
@@ -348,5 +347,283 @@ export class PointagesComponent implements OnInit {
 
   statutLabel(s: string): string {
     return s === 'present' ? 'Présent' : s === 'retard' ? 'Retard' : 'Absent';
+  }
+
+  voirHistorique(matricule: string): void {
+    const employe = this.allEmployes().find((e) => e.matricule === matricule);
+    if (employe) {
+      this.router.navigate(['/pointages/historique', employe.id]);
+    }
+  }
+
+  // ── Export PDF Methods ─────────────────────────────────────────────────────
+
+  private getExportDateRange(): { debut: string; fin: string } {
+    const today = new Date();
+    let debut = new Date();
+    let fin = new Date();
+
+    switch (this.periodeExport()) {
+      case 'today':
+        debut = today;
+        fin = today;
+        break;
+      case 'week':
+        const day = today.getDay();
+        const diff = day === 0 ? 6 : day - 1;
+        debut = new Date(today);
+        debut.setDate(today.getDate() - diff);
+        fin = today;
+        break;
+      case 'month':
+        debut = new Date(today.getFullYear(), today.getMonth(), 1);
+        fin = today;
+        break;
+      case 'custom':
+        return {
+          debut: this.dateExportDebut || today.toISOString().split('T')[0],
+          fin: this.dateExportFin || today.toISOString().split('T')[0],
+        };
+      default:
+        debut = new Date(today.getFullYear(), today.getMonth(), 1);
+        fin = today;
+    }
+
+    return {
+      debut: debut.toISOString().split('T')[0],
+      fin: fin.toISOString().split('T')[0],
+    };
+  }
+
+  // pointages.ts - modifier la méthode calculerStatsSurPeriode
+
+  private calculerStatsSurPeriode(
+    debut: string,
+    fin: string,
+  ): {
+    totalEmployes: number;
+    totalPresents: number;
+    totalRetards: number;
+    totalAbsents: number;
+    tauxMoyen: number;
+    details: DetailPointageExport[];
+  } {
+    const lignes = this.lignesFiltrees();
+    const totalEmployes = lignes.length;
+    const totalPresents = lignes.filter((l) => l.statut === 'present').length;
+    const totalRetards = lignes.filter((l) => l.statut === 'retard').length;
+    const totalAbsents = lignes.filter((l) => l.statut === 'absent').length;
+    const tauxMoyen =
+      totalEmployes > 0 ? Math.round(((totalPresents + totalRetards) / totalEmployes) * 100) : 0;
+
+    return {
+      totalEmployes,
+      totalPresents,
+      totalRetards,
+      totalAbsents,
+      tauxMoyen,
+      details: lignes.map((l) => ({
+        nom: l.nom,
+        prenom: l.prenom,
+        matricule: l.matricule,
+        service: l.service,
+        poste: '',
+        arrive: l.arrive,
+        depart: l.descente,
+        heures: l.heures,
+        retard: l.retard,
+        statut: l.statut,
+      })),
+    };
+  }
+
+  private generatePrintHTML(debut: string, fin: string): string {
+    const today = new Date();
+    const dateDebut = debut || this.dateSelectionnee();
+    const dateFin = fin || this.dateSelectionnee();
+    const periodStats = this.calculerStatsSurPeriode(dateDebut, dateFin);
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <title>Pointages - ${dateDebut} au ${dateFin}</title>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; padding: 30px; background: white; }
+    .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #4f7df3; }
+    .header h1 { color: #1e293b; font-size: 24px; margin-bottom: 8px; }
+    .header .period { color: #64748b; font-size: 14px; margin-top: 5px; }
+    .header .date { color: #94a3b8; font-size: 11px; margin-top: 8px; }
+    .stats-grid { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center; }
+    .stat-card { background: #f8fafc; border-radius: 12px; padding: 15px 25px; text-align: center; min-width: 120px; border: 1px solid #e2e8f0; }
+    .stat-card .value { font-size: 28px; font-weight: 700; color: #4f7df3; }
+    .stat-card .label { font-size: 12px; color: #64748b; margin-top: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+    th { background: #f1f5f9; font-weight: 600; color: #475569; }
+    .badge-present { color: #10b981; font-weight: 600; }
+    .badge-retard { color: #f59e0b; font-weight: 600; }
+    .badge-absent { color: #ef4444; font-weight: 600; }
+    .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #94a3b8; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📊 Rapport des pointages</h1>
+    <div class="period">Période du ${this.formatDate(dateDebut)} au ${this.formatDate(dateFin)}</div>
+    <div class="date">Généré le ${today.toLocaleString('fr-FR')}</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="value">${periodStats.totalEmployes}</div><div class="label">Employés</div></div>
+    <div class="stat-card"><div class="value" style="color:#10b981">${periodStats.totalPresents}</div><div class="label">Présents</div></div>
+    <div class="stat-card"><div class="value" style="color:#f59e0b">${periodStats.totalRetards}</div><div class="label">Retards</div></div>
+    <div class="stat-card"><div class="value" style="color:#ef4444">${periodStats.totalAbsents}</div><div class="label">Absents</div></div>
+    <div class="stat-card"><div class="value">${periodStats.tauxMoyen}%</div><div class="label">Taux présence</div></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Employé</th><th>Service</th><th>Poste</th><th>Arrivée</th><th>Départ</th><th>Heures</th><th>Retard</th><th>Statut</th></tr>
+    </thead>
+    <tbody>
+      ${periodStats.details
+        .map(
+          (d: DetailPointageExport) => `
+        <tr>
+          <td><strong>${d.prenom} ${d.nom}</strong><br><span style="font-size:11px;color:#94a3b8">${d.matricule}</span></td>
+          <td>${d.service}</td>
+          <td>${d.poste || '—'}</td>
+          <td>${d.arrive || '—'}</td>
+          <td>${d.depart || '—'}</td>
+          <td>${d.heures > 0 ? d.heures + 'h' : '—'}</td>
+          <td>${d.retard > 0 ? '+' + d.retard + ' min' : '—'}</td>
+          <td class="badge-${d.statut}">${d.statut === 'present' ? '✓ Présent' : d.statut === 'retard' ? '⚠ Retard' : '✗ Absent'}</td>
+        </tr>
+      `,
+        )
+        .join('')}
+    </tbody>
+  </table>
+
+  <div class="footer">SamaRH - Système de gestion des pointages</div>
+</body>
+</html>`;
+  }
+
+  openPrintPreview(): void {
+    const { debut, fin } = this.getExportDateRange();
+    const html = this.generatePrintHTML(debut, fin);
+    const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    this.printContent = bodyMatch ? bodyMatch[1] : html;
+    this.showPrintPreview = true;
+  }
+
+  openExportModal(): void {
+    if (!this.dateExportDebut) {
+      const today = new Date();
+      const monthAgo = new Date();
+      monthAgo.setMonth(today.getMonth() - 1);
+      this.dateExportDebut = monthAgo.toISOString().split('T')[0];
+      this.dateExportFin = today.toISOString().split('T')[0];
+    }
+    this.openPrintPreview();
+  }
+
+  // pointages.ts - version finale
+
+  /**
+   * Impression directe - sans popup about:blank
+   */
+  printDirect(): void {
+    // Créer un iframe caché
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    iframe.style.top = '-9999px';
+    iframe.style.left = '-9999px';
+    document.body.appendChild(iframe);
+
+    // Générer le HTML pour l'impression
+    const { debut, fin } = this.getExportDateRange();
+    const html = this.generatePrintHTML(debut, fin);
+
+    // Écrire dans l'iframe
+    const iframeDoc = iframe.contentWindow?.document;
+    if (iframeDoc) {
+      iframeDoc.open();
+      iframeDoc.write(html);
+      iframeDoc.close();
+
+      // Attendre que le contenu soit chargé
+      iframe.onload = () => {
+        // Déclencher l'impression
+        iframe.contentWindow?.print();
+
+        // Supprimer l'iframe après l'impression (ou après un délai)
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      };
+
+      // Si onload ne se déclenche pas, déclencher directement
+      setTimeout(() => {
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
+      }, 500);
+    } else {
+      this.showToast("Impossible de démarrer l'impression", 'error');
+      document.body.removeChild(iframe);
+    }
+  }
+
+  printFromPreview(): void {
+    const content = this.printContent;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document
+        .write(`<!DOCTYPE html><html><head><title>Pointages</title><meta charset="UTF-8"><style>
+        body { font-family: system-ui, sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: #f5f5f5; }
+      </style></head><body>${content}</body></html>`);
+      printWindow.document.close();
+      printWindow.print();
+      printWindow.close();
+      this.showToast('Impression envoyée', 'success');
+    }
+  }
+
+  saveAsPDF(): void {
+    this.printFromPreview();
+    this.showToast('Utilisez "Enregistrer au format PDF" dans la boîte de dialogue', 'info');
+  }
+
+  private showToast(message: string, type: 'success' | 'error' | 'info'): void {
+    this.toastMessage = message;
+    this.toastType = type;
+    setTimeout(() => {
+      this.toastMessage = '';
+    }, 3000);
+  }
+
+  closePrintPreview(): void {
+    this.showPrintPreview = false;
+    this.printContent = '';
+  }
+
+  private formatDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
   }
 }

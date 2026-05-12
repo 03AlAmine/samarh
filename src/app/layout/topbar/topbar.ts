@@ -1,270 +1,214 @@
-// topbar.ts - version corrigée
-import { Component, inject, output, signal, OnInit, OnDestroy, effect } from '@angular/core';
+import {
+  Component, inject, output, signal, OnInit, OnDestroy,
+  effect, ChangeDetectionStrategy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { EmployeService } from '../../core/services/employe.service';
+import { NotificationService, AppNotification } from '../../core/services/notification.service';
 import { AppUser } from '../../core/models/user.model';
-import { Subject, takeUntil } from 'rxjs';
 
 interface SearchResult {
-  id: string;
-  title: string;
-  subtitle: string;
-  route: string;
-  type: 'employe' | 'service';
-  iconBg: string;
+  id: string; title: string; subtitle: string;
+  route: string; type: 'employe' | 'service'; iconBg: string;
 }
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule],
   templateUrl: './topbar.html',
   styleUrls: ['./topbar.scss'],
 })
 export class TopbarComponent implements OnInit, OnDestroy {
-  private auth = inject(AuthService);
+  private auth           = inject(AuthService);
   private employeService = inject(EmployeService);
-  private router = inject(Router);
-  private destroy$ = new Subject<void>();
+  private router         = inject(Router);
+  readonly notifSvc      = inject(NotificationService);
+  private destroy$       = new Subject<void>();
 
   toggleSidebar = output<void>();
-  userMenuOpen = signal(false);
-  user = signal<AppUser | null>(null);
+
+  user            = signal<AppUser | null>(null);
+  userMenuOpen    = signal(false);
+  notifPanelOpen  = signal(false);
+  unreadCount     = signal(0);
+  notifications   = signal<AppNotification[]>([]);
 
   // Recherche
-  searchQuery = signal('');
+  searchQuery       = signal('');
   showSearchResults = signal(false);
-  searchLoading = signal(false);
-  searchResults = signal<SearchResult[]>([]);
+  searchLoading     = signal(false);
+  searchResults     = signal<SearchResult[]>([]);
   private searchCache = new Map<string, SearchResult[]>();
   allEmployes: any[] = [];
   allServices: any[] = [];
 
-  // Notifications
-  unreadCount = signal(3);
-
   constructor() {
-    this.auth.user$.pipe(takeUntil(this.destroy$)).subscribe((u) => this.user.set(u));
+    this.auth.user$.pipe(takeUntil(this.destroy$)).subscribe(u => this.user.set(u));
 
-    this.employeService.employes$.pipe(takeUntil(this.destroy$)).subscribe((employes) => {
-      this.allEmployes = employes;
-    });
+    this.employeService.employes$.pipe(takeUntil(this.destroy$))
+      .subscribe(e => this.allEmployes = e);
 
-    this.employeService.services$.pipe(takeUntil(this.destroy$)).subscribe((services) => {
-      this.allServices = services;
-    });
+    this.employeService.services$.pipe(takeUntil(this.destroy$))
+      .subscribe(s => this.allServices = s);
 
-    let timeoutId: any;
+    // Notifications temps réel
+    this.notifSvc.notifications$.pipe(takeUntil(this.destroy$))
+      .subscribe(list => this.notifications.set(list));
+
+    this.notifSvc.unreadCount$.pipe(takeUntil(this.destroy$))
+      .subscribe(n => this.unreadCount.set(n));
+
+    // Recherche avec debounce
+    let timer: any;
     effect(() => {
-      const query = this.searchQuery();
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        this.performSearch(query);
-      }, 300);
+      const q = this.searchQuery();
+      clearTimeout(timer);
+      timer = setTimeout(() => this.performSearch(q), 300);
     });
   }
 
   ngOnInit(): void {
-    document.addEventListener('keydown', this.handleKeyboardShortcut.bind(this));
-    document.addEventListener('click', this.handleOutsideClick.bind(this));
-
-    setInterval(() => {
-      if (this.searchCache.size > 50) {
-        this.searchCache.clear();
-      }
-    }, 60000);
+    document.addEventListener('keydown', this.onKeydown);
+    document.addEventListener('click',   this.onOutsideClick);
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    document.removeEventListener('keydown', this.handleKeyboardShortcut.bind(this));
-    document.removeEventListener('click', this.handleOutsideClick.bind(this));
+    this.destroy$.next(); this.destroy$.complete();
+    document.removeEventListener('keydown', this.onKeydown);
+    document.removeEventListener('click',   this.onOutsideClick);
   }
 
-  private handleKeyboardShortcut(e: KeyboardEvent): void {
+  private onKeydown = (e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
-      const searchInput = document.querySelector('.search-bar input') as HTMLInputElement;
-      if (searchInput) searchInput.focus();
+      (document.querySelector('.search-bar input') as HTMLInputElement)?.focus();
     }
     if (e.key === 'Escape') {
       this.showSearchResults.set(false);
+      this.notifPanelOpen.set(false);
     }
-  }
+  };
 
-  private handleOutsideClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.user-menu-trigger') && !target.closest('.user-dropdown')) {
+  private onOutsideClick = (e: MouseEvent) => {
+    const t = e.target as HTMLElement;
+    if (!t.closest('.user-menu-trigger') && !t.closest('.user-dropdown'))
       this.userMenuOpen.set(false);
-    }
-    if (!target.closest('.search-wrapper')) {
+    if (!t.closest('.search-wrapper'))
       this.showSearchResults.set(false);
-    }
+    if (!t.closest('.notif-wrapper'))
+      this.notifPanelOpen.set(false);
+  };
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+
+  toggleNotif(): void {
+    this.notifPanelOpen.update(v => !v);
+    this.userMenuOpen.set(false);
   }
 
-  onSearch(query: string): void {
-    this.searchQuery.set(query);
+  async markRead(n: AppNotification, e: Event): Promise<void> {
+    e.stopPropagation();
+    if (!n.read) await this.notifSvc.markRead(n.id);
   }
 
+  async markAllRead(): Promise<void> {
+    await this.notifSvc.markAllRead(this.notifications());
+  }
+
+  async deleteNotif(n: AppNotification, e: Event): Promise<void> {
+    e.stopPropagation();
+    await this.notifSvc.delete(n.id);
+  }
+
+  goToNotif(n: AppNotification): void {
+    if (!n.read) this.notifSvc.markRead(n.id);
+    this.notifPanelOpen.set(false);
+    if (n.actionUrl) this.router.navigateByUrl(n.actionUrl);
+  }
+
+  timeAgo(d: string): string { return this.notifSvc.timeAgo(d); }
+  notifColor(type: any): string { return this.notifSvc.colorFor(type); }
+
+  // ── Recherche ─────────────────────────────────────────────────────────────
+
+  onSearch(q: string): void { this.searchQuery.set(q); }
   clearSearch(): void {
     this.searchQuery.set('');
     this.showSearchResults.set(false);
-    const input = document.querySelector('.search-bar input') as HTMLInputElement;
-    if (input) input.focus();
+    (document.querySelector('.search-bar input') as HTMLInputElement)?.focus();
   }
+  onBlur(): void { setTimeout(() => this.showSearchResults.set(false), 200); }
 
-  onBlur(): void {
-    setTimeout(() => {
-      this.showSearchResults.set(false);
-    }, 200);
-  }
-
-  private async performSearch(query: string): Promise<void> {
-    if (!query || query.length < 2) {
-      this.searchResults.set([]);
-      return;
-    }
-
-    if (this.searchCache.has(query)) {
-      this.searchResults.set(this.searchCache.get(query)!);
-      return;
-    }
-
+  private async performSearch(q: string): Promise<void> {
+    if (!q || q.length < 2) { this.searchResults.set([]); return; }
+    if (this.searchCache.has(q)) { this.searchResults.set(this.searchCache.get(q)!); return; }
     this.searchLoading.set(true);
-
-    const lowerQuery = query.toLowerCase();
-    const results: SearchResult[] = [];
-
-    const limitedEmployes = this.allEmployes.slice(0, 100);
-
-    const employesMatch = limitedEmployes
-      .filter((e) => {
-        const fullName = `${e.prenom} ${e.nom}`.toLowerCase();
-        const matricule = e.matricule?.toLowerCase() || '';
-        return fullName.includes(lowerQuery) || matricule.includes(lowerQuery);
-      })
-      .slice(0, 5);
-
-    employesMatch.forEach((e) => {
-      results.push({
-        id: e.id,
-        title: `${e.prenom} ${e.nom}`,
+    const lq = q.toLowerCase();
+    const results: SearchResult[] = [
+      ...this.allEmployes.filter(e =>
+        `${e.prenom} ${e.nom}`.toLowerCase().includes(lq) ||
+        (e.matricule || '').toLowerCase().includes(lq)
+      ).slice(0, 5).map(e => ({
+        id: e.id, title: `${e.prenom} ${e.nom}`,
         subtitle: `${e.poste || 'Employé'} · ${e.matricule}`,
-        route: `/employes/${e.id}`,
-        type: 'employe',
-        iconBg: this.getAvatarColor(e.id),
-      });
-    });
-
-    const servicesMatch = this.allServices
-      .filter((s) => s.nom?.toLowerCase().includes(lowerQuery))
-      .slice(0, 5);
-
-    servicesMatch.forEach((s) => {
-      results.push({
-        id: s.id,
-        title: s.nom,
-        subtitle: `${s.matricule} · ${this.getEffectifService(s.matricule)} employés`,
-        route: `/services`,
-        type: 'service',
-        iconBg: this.getServiceColor(s.matricule),
-      });
-    });
-
-    const finalResults = results.slice(0, 8);
-    this.searchCache.set(query, finalResults);
-    this.searchResults.set(finalResults);
+        route: `/employes/${e.id}`, type: 'employe' as const,
+        iconBg: this.getColor(e.id),
+      })),
+      ...this.allServices.filter(s =>
+        s.nom?.toLowerCase().includes(lq)
+      ).slice(0, 3).map(s => ({
+        id: s.id, title: s.nom,
+        subtitle: `${s.matricule} · ${this.allEmployes.filter(e => e.service === s.matricule).length} employés`,
+        route: '/services', type: 'service' as const,
+        iconBg: this.getColor(s.matricule),
+      })),
+    ].slice(0, 8);
+    this.searchCache.set(q, results);
+    this.searchResults.set(results);
     this.searchLoading.set(false);
   }
 
-  private getEffectifService(matricule: string): number {
-    return this.allEmployes.filter((e) => e.service === matricule && e.statut !== 'archive').length;
+  private getColor(s: string): string {
+    const colors = ['#4f7df3','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4'];
+    return colors[(s || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length];
   }
 
-  private getAvatarColor(id: string): string {
-    const colors = ['#4f7df3', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
-    const idx = id?.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 0;
-    return colors[idx % colors.length];
-  }
+  // ── User helpers ──────────────────────────────────────────────────────────
 
-  private getServiceColor(matricule: string): string {
-    const colors = ['#4f7df3', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
-    const idx = matricule?.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 0;
-    return colors[idx % colors.length];
-  }
-
-  // ✅ Converti en méthodes (pas en getters)
-  userFirstName(): string {
-    const u = this.user() as any;
-    if (!u) return '';
-    return u.firstName || u.prenom || 'Utilisateur';
-  }
-
+  userFirstName(): string { return (this.user() as any)?.firstName || (this.user() as any)?.prenom || 'Utilisateur'; }
   currentDate(): string {
-    return new Date().toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
+    return new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   }
-
   userInitials(): string {
     const u = this.user();
     if (!u) return '?';
     if (u.firstName && u.lastName) return `${u.firstName[0]}${u.lastName[0]}`.toUpperCase();
-    if (u.firstName) return u.firstName.substring(0, 2).toUpperCase();
-    if (u.lastName) return u.lastName.substring(0, 2).toUpperCase();
     return (u as any).login?.substring(0, 2).toUpperCase() || '?';
   }
-
   userLabel(): string {
     const u = this.user() as any;
     if (!u) return '';
-    if (u.isCommunauteUser) {
-      return u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.login || u.matricule || 'Employé';
-    }
-    return u.userType === 'company' ? u.companyName || 'Entreprise' : `${u.firstName} ${u.lastName}`;
+    return u.isCommunauteUser
+      ? (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.login || 'Employé')
+      : (u.companyName || `${u.firstName} ${u.lastName}`);
   }
-
   roleLabel(): string {
     const u = this.user() as any;
     if (!u) return '';
     if (u.userType === 'admin') return 'Super Admin';
-    if (this.auth.isAdmin && u.communauteId) return 'Admin Communauté';
-    if (u.isCommunauteUser && u.role === 'Chargé de compte') return 'Chargé de compte';
-    if (u.isCommunauteUser && u.role === 'Administrateur') return 'Admin';
-    if (u.isCommunauteUser) return u.poste || 'Employé';
-    return u.userType === 'company' ? 'Gérant' : 'Individuel';
+    if (this.auth.isAdmin) return 'Administrateur';
+    if (u.role === 'Chargé de compte') return 'Chargé de compte';
+    return u.poste || 'Employé';
   }
-
-  userEmail(): string {
-    return (this.user() as any)?.email || '';
-  }
-
-  toggleUserMenu(): void {
-    this.userMenuOpen.update(v => !v);
-  }
-
-  closeMenu(): void {
-    this.userMenuOpen.set(false);
-  }
-
-  toggleNotif(): void {
-    console.log('Notifications');
-  }
-
-  openCreateEmploye(): void {
-    this.router.navigate(['/employes'], { queryParams: { action: 'create' } });
-  }
-
-  openQuickPointage(): void {
-    this.router.navigate(['/pointages']);
-  }
-
-  async logout(): Promise<void> {
-    await this.auth.logout();
-  }
+  userEmail(): string { return (this.user() as any)?.email || ''; }
+  toggleUserMenu(): void { this.userMenuOpen.update(v => !v); this.notifPanelOpen.set(false); }
+  closeMenu(): void { this.userMenuOpen.set(false); }
+  openCreateEmploye(): void { this.router.navigate(['/employes'], { queryParams: { action: 'create' } }); }
+  openQuickPointage(): void { this.router.navigate(['/pointages']); }
+  async logout(): Promise<void> { await this.auth.logout(); }
 }

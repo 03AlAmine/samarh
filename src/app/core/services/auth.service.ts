@@ -49,11 +49,9 @@ export class AuthService {
       if (!employeeRestored) {
         // 3. Enfin, écouter Firebase Auth
         this.auth.onAuthStateChanged(async (firebaseUser) => {
-          console.log('🔐 onAuthStateChanged - firebaseUser:', firebaseUser?.uid);
 
           if (firebaseUser) {
             const userData = await this.fb.adminGet<AppUser>(`users/${firebaseUser.uid}`);
-            console.log('👤 userData récupéré:', userData?.userType);
 
             if (userData) {
               const userWithId = { ...userData, uid: firebaseUser.uid };
@@ -113,7 +111,6 @@ export class AuthService {
       };
 
       this.userSubject.next(user);
-      console.log('✅ Session admin restaurée');
       return true;
     } catch {
       return false;
@@ -149,7 +146,6 @@ export class AuthService {
           this.authReady$.next(true);
         });
 
-      console.log('✅ Session employé restaurée');
       return true;
     } catch {
       return false;
@@ -159,7 +155,6 @@ export class AuthService {
   // ── CONNEXION ADMIN ────────────────────────────────────────────────────────
 
   async login(email: string, password: string, rememberMe = false): Promise<void> {
-    console.log('🔐 Connexion admin:', email);
 
     const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
     await setPersistence(this.auth, persistence);
@@ -179,7 +174,6 @@ export class AuthService {
     this.saveAdminSession(userWithUid);
     this.userSubject.next(userWithUid);
 
-    console.log('✅ Admin connecté, session sauvegardée');
   }
 
   // ── CONNEXION EMPLOYÉ ──────────────────────────────────────────────────────
@@ -213,7 +207,6 @@ export class AuthService {
     sessionStorage.setItem(EMPLOYEE_SESSION_KEY, JSON.stringify(sessionData));
     if (rememberMe) localStorage.setItem(EMPLOYEE_SESSION_KEY, JSON.stringify(sessionData));
 
-    console.log('✅ Employé connecté, session sauvegardée');
   }
 
   // ── INSCRIPTION ────────────────────────────────────────────────────────────

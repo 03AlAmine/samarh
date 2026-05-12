@@ -1,3 +1,5 @@
+// cartes.ts - remplacer les méthodes de sélection
+
 import {
   Component,
   inject,
@@ -38,18 +40,18 @@ export class CartesComponent implements OnInit {
   filterSvc = signal('');
   styleCarte = signal<Style>('moderne');
   format = signal<Format>('paysage');
-  couleur = signal('#4f7df3');
-  selected = signal<Set<string>>(new Set());
+  couleur = signal('#10b981');
+
+  // ✅ Sélection stockée séparément (tous les IDs sélectionnés, indépendamment du filtre)
+  selectedIds = signal<Set<string>>(new Set());
   page = signal(1);
 
-  // ── Map id → data URL PNG du QR code ─────────────────────────────────────
-  // Généré une fois, jamais de canvas dans le template
   qrDataUrls = signal<Map<string, string>>(new Map());
 
   readonly PAGE = 12;
   readonly presetColors = [
-    '#4f7df3',
     '#10b981',
+    '#4f7df3',
     '#f59e0b',
     '#ef4444',
     '#8b5cf6',
@@ -62,7 +64,6 @@ export class CartesComponent implements OnInit {
     return this.auth.isAdmin;
   }
 
-  // Services visibles selon le rôle
   servicesVisibles = computed((): Service[] => {
     if (this.isAdmin) return this.allServices();
     const u = (this.auth as any)['userSubject']?.value as any;
@@ -70,7 +71,6 @@ export class CartesComponent implements OnInit {
     return this.allServices().filter((s) => u.services.includes(s.matricule));
   });
 
-  // Employés visibles selon le rôle
   employesVisibles = computed((): Employe[] => {
     if (this.isAdmin) return this.allEmployes();
     const u = (this.auth as any)['userSubject']?.value as any;
@@ -98,6 +98,21 @@ export class CartesComponent implements OnInit {
 
   totalPages = computed(() => Math.max(1, Math.ceil(this.filtered().length / this.PAGE)));
 
+  /**
+   * ✅ Nombre total de cartes sélectionnées (pour l'affichage)
+   */
+  get selectedCount(): number {
+    return this.selectedIds().size;
+  }
+
+  /**
+   * ✅ Liste des employés sélectionnés (ceux qui sont dans selectedIds ET existent dans allEmployes)
+   */
+  getSelectedEmployes(): Employe[] {
+    const ids = this.selectedIds();
+    return this.allEmployes().filter(e => ids.has(e.id));
+  }
+
   ngOnInit(): void {
     this.employeService.employes$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((list) => {
       this.allEmployes.set(list);
@@ -110,16 +125,12 @@ export class CartesComponent implements OnInit {
       .subscribe((list) => this.allServices.set(list));
   }
 
-  // ── Génération QR codes en data URL ──────────────────────────────────────
-  // cartes.ts - modifier la méthode generateQRCodes
-
   private async generateQRCodes(employes: Employe[]): Promise<void> {
     const map = new Map<string, string>();
 
     await Promise.all(
       employes.map(async (e) => {
         if (!e.id) return;
-        // ✅ Le QR code contient le MATRICULE (pas une URL)
         const content = e.matricule || e.id;
         try {
           const dataUrl = await QRCode.toDataURL(content, {
@@ -141,22 +152,59 @@ export class CartesComponent implements OnInit {
     return this.qrDataUrls().get(id) || '';
   }
 
-  // ── Sélection ─────────────────────────────────────────────────────────────
+  // ── Sélection corrigée ─────────────────────────────────────────────────────
+
+  /**
+   * ✅ Vérifie si un employé est sélectionné
+   */
+  isSelected(id: string): boolean {
+    return this.selectedIds().has(id);
+  }
+
+  /**
+   * ✅ Active/Désactive la sélection d'un employé
+   */
   toggleSelect(id: string): void {
-    this.selected.update((s) => {
-      const n = new Set(s);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
+    this.selectedIds.update((set) => {
+      const newSet = new Set(set);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
     });
   }
-  isSelected(id: string): boolean {
-    return this.selected().has(id);
-  }
+
+  /**
+   * ✅ Sélectionne tous les employés VISIBLES (filtrés) sans perdre les sélections précédentes
+   */
   selectAll(): void {
-    this.selected.set(new Set(this.filtered().map((e) => e.id)));
+    const visibleIds = this.filtered().map(e => e.id);
+    this.selectedIds.update((set) => {
+      const newSet = new Set(set);
+      visibleIds.forEach(id => newSet.add(id));
+      return newSet;
+    });
   }
+
+  /**
+   * ✅ Désélectionne tous les employés VISIBLES (filtrés) sans affecter les autres
+   */
   clearSelection(): void {
-    this.selected.set(new Set());
+    const visibleIds = this.filtered().map(e => e.id);
+    this.selectedIds.update((set) => {
+      const newSet = new Set(set);
+      visibleIds.forEach(id => newSet.delete(id));
+      return newSet;
+    });
+  }
+
+  /**
+   * ✅ Désélectionne TOUS les employés (y compris ceux hors filtre)
+   */
+  clearAllSelection(): void {
+    this.selectedIds.set(new Set());
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -191,14 +239,16 @@ export class CartesComponent implements OnInit {
     return this.couleur();
   }
 
-  // ── Impression ────────────────────────────────────────────────────────────
-  imprimerSelection(): void {
-    const cibles =
-      this.selected().size > 0
-        ? this.filtered().filter((e) => this.selected().has(e.id))
-        : this.filtered();
+  // ── Impression (utilise les employés sélectionnés) ─────────────────────────
 
-    if (cibles.length === 0) {
+  imprimerSelection(): void {
+    // ✅ Utiliser les employés réellement sélectionnés
+    const cibles = this.getSelectedEmployes();
+
+    // Si aucune sélection, imprimer tous les employés visibles
+    const employesAImprimer = cibles.length > 0 ? cibles : this.filtered();
+
+    if (employesAImprimer.length === 0) {
       alert('Aucune carte à imprimer');
       return;
     }
@@ -211,10 +261,9 @@ export class CartesComponent implements OnInit {
     if (!doc) return;
 
     doc.open();
-    doc.write(this.buildPrintHTML(cibles));
+    doc.write(this.buildPrintHTML(employesAImprimer));
     doc.close();
 
-    // Les data URLs sont déjà dans le HTML, pas besoin d'attendre
     setTimeout(() => {
       iframe.contentWindow?.print();
       setTimeout(() => document.body.removeChild(iframe), 500);

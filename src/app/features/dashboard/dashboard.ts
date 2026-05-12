@@ -47,6 +47,7 @@ Chart.register(
 
 import { AuthService } from '../../core/services/auth.service';
 import { EmployeService } from '../../core/services/employe.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { RoleFilterService } from '../../core/services/role-filter.service';
 import { FirebaseService } from '../../core/services/firebase.service';
 import { PointageService } from '../../core/services/pointage.service';
@@ -101,6 +102,16 @@ export class DashboardComponent implements OnInit {
   readonly fb = inject(FirebaseService);
   private pointageService = inject(PointageService);
   private cdr = inject(ChangeDetectorRef);
+  private notifSvc = inject(NotificationService);
+
+  /** Retourne le nom complet propre même si prenom est vide */
+  private nomComplet(emp: Employe): string {
+    const prenom = (emp.prenom || '').trim();
+    const nom    = (emp.nom    || '').trim();
+    if (!prenom) return nom;               // "Amadou Diallo" tout dans nom
+    if (!nom)    return prenom;            // seulement prénom
+    return `${prenom} ${nom}`;
+  }
   @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
 
   // ── State brut ────────────────────────────────────────────────────────────
@@ -166,6 +177,7 @@ export class DashboardComponent implements OnInit {
   });
 
   alertesRetard = signal<AlerteRetard[]>([]);
+  private notifiedToday = new Set<string>(); // évite les doublons de notifs
 
   constructor() {
     effect(() => {
@@ -432,6 +444,13 @@ export class DashboardComponent implements OnInit {
         next: (presences) => {
           this._presencesToday.set(presences);
           this.calculerAlertes(presences);
+          // Absents : attendre 30min après ouverture (laisser le temps de badger)
+          // On utilise l'heure actuelle — notifier seulement après 8h30
+          const now = new Date();
+          const heure = now.getHours() * 60 + now.getMinutes();
+          if (heure >= 8 * 60 + 30) {
+            this.notifierAbsents(presences);
+          }
         },
         error: () => this._presencesToday.set([]),
       });
@@ -476,6 +495,69 @@ export class DashboardComponent implements OnInit {
     });
 
     this.alertesRetard.set(alertes.sort((a, b) => b.minutesRetard - a.minutesRetard).slice(0, 5));
+
+    // ── 1 seul résumé retards par jour ──────────────────────────────────────
+    const todayStr = new Date().toISOString().split('T')[0];
+    const alertesFiltrees = alertes.filter(a =>
+      this.auth.canManageService(a.employe.service ?? '')
+    );
+    if (alertesFiltrees.length === 0) return;
+
+    const keyRetards = `notif_retards_${todayStr}`;
+    if (this.notifiedToday.has(keyRetards)) return;
+    this.notifiedToday.add(keyRetards);
+
+    const top3 = [...alertesFiltrees]
+      .sort((a, b) => b.minutesRetard - a.minutesRetard)
+      .slice(0, 3);
+    const noms = top3.map(a => `${this.nomComplet(a.employe)} (${a.minutesRetard} min)`).join(', ');
+    const plusAutres = alertesFiltrees.length > 3 ? ` et ${alertesFiltrees.length - 3} autre(s)` : '';
+
+    this.notifSvc.send({
+      type:      'retard',
+      title:     alertesFiltrees.length === 1 ? 'Retard signalé' : `${alertesFiltrees.length} retards aujourd'hui`,
+      message:   `${noms}${plusAutres}.`,
+      actionUrl: alertesFiltrees.length === 1 ? `/employes/${alertesFiltrees[0].employe.id}` : '/pointages',
+    }).catch(() => {});
+  }
+
+  /** Envoie une notif pour chaque employé absent aujourd'hui (non pointé) */
+  private notifierAbsents(presences: PresenceBrute[]): void {
+    const today = new Date().toISOString().split('T')[0];
+    const dateLabel = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    const matPresents = new Set(presences.map(p => p.matricule));
+
+    // Employés visibles selon le rôle (déjà filtrés par service pour les chargés de compte)
+    const actifs = this.employes().filter(e =>
+      e.statut !== 'archive' && e.statut !== 'inactif' && e.matricule
+    );
+
+    const absents = actifs.filter(emp =>
+      this.auth.canManageService(emp.service ?? '') &&
+      !matPresents.has(emp.matricule)
+    );
+
+    if (absents.length === 0) return;
+
+    // ── Notif absences : 1 seul résumé par jour ────────────────────────────
+    const keyAbsents = `notif_absents_${today}`;
+    if (this.notifiedToday.has(keyAbsents)) return; // déjà envoyé aujourd'hui
+    this.notifiedToday.add(keyAbsents);
+
+    // Prendre les 3 premiers pour le message
+    const top3 = absents.slice(0, 3).map(e => this.nomComplet(e));
+    const noms = top3.join(', ');
+    const plusAutres = absents.length > 3 ? ` et ${absents.length - 3} autre(s)` : '';
+
+    const title   = absents.length === 1 ? 'Absence non justifiée' : `${absents.length} absents aujourd'hui`;
+    const message = absents.length === 1
+      ? `${noms} n'est pas encore pointé(e).`
+      : `${noms}${plusAutres} ne sont pas encore pointés.`;
+
+    this.notifSvc.send({
+      type: 'absence', title, message,
+      actionUrl: absents.length === 1 ? `/employes/${absents[0].id}` : '/pointages',
+    }).catch(() => {});
   }
 
   private async loadSemaine(employes: Employe[]): Promise<void> {

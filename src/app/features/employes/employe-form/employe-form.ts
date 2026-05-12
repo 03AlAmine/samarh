@@ -1,14 +1,23 @@
-// employe-form.ts - version complète avec gestion du code PIN
+// employe-form.ts - ajouter cette propriété et modifier l'affichage des rôles
+
 import {
-  Component, Input, Output, EventEmitter,
-  OnInit, inject, ChangeDetectionStrategy, signal,
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  inject,
+  ChangeDetectionStrategy,
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import * as bcrypt from 'bcryptjs';
 import { Employe, Service } from '../../../core/models/employe.model';
+import { AuthService } from '../../../core/services/auth.service';
 
 type Tab = 'infos' | 'acces';
+type RoleType = 'Employé' | 'Chargé de compte' | 'Admin communauté';
 
 @Component({
   selector: 'app-employe-form',
@@ -19,59 +28,83 @@ type Tab = 'infos' | 'acces';
   styleUrls: ['./employe-form.scss'],
 })
 export class EmployeFormComponent implements OnInit {
-  @Input() employe:  Employe | null = null;
+  @Input() employe: Employe | null = null;
   @Input() services: Service[] = [];
-  @Input() loading   = false;
-  @Output() saved     = new EventEmitter<Partial<Employe>>();
+  @Input() loading = false;
+  @Output() saved = new EventEmitter<Partial<Employe>>();
   @Output() cancelled = new EventEmitter<void>();
 
   private fb = inject(FormBuilder);
+  private auth = inject(AuthService);
 
-  activeTab  = signal<Tab>('infos');
-  hashing    = false;
-  showPin    = signal(false); // ✅ Pour afficher/masquer le PIN
+  activeTab = signal<Tab>('infos');
+  hashing = false;
+  showPin = signal(false);
 
   // ── Services sélectionnés pour les permissions ────────────────────────────
   selectedServices = signal<Set<string>>(new Set());
-  role             = signal<'Employé' | 'Chargé de compte' | 'Admin communauté'>('Employé');
+  role = signal<RoleType>('Employé');
 
   form = this.fb.group({
-    nom:          ['', Validators.required],
-    prenom:       ['', Validators.required],
-    matricule:    ['', Validators.required],
-    email:        [''],
-    telephone:    [''],
-    poste:        [''],
-    service:      [''],  // service d'affectation (1 seul)
-    typeContrat:  ['CDI'],
+    nom: ['', Validators.required],
+    prenom: ['', Validators.required],
+    matricule: ['', Validators.required],
+    email: [''],
+    telephone: [''],
+    poste: [''],
+    service: [''],
+    typeContrat: ['CDI'],
     dateEmbauche: [''],
-    statut:       ['actif'],
-    login:        [''],
-    password:     [''],
-    pin:          ['', [Validators.pattern('^[0-9]{4}$')]], // ✅ Code PIN 4 chiffres
+    statut: ['actif'],
+    login: [''],
+    password: [''],
+    pin: ['', [Validators.pattern('^[0-9]{4}$')]],
   });
+
+  /**
+   * ✅ Liste des rôles disponibles selon l'utilisateur connecté
+   * - Admin communauté → peut créer Admin, Chargé, Employé
+   * - Chargé de compte → peut créer uniquement Employé
+   */
+  get rolesDisponibles(): RoleType[] {
+    if (this.auth.isAdmin) {
+      return ['Employé', 'Chargé de compte', 'Admin communauté'];
+    }
+    // Chargé de compte ou autre → seulement Employé
+    return ['Employé'];
+  }
+
+  /**
+   * ✅ Vérifie si l'utilisateur peut modifier le rôle
+   */
+  get canModifierRole(): boolean {
+    return this.auth.isAdmin;
+  }
+
+  get isChargeDeCompte(): boolean {
+    return !this.auth.isAdmin && this.auth.canEditEmployes;
+  }
 
   ngOnInit(): void {
     if (this.employe) {
       this.form.patchValue({
-        nom:          this.employe.nom          || '',
-        prenom:       this.employe.prenom       || '',
-        matricule:    this.employe.matricule    || '',
-        email:        this.employe.email        || '',
-        telephone:    this.employe.telephone    || '',
-        poste:        this.employe.poste        || '',
-        service:      this.employe.service      || '',
-        typeContrat:  this.employe.typeContrat  || 'CDI',
+        nom: this.employe.nom || '',
+        prenom: this.employe.prenom || '',
+        matricule: this.employe.matricule || '',
+        email: this.employe.email || '',
+        telephone: this.employe.telephone || '',
+        poste: this.employe.poste || '',
+        service: this.employe.service || '',
+        typeContrat: this.employe.typeContrat || 'CDI',
         dateEmbauche: this.employe.dateEmbauche || '',
-        statut:       this.employe.statut       || 'actif',
-        login:        this.employe.login        || '',
-        pin:          this.employe.pin          || '', // ✅ Récupérer le PIN existant
+        statut: this.employe.statut || 'actif',
+        login: this.employe.login || '',
+        pin: this.employe.pin || '',
       });
 
       // ── Charger les permissions existantes ────────────────────────────────
       const emp = this.employe as any;
 
-      // services[] = liste des matricules de services gérés
       if (emp.services === 'Tous' || emp.role === 'Administrateur') {
         this.role.set('Admin communauté');
         this.selectedServices.set(new Set());
@@ -92,7 +125,7 @@ export class EmployeFormComponent implements OnInit {
 
   // ── Gestion sélection services ────────────────────────────────────────────
   toggleService(matricule: string): void {
-    this.selectedServices.update(set => {
+    this.selectedServices.update((set) => {
       const n = new Set(set);
       n.has(matricule) ? n.delete(matricule) : n.add(matricule);
       return n;
@@ -103,7 +136,7 @@ export class EmployeFormComponent implements OnInit {
     return this.selectedServices().has(matricule);
   }
 
-  setRole(r: 'Employé' | 'Chargé de compte' | 'Admin communauté'): void {
+  setRole(r: RoleType): void {
     this.role.set(r);
     if (r === 'Employé') {
       this.selectedServices.set(new Set());
@@ -122,15 +155,9 @@ export class EmployeFormComponent implements OnInit {
   }
 
   // ── Gestion du Code PIN ───────────────────────────────────────────────────
-
-  /**
-   * Génère un code PIN aléatoire à 4 chiffres
-   */
   generateRandomPin(): void {
     const pin = Math.floor(1000 + Math.random() * 9000).toString();
     this.form.patchValue({ pin });
-
-    // Animation feedback
     const pinInput = document.querySelector('.pin-input') as HTMLInputElement;
     if (pinInput) {
       pinInput.classList.add('pin-generated');
@@ -138,9 +165,6 @@ export class EmployeFormComponent implements OnInit {
     }
   }
 
-  /**
-   * Valide et nettoie le format du PIN (uniquement chiffres, max 4)
-   */
   validatePin(event: any): void {
     let value = event.target.value;
     value = value.replace(/[^0-9]/g, '');
@@ -148,11 +172,8 @@ export class EmployeFormComponent implements OnInit {
     this.form.patchValue({ pin: value });
   }
 
-  /**
-   * Affiche ou masque le code PIN
-   */
   togglePinVisibility(): void {
-    this.showPin.update(v => !v);
+    this.showPin.update((v) => !v);
     const pinInput = document.querySelector('.pin-input') as HTMLInputElement;
     if (pinInput) {
       pinInput.type = this.showPin() ? 'text' : 'password';
@@ -160,11 +181,9 @@ export class EmployeFormComponent implements OnInit {
   }
 
   // ── Soumission ────────────────────────────────────────────────────────────
-
   async submit(): Promise<void> {
-    // Vérifier les champs invalides
     if (this.form.invalid) {
-      Object.keys(this.form.controls).forEach(key => {
+      Object.keys(this.form.controls).forEach((key) => {
         const control = this.form.get(key);
         if (control?.invalid) {
           control.markAsTouched();
@@ -192,21 +211,21 @@ export class EmployeFormComponent implements OnInit {
     const roleVal = this.role();
 
     if (roleVal === 'Admin communauté') {
-      val.services         = 'Tous';
-      val.role             = 'Administrateur';
-      val.estChargeCompte  = false;
+      val.services = 'Tous';
+      val.role = 'Administrateur';
+      val.estChargeCompte = false;
     } else if (roleVal === 'Chargé de compte') {
-      val.services         = Array.from(this.selectedServices());
-      val.role             = 'Chargé de compte';
-      val.estChargeCompte  = true;
+      val.services = Array.from(this.selectedServices());
+      val.role = 'Chargé de compte';
+      val.estChargeCompte = true;
       val.dateNominationChargedCompte = new Date().toISOString();
     } else {
-      val.services        = [];
-      val.role            = 'Employé';
+      val.services = [];
+      val.role = 'Employé';
       val.estChargeCompte = false;
     }
 
-    // ✅ Ajouter le PIN (s'il est défini)
+    // Ajouter le PIN
     if (val.pin && val.pin.length === 4) {
       val.pinDefined = true;
       val.pinLastUpdate = new Date().toISOString();

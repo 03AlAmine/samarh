@@ -1,0 +1,164 @@
+<!-- historique-pointages.component.html -->
+<div class="historique-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Historique des pointages</h1>
+      <p class="page-subtitle">{{ employe?.prenom }} {{ employe?.nom }} · {{ employe?.matricule }}</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn--secondary btn--sm" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i>
+        Retour
+      </button>
+      <button class="btn btn--primary btn--sm" (click)="exportPDF()">
+        <i class="fas fa-file-pdf"></i>
+        Exporter PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="filters-card">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label>Période</label>
+        <div class="period-buttons">
+          <button [class.active]="periode() === 'mois'" (click)="setPeriode('mois')">Ce mois</button>
+          <button [class.active]="periode() === '3mois'" (click)="setPeriode('3mois')">3 mois</button>
+          <button [class.active]="periode() === '6mois'" (click)="setPeriode('6mois')">6 mois</button>
+          <button [class.active]="periode() === 'annee'" (click)="setPeriode('annee')">Cette année</button>
+          <button [class.active]="periode() === 'personnalise'" (click)="openDatePicker()">Personnalisé</button>
+        </div>
+      </div>
+      <div class="filter-group" *ngIf="periode() === 'personnalise'">
+        <label>Date début</label>
+        <input type="date" [(ngModel)]="dateDebut" (change)="loadHistorique()">
+      </div>
+      <div class="filter-group" *ngIf="periode() === 'personnalise'">
+        <label>Date fin</label>
+        <input type="date" [(ngModel)]="dateFin" (change)="loadHistorique()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistiques -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div>
+        <span class="stat-value">{{ stats().tauxPresence }}%</span>
+        <span class="stat-label">Taux présence</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div>
+        <span class="stat-value">{{ stats().totalHeures }}h</span>
+        <span class="stat-label">Heures travaillées</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div>
+        <span class="stat-value">{{ stats().nbRetards }}</span>
+        <span class="stat-label">Retards</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">
+        <i class="fas fa-user-slash"></i>
+      </div>
+      <div>
+        <span class="stat-value">{{ stats().joursAbsents }}</span>
+        <span class="stat-label">Absences</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tableau des pointages -->
+  @if (loading()) {
+    <div class="loading-state"><div class="spinner"></div></div>
+  }
+
+  @if (!loading() && pointages().length === 0) {
+    <div class="empty-state">
+      <i class="fas fa-calendar-times" style="font-size: 48px;"></i>
+      <p>Aucun pointage sur cette période</p>
+    </div>
+  }
+
+  @if (!loading() && pointages().length > 0) {
+    <div class="table-card">
+      <div class="table-header">
+        <h3><i class="fas fa-list-alt"></i> Détail des pointages</h3>
+        <span class="table-count">{{ pointages().length }} jour(s)</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Jour</th>
+              <th>Arrivée</th>
+              <th>Départ</th>
+              <th>Heures</th>
+              <th>Retard</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of pointages(); track p.date) {
+              <tr>
+                <td data-label="Date">{{ p.date | date:'dd/MM/yyyy' }}</td>
+                <td data-label="Jour">{{ p.jourSemaine }}</td>
+                <td data-label="Arrivée" [class.time-late]="p.retard > 0">{{ p.heureArrivee || '—' }}</td>
+                <td data-label="Départ">{{ p.heureDepart || '—' }}</td>
+                <td data-label="Heures">{{ p.heuresTravaillees > 0 ? p.heuresTravaillees + 'h' : '—' }}</td>
+                <td data-label="Retard">
+                  @if (p.retard > 0) {
+                    <span class="retard-badge"><i class="fas fa-clock"></i> +{{ p.retard }} min</span>
+                  } @else {
+                    <span>—</span>
+                  }
+                </td>
+                <td data-label="Statut">
+                  <span class="badge badge--{{ p.statut === 'present' ? 'success' : p.statut === 'retard' ? 'warning' : 'danger' }}">
+                    {{ p.statut === 'present' ? 'Présent' : p.statut === 'retard' ? 'Retard' : 'Absent' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Résumé mensuel -->
+    <div class="summary-card">
+      <h3><i class="fas fa-chart-bar"></i> Résumé mensuel</h3>
+      <div class="summary-grid">
+        @for (mois of resumeMensuel(); track mois.mois) {
+          <div class="summary-item">
+            <span class="summary-month">{{ mois.mois }}</span>
+            <div class="summary-stats">
+              <span class="present"><i class="fas fa-check-circle"></i> {{ mois.presents }}j</span>
+              <span class="absent"><i class="fas fa-times-circle"></i> {{ mois.absents }}j</span>
+              <span class="retard"><i class="fas fa-exclamation-triangle"></i> {{ mois.retards }}j</span>
+            </div>
+            <div class="summary-bar">
+              <div class="bar-fill" [style.width.%]="mois.taux"></div>
+            </div>
+            <span class="summary-taux">{{ mois.taux }}%</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

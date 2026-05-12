@@ -566,3 +566,150 @@ table.data-table {
   background: var(--accent-light);
   color: var(--accent-dark);
 }
+/* ============================================
+   FONT AWESOME - STYLISATION GLOBALE
+   ============================================ */
+
+// Taille et alignement de base
+.fas, .far, .fab {
+  font-size: 1em;
+  line-height: 1;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Ajustement pour boutons
+.btn {
+  .fas, .far, .fab {
+    margin-right: 6px;
+    font-size: 0.9em;
+  }
+}
+
+// Icônes seules (sans texte)
+.btn--icon {
+  .fas, .far, .fab {
+    margin-right: 0;
+    font-size: 1em;
+  }
+}
+
+// Pour les badges, tags, etc.
+.badge, .tag, .pill {
+  .fas, .far, .fab {
+    font-size: 0.75em;
+    margin-right: 4px;
+  }
+}
+
+// Cards et panels
+.panel__title, .card-header, .section-title {
+  .fas, .far, .fab {
+    margin-right: 8px;
+    font-size: 0.9em;
+    opacity: 0.8;
+  }
+}
+
+// Liens
+a {
+  .fas, .far, .fab {
+    margin-right: 4px;
+  }
+}
+
+// Tableaux
+.data-table, .stats-table {
+  th, td {
+    .fas, .far, .fab {
+      font-size: 0.85em;
+      margin-right: 4px;
+    }
+  }
+}
+
+// Tabs
+.form-tab, .emp-tab, .detail-tabs button {
+  .fas, .far, .fab {
+    margin-right: 6px;
+    font-size: 0.85em;
+  }
+}
+
+// Empty states
+.empty-state, .panel__empty {
+  .fas, .far, .fab {
+    font-size: 2em;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+}
+
+// Messages d'alerte
+.alert, .warning, .form-alert, .toast-notification {
+  .fas, .far, .fab {
+    margin-right: 8px;
+    font-size: 1em;
+  }
+}
+
+// Pagination
+.pagination, .pager {
+  .fas, .far, .fab {
+    font-size: 0.8em;
+  }
+}
+
+// KPI et statistiques
+.kpi-card, .stat-card, .stats-card {
+  .kpi-icon, .stat-icon {
+    .fas, .far, .fab {
+      font-size: 1.2em;
+    }
+  }
+}
+
+// Responsables et avatars
+.responsable-card, .person-row {
+  .fas, .far, .fab {
+    font-size: 0.85em;
+  }
+}
+
+// Stars (notation)
+.stars {
+  .fas.fa-star {
+    color: #d1d5db;
+    font-size: 0.85em;
+    margin-right: 2px;
+
+    &.active {
+      color: #f59e0b;
+    }
+  }
+}
+
+// Animation pour icônes de chargement
+.fa-spinner, .fa-sync-alt {
+  animation: fa-spin 1s linear infinite;
+}
+
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Version compacte pour écrans mobiles
+@media (max-width: 768px) {
+  .btn .fas, .btn .far, .btn .fab {
+    margin-right: 4px;
+    font-size: 0.8em;
+  }
+
+  .panel__title .fas, .panel__title .far, .panel__title .fab {
+    margin-right: 6px;
+    font-size: 0.85em;
+  }
+}

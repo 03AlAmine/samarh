@@ -1,10 +1,49 @@
-// ─── CARTES EMPLOYÉS ──────────────────────────────────────────────────────────
+// cartes.scss - version corrigée
 
 .header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+// Styles correspondants
+.selection-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: #10b981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: white;
+  font-size: 18px;
+
+  &.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.carte.moderne .selection-badge {
+  background: #4f7df3;
+}
+
+.carte.premium .selection-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.carte.minimal .selection-badge {
+  background: #10b981;
+  border: 2px solid white;
 }
 
 // ── Barre de contrôles ────────────────────────────────────────────────────────
@@ -115,49 +154,50 @@
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 .skeleton-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
 .card-skeleton {
-  height: 180px;
+  height: 280px;
   border-radius: 12px;
   background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 @keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 // ── Grille ────────────────────────────────────────────────────────────────────
 .cartes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+
   &.portrait {
-    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 }
 
-// ── Carte ─────────────────────────────────────────────────────────────────────
+// ── Carte de base ─────────────────────────────────────────────────────────────
 .carte {
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
   border: 2px solid var(--border);
-  transition: all 0.18s;
+  transition: all 0.2s ease;
   position: relative;
   user-select: none;
   --accent: #4f7df3;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+
   &:hover {
     border-color: var(--accent);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
   }
   &.selected {
     border-color: var(--accent);
@@ -165,116 +205,96 @@
   }
 }
 
-// ── Styles de carte ───────────────────────────────────────────────────────────
-.carte.moderne {
-  .carte-header {
-    background: var(--accent);
-    padding: 14px;
-    display: flex;
-    align-items: center;
-    gap: 11px;
-  }
-  .carte-body {
-    padding: 10px 13px;
-    background: var(--surface);
-  }
-  .carte-footer {
-    padding: 7px 13px;
-    background: var(--bg);
-    border-top: 1px solid var(--border);
-  }
-}
-.carte.minimal {
-  border-radius: 8px;
-  .carte-header {
-    background: var(--bg);
-    padding: 12px 13px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .carte-nom {
-    color: var(--text-primary) !important;
-  }
-  .carte-poste {
-    color: var(--text-secondary) !important;
-  }
-  .carte-body {
-    padding: 9px 13px;
-    background: var(--surface);
-  }
-  .carte-footer {
-    padding: 7px 13px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-  }
-}
-.carte.premium {
-  border-radius: 14px;
-  .carte-header {
-    background: linear-gradient(135deg, var(--accent), #7c3aed);
-    padding: 16px 14px;
-    display: flex;
-    align-items: center;
-    gap: 11px;
-  }
-  .carte-body {
-    padding: 12px 14px;
-    background: var(--surface);
-  }
-  .carte-footer {
-    padding: 9px 14px;
-    background: linear-gradient(90deg, var(--bg), var(--surface));
-    border-top: 1px solid var(--border);
-  }
+// ── En-tête de carte (avatar + infos) ─────────────────────────────────────────
+.carte-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  position: relative;
+  min-height: 110px;
 }
 
-// Photo / avatar
 .carte-photo {
-  width: 44px;
-  height: 44px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  border: 3px solid rgba(255, 255, 255, 0.4);
   flex-shrink: 0;
 }
+
 .carte-avatar {
-  width: 44px;
-  height: 44px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   color: #fff;
-  font-size: 15px;
+  font-size: 22px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.25);
+  border: 3px solid rgba(255, 255, 255, 0.3);
 }
+
 .carte-id {
   flex: 1;
   min-width: 0;
 }
+
 .carte-nom {
-  display: block;
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-bottom: 4px;
 }
+
 .carte-poste {
-  display: block;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.8);
-  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 8px;
+}
+
+.carte-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.carte-service-chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.carte-mat-chip {
+  font-size: 10px;
+  font-weight: 500;
+  font-family: monospace;
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .carte-check {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
   display: flex;
@@ -283,97 +303,86 @@
   flex-shrink: 0;
   opacity: 0;
   transition: opacity 0.15s;
+
   &.visible {
     opacity: 1;
     background: rgba(255, 255, 255, 0.9);
   }
 }
 
-// Corps
-.carte-service {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.carte-matricule {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-// ── QR Code ────────────────────────────────────────────────────────────────────
-.carte-qr {
+// ── Corps de carte (QR code) ──────────────────────────────────────────────────
+.carte-body {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 9px;
-  background: var(--bg);
-  border-radius: 7px;
-  border: 1px solid var(--border);
+  justify-content: center;
+  padding: 16px;
+  background: var(--surface);
+}
+
+.carte-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
 }
 
 .qr-img {
-  width: 72px;
-  height: 72px;
+  width: 100px;
+  height: 100px;
   display: block;
-  border-radius: 4px;
-  flex-shrink: 0;
-  background: #fff; // fond blanc pendant le chargement
-  image-rendering: pixelated; // évite le flou sur les QR
+  border-radius: 12px;
+  background: white;
+  padding: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .qr-placeholder {
-  width: 72px;
-  height: 72px;
-  border-radius: 4px;
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
   background: #f3f4f6;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
   color: #9ca3af;
 }
 
 .qr-label {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 10px;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--text-secondary);
-  word-break: break-all;
-  line-height: 1.4;
+  background: var(--bg-secondary);
+  padding: 4px 10px;
+  border-radius: 20px;
 }
 
-// Portrait : QR côte à côte centré
-.carte.portrait .carte-qr {
-  justify-content: center;
-}
-
-// Footer
+// ── Pied de carte ─────────────────────────────────────────────────────────────
 .carte-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
 }
+
 .carte-org {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
 .carte-badge {
   font-size: 10px;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 20px;
+
   &.valid {
     background: #dcfce7;
     color: #166534;
@@ -384,28 +393,73 @@
   }
 }
 
-// Portrait
+// ── Styles de carte (moderne, minimal, premium) ──────────────────────────────
+.carte.moderne {
+  .carte-header {
+    background: var(--accent);
+  }
+}
+
+.carte.minimal {
+  .carte-header {
+    background: #f1f5f9;
+    border-bottom: 1px solid var(--border);
+  }
+  .carte-nom {
+    color: #1e293b !important;
+  }
+  .carte-poste {
+    color: #64748b !important;
+  }
+  .carte-service-chip {
+    background: #e2e8f0;
+    color: #475569;
+  }
+  .carte-mat-chip {
+    background: #e2e8f0;
+    color: #475569;
+  }
+}
+
+.carte.premium {
+  .carte-header {
+    background: linear-gradient(135deg, var(--accent), #7c3aed);
+  }
+}
+
+// ── Mode Portrait ─────────────────────────────────────────────────────────────
 .carte.portrait {
   .carte-header {
     flex-direction: column;
     text-align: center;
-    padding: 16px 12px 10px;
+    padding: 20px 16px;
   }
+
   .carte-photo,
   .carte-avatar {
-    width: 54px;
-    height: 54px;
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
   }
+
   .carte-id {
     width: 100%;
-  }
-  .carte-nom,
-  .carte-poste {
     text-align: center;
+  }
+
+  .carte-meta {
+    justify-content: center;
+  }
+
+  .carte-qr {
+    .qr-img, .qr-placeholder {
+      width: 120px;
+      height: 120px;
+    }
   }
 }
 
-// Pagination
+// ── Pagination ────────────────────────────────────────────────────────────────
 .pagination {
   display: flex;
   align-items: center;
@@ -417,17 +471,19 @@
 .page-btn {
   border: 1.5px solid var(--border);
   background: transparent;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-primary);
+
   &:hover:not(:disabled) {
     background: var(--bg);
+    border-color: var(--accent);
   }
   &:disabled {
     opacity: 0.35;
@@ -435,7 +491,7 @@
   }
 }
 .page-info {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -443,7 +499,7 @@
 .empty-state {
   display: flex;
   justify-content: center;
-  padding: 48px;
+  padding: 60px;
   color: var(--text-secondary);
 }
 
@@ -453,18 +509,20 @@
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  border-radius: 7px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
   border: none;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: all 0.2s;
+
   &--primary {
     background: var(--accent);
     color: #fff;
     &:hover {
       background: #2f5bd0;
+      transform: translateY(-1px);
     }
   }
   &--ghost {
@@ -473,17 +531,17 @@
     color: var(--text-secondary);
     &:hover {
       background: var(--bg);
+      border-color: var(--accent);
+      color: var(--accent);
     }
   }
   &--sm {
     padding: 6px 12px;
-    font-size: 12.5px;
+    font-size: 12px;
   }
 }
 
 // ── Impression ────────────────────────────────────────────────────────────────
-// L'impression ciblée utilise un iframe — pas besoin de @media print ici.
-// On garde quand même un fallback pour "Imprimer tout" (window.print)
 @media print {
   .controls-bar,
   .header-actions,
@@ -496,20 +554,16 @@
   }
   .cartes-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 8px !important;
+    gap: 10px !important;
   }
   .carte {
     break-inside: avoid;
     border: 1px solid #ccc !important;
     box-shadow: none !important;
     transform: none !important;
-    cursor: default !important;
+    cursor: default;
   }
   .carte-check {
-    display: none !important;
-  }
-  // Masquer les cartes NON sélectionnées si des cartes sont sélectionnées
-  .carte:not(.selected).has-selection {
     display: none !important;
   }
 }

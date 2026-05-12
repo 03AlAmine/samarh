@@ -544,3 +544,21 @@ select.form-control {
   font-size: 11px;
   margin-top: 4px;
 }
+// employe-form.scss - ajouter
+
+.role-info-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #e0f2fe;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #0369a1;
+
+  svg {
+    flex-shrink: 0;
+    color: #0284c7;
+  }
+}
