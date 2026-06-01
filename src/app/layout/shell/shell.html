@@ -1,6 +1,13 @@
 <!-- shell.html -->
 <div class="shell">
 
+  <!-- Loader de navigation (barre en haut) -->
+  @if (navigating()) {
+    <div class="nav-loader">
+      <div class="nav-loader-bar"></div>
+    </div>
+  }
+
   <!-- Overlay mobile -->
   @if (sidebarOpen() && isMobile()) {
     <div class="overlay" (click)="toggleSidebar()"></div>

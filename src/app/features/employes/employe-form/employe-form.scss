@@ -1,6 +1,79 @@
 // ─── EMPLOYE FORM ─────────────────────────────────────────────────────────────
 
-// ── Conteneur formulaire ─────────────────────────────────────────────────────
+// ── Photo upload ──────────────────────────────────────────────────────────────
+.photo-upload {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.photo-preview {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.photo-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+.photo-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--border-light, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 24px;
+}
+
+.photo-remove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  &:hover { background: #dc2626; }
+}
+
+.photo-btn {
+  cursor: pointer;
+  &.disabled { opacity: 0.6; pointer-events: none; }
+}
+
+.photo-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  width: 100%;
+  margin-top: -8px;
+}
+
+
 .emp-form {
   padding: 8px 28px 24px;
 }

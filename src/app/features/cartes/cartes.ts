@@ -42,11 +42,13 @@ export class CartesComponent implements OnInit {
   format = signal<Format>('paysage');
   couleur = signal('#10b981');
 
-  // ✅ Sélection stockée séparément (tous les IDs sélectionnés, indépendamment du filtre)
   selectedIds = signal<Set<string>>(new Set());
   page = signal(1);
 
-  qrDataUrls = signal<Map<string, string>>(new Map());
+  // ✅ Map plain (pas un signal) — on ne veut pas de re-rendu global à chaque QR généré
+  // On déclenche manuellement la mise à jour via qrReady signal (compteur)
+  private qrMap = new Map<string, string>();
+  qrReady = signal(0); // incrément pour forcer la re-lecture du qrMap dans le template
 
   readonly PAGE = 12;
   readonly presetColors = [
@@ -117,7 +119,8 @@ export class CartesComponent implements OnInit {
     this.employeService.employes$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((list) => {
       this.allEmployes.set(list);
       this.loading.set(false);
-      this.generateQRCodes(list);
+      // ✅ Ne générer les QR que pour la première page visible, pas tout d'un coup
+      this.generateQRCodesForPage();
     });
 
     this.employeService.services$
@@ -125,31 +128,55 @@ export class CartesComponent implements OnInit {
       .subscribe((list) => this.allServices.set(list));
   }
 
+  /** Génère les QR uniquement pour les employés de la page courante */
+  private async generateQRCodesForPage(): Promise<void> {
+    const employes = this.paginated();
+    await this.ensureQRCodes(employes);
+  }
+
+  /** Génère les QR codes manquants un par un en cédant le thread entre chaque */
+  private async ensureQRCodes(employes: Employe[]): Promise<void> {
+    const missing = employes.filter((e) => e.id && !this.qrMap.has(e.id));
+    if (missing.length === 0) return;
+
+    for (const e of missing) {
+      if (!e.id) continue;
+      const content = e.matricule || e.id;
+      try {
+        const dataUrl = await QRCode.toDataURL(content, {
+          width: 64,
+          margin: 1,
+          color: { dark: '#111827', light: '#ffffff' },
+        });
+        this.qrMap.set(e.id, dataUrl);
+        // ✅ Mise à jour progressive : chaque QR apparaît dès qu'il est prêt
+        this.qrReady.update(n => n + 1);
+      } catch {
+        /* ignore */
+      }
+      // ✅ Céder le thread au navigateur entre chaque QR → scroll fluide
+      await new Promise<void>(r => setTimeout(r, 0));
+    }
+  }
+
+  /** Appelé quand la page change — charge les QR de la nouvelle page */
+  async onPageChange(p: number): Promise<void> {
+    this.page.set(p);
+    await this.generateQRCodesForPage();
+  }
+
+  /** Pour l'impression : générer les QR de tous les employés sélectionnés */
   private async generateQRCodes(employes: Employe[]): Promise<void> {
-    const map = new Map<string, string>();
+    await this.ensureQRCodes(employes);
+  }
 
-    await Promise.all(
-      employes.map(async (e) => {
-        if (!e.id) return;
-        const content = e.matricule || e.id;
-        try {
-          const dataUrl = await QRCode.toDataURL(content, {
-            width: 64,
-            margin: 1,
-            color: { dark: '#111827', light: '#ffffff' },
-          });
-          map.set(e.id, dataUrl);
-        } catch {
-          /* ignore */
-        }
-      }),
-    );
-
-    this.qrDataUrls.set(map);
+  getCouleurStyle(): string {
+    return this.couleur();
   }
 
   getQR(id: string): string {
-    return this.qrDataUrls().get(id) || '';
+    void this.qrReady(); // dépendance réactive pour que le template se re-évalue
+    return this.qrMap.get(id) || '';
   }
 
   // ── Sélection corrigée ─────────────────────────────────────────────────────
@@ -213,19 +240,18 @@ export class CartesComponent implements OnInit {
     return this.allServices().find((s) => s.matricule === matricule)?.nom || '';
   }
 
+  private readonly avatarColorCache = new Map<string, string>();
+  private readonly AVATAR_COLORS = [
+    '#4f7df3', '#10b981', '#f59e0b', '#ef4444',
+    '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
+  ];
+
   avatarColor(id: string): string {
-    const colors = [
-      '#4f7df3',
-      '#10b981',
-      '#f59e0b',
-      '#ef4444',
-      '#8b5cf6',
-      '#ec4899',
-      '#06b6d4',
-      '#84cc16',
-    ];
+    if (this.avatarColorCache.has(id)) return this.avatarColorCache.get(id)!;
     const idx = id ? id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : 0;
-    return colors[idx % colors.length];
+    const color = this.AVATAR_COLORS[idx % this.AVATAR_COLORS.length];
+    this.avatarColorCache.set(id, color);
+    return color;
   }
 
   initials(e: Employe): string {
@@ -235,13 +261,9 @@ export class CartesComponent implements OnInit {
     return (e.nom || '').substring(0, 2).toUpperCase();
   }
 
-  getCouleurStyle(): string {
-    return this.couleur();
-  }
-
   // ── Impression (utilise les employés sélectionnés) ─────────────────────────
 
-  imprimerSelection(): void {
+  async imprimerSelection(): Promise<void> {
     // ✅ Utiliser les employés réellement sélectionnés
     const cibles = this.getSelectedEmployes();
 
@@ -252,6 +274,9 @@ export class CartesComponent implements OnInit {
       alert('Aucune carte à imprimer');
       return;
     }
+
+    // ✅ S'assurer que les QR sont générés pour tous les employés à imprimer
+    await this.generateQRCodes(employesAImprimer);
 
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:absolute;width:0;height:0;border:none';

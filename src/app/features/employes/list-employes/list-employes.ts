@@ -20,6 +20,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { RoleFilterService } from '../../../core/services/role-filter.service';
 import { Employe, Service } from '../../../core/models/employe.model';
 import { EmployeFormComponent } from '../employe-form/employe-form';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-list-employes',
@@ -36,7 +37,7 @@ export class ListEmployesComponent implements OnInit {
   private roleFilter = inject(RoleFilterService);
   private toast = inject(ToastService);
   private confirm = inject(ConfirmDialogService);
-
+private router = inject(Router);
   // State
   loading = signal(true);
   allEmployes = signal<Employe[]>([]);
@@ -124,15 +125,51 @@ export class ListEmployesComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.employeService.employes$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((e) => {
-      this.allEmployes.set(e);
-      this.loading.set(false);
-    });
-    this.employeService.services$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((s) => {
-      this.allServices.set(s);
-    });
+// Ajouter ces propriétés
+vue = signal<'table' | 'cards'>('cards'); // Par défaut cartes sur mobile
+
+// Détecter la taille d'écran au chargement
+ngOnInit(): void {
+  this.employeService.employes$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((e) => {
+    this.allEmployes.set(e);
+    this.loading.set(false);
+  });
+  this.employeService.services$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((s) => {
+    this.allServices.set(s);
+  });
+
+  // ✅ Définir la vue par défaut selon l'écran
+  this.setDefaultView();
+
+  // ✅ Écouter le redimensionnement
+  window.addEventListener('resize', () => this.setDefaultView());
+}
+
+setDefaultView(): void {
+  if (window.innerWidth < 768) {
+    this.vue.set('cards');
+  } else {
+    // Sur desktop, on peut garder le choix de l'utilisateur
+    // ou forcer table. Ici on garde cards par défaut
+    if (this.vue() !== 'table') {
+      this.vue.set('cards');
+    }
   }
+}
+
+setVue(type: 'table' | 'cards'): void {
+  this.vue.set(type);
+}
+
+getAvatarColor(id: string): string {
+  const colors = ['#4f7df3', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+  const idx = id ? id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : 0;
+  return colors[idx % colors.length];
+}
+
+openDetail(id: string): void {
+  this.router.navigate(['/employes', id]);
+}
 
   openForm(employe?: Employe): void {
     // Vérifier les droits d'édition

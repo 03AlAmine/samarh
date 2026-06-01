@@ -38,13 +38,13 @@
         class="search-input"
         placeholder="Nom, prénom, matricule…"
         [value]="search()"
-        (input)="search.set($any($event.target).value); page.set(1)"
+        (input)="search.set($any($event.target).value); onPageChange(1)"
       />
     </div>
     <select
       class="filter-select"
       [value]="filterSvc()"
-      (change)="filterSvc.set($any($event.target).value); page.set(1)"
+      (change)="filterSvc.set($any($event.target).value); onPageChange(1)"
     >
       <option value="">Tous les services</option>
       @for (s of servicesVisibles(); track s.id) {
@@ -183,11 +183,11 @@
 
   @if (totalPages() > 1) {
     <div class="pagination card">
-      <button class="page-btn" [disabled]="page() === 1" (click)="page.set(page() - 1)">
+      <button class="page-btn" [disabled]="page() === 1" (click)="onPageChange(page() - 1)">
         <i class="fas fa-chevron-left"></i>
       </button>
       <span class="page-info">{{ page() }} / {{ totalPages() }}</span>
-      <button class="page-btn" [disabled]="page() === totalPages()" (click)="page.set(page() + 1)">
+      <button class="page-btn" [disabled]="page() === totalPages()" (click)="onPageChange(page() + 1)">
         <i class="fas fa-chevron-right"></i>
       </button>
     </div>

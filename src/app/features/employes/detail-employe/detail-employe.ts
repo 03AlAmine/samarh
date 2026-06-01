@@ -171,6 +171,7 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
+
   private async load(id: string): Promise<void> {
     try {
       const employe = await this.employeService.getById(id);
@@ -187,11 +188,10 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
       }
 
       this.employe.set(employe);
-
-      // ✅ Recharger les services gérés après avoir l'employé
       this.loadServicesGeres();
       this.cdr.detectChanges();
     } catch (err) {
+      console.error('❌ Erreur dans load():', err);
       this.accessDenied.set(true);
     } finally {
       this.loading.set(false);
@@ -213,16 +213,44 @@ export class DetailEmployeComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Génère un nouveau PIN pour un employé
+   * Génère un nouveau PIN pour l'employé courant
    */
-  async generatePinForEmploye(id: string): Promise<void> {
+  async generatePinForEmploye(): Promise<void> {
+    // ✅ Utiliser l'employé courant, pas l'ID de la route
+    const employe = this.employe();
+
+    if (!employe || !employe.id) {
+      console.error('❌ Employé non trouvé ou ID manquant');
+      this.toast.error('Employé non trouvé');
+      return;
+    }
+
+    const employeId = employe.id;
+    console.log(
+      '🔑 Génération PIN pour employé:',
+      employe.prenom,
+      employe.nom,
+      '(ID:',
+      employeId,
+      ')',
+    );
+
     const pin = this.employeService.generateRandomPin();
+
     try {
-      await this.employeService.updatePin(id, pin);
-      const updated = await this.employeService.getById(id);
+      await this.employeService.updatePin(employeId, pin);
+
+      // ✅ Recharger l'employé après mise à jour
+      const updated = await this.employeService.getById(employeId);
+      console.log('✅ Employé mis à jour:', updated?.prenom, updated?.nom);
+
       this.employe.set(updated);
+      this.loadServicesGeres();
+
       this.toast.success(`PIN généré : ${pin}`, 5000);
+      this.cdr.detectChanges();
     } catch (error) {
+      console.error('❌ Erreur lors de la génération du PIN:', error);
       this.toast.error('Erreur lors de la génération du PIN');
     }
   }

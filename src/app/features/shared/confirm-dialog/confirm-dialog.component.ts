@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -6,6 +6,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   animations: [
     trigger('backdrop', [

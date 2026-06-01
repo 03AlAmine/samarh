@@ -1,4 +1,4 @@
-// auth.service.ts - version corrigée
+// auth.service.ts - corriger les méthodes problématiques
 
 import { Injectable, inject } from '@angular/core';
 import {
@@ -39,20 +39,15 @@ export class AuthService {
     if (this.isAuthInitialized) return;
     this.isAuthInitialized = true;
 
-    // 1. D'abord, essayer de restaurer une session admin
     const adminRestored = this.restoreAdminSession();
 
     if (!adminRestored) {
-      // 2. Sinon, essayer de restaurer une session employé
       const employeeRestored = this.restoreEmployeeSession();
 
       if (!employeeRestored) {
-        // 3. Enfin, écouter Firebase Auth
         this.auth.onAuthStateChanged(async (firebaseUser) => {
-
           if (firebaseUser) {
             const userData = await this.fb.adminGet<AppUser>(`users/${firebaseUser.uid}`);
-
             if (userData) {
               const userWithId = { ...userData, uid: firebaseUser.uid };
               this.userSubject.next(userWithId);
@@ -70,7 +65,6 @@ export class AuthService {
     }
   }
 
-  // ✅ Session Admin
   private saveAdminSession(user: AppUser): void {
     const sessionData = {
       uid: (user as any).uid,
@@ -83,7 +77,6 @@ export class AuthService {
       isAdmin: true,
     };
     sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData));
-    // Nettoyer toute session employé existante
     sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
   }
 
@@ -95,19 +88,22 @@ export class AuthService {
       const session = JSON.parse(raw);
       if (!session.uid) return false;
 
-      // Session expirée après 24h
       if (session.timestamp && session.timestamp < Date.now() - 24 * 60 * 60 * 1000) {
         sessionStorage.removeItem(ADMIN_SESSION_KEY);
         return false;
       }
 
-      const user: any = {
+      const user: AppUser = {
         uid: session.uid,
         userType: session.userType,
         email: session.email,
         firstName: session.firstName,
         lastName: session.lastName,
         communauteId: session.communauteId,
+        accountType: 'free',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        emailVerified: false,
       };
 
       this.userSubject.next(user);
@@ -117,7 +113,6 @@ export class AuthService {
     }
   }
 
-  // ✅ Session Employé
   private restoreEmployeeSession(): boolean {
     try {
       const raw = sessionStorage.getItem(EMPLOYEE_SESSION_KEY) || localStorage.getItem(EMPLOYEE_SESSION_KEY);
@@ -131,7 +126,26 @@ export class AuthService {
         return false;
       }
 
-      const user: EmployeeUser = this.buildEmployeeUser(session);
+      // ✅ Convertir EmployeeUser en AppUser
+      const user: AppUser = {
+        uid: session.uid || `local_${Date.now()}`,
+        email: session.email || '',
+        firstName: session.prenom || session.firstName || '',
+        lastName: session.nom || session.lastName || '',
+        phone: session.telephone || '',
+        userType: 'employee',
+        accountType: 'free',
+        status: 'active',
+        createdAt: session.createdAt || new Date().toISOString(),
+        emailVerified: false,
+        isCommunauteUser: true,
+        login: session.login,
+        matricule: session.matricule || '',
+        services: session.services || [],
+        role: session.role || 'Employé',
+        communauteId: session.communauteId,
+      };
+
       this.userSubject.next(user);
 
       this.fb
@@ -155,7 +169,6 @@ export class AuthService {
   // ── CONNEXION ADMIN ────────────────────────────────────────────────────────
 
   async login(email: string, password: string, rememberMe = false): Promise<void> {
-
     const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
     await setPersistence(this.auth, persistence);
 
@@ -173,16 +186,33 @@ export class AuthService {
     const userWithUid = { ...userData, uid: cred.user.uid };
     this.saveAdminSession(userWithUid);
     this.userSubject.next(userWithUid);
-
   }
 
-  // ── CONNEXION EMPLOYÉ ──────────────────────────────────────────────────────
+  // ── CONNEXION EMPLOYÉ (Communauté) ─────────────────────────────────────────
 
   async loginCommunaute(employe: any, communauteId: string, rememberMe = false): Promise<void> {
-    // Nettoyer toute session admin existante
     sessionStorage.removeItem(ADMIN_SESSION_KEY);
 
-    const user: EmployeeUser = this.buildEmployeeUser({ ...employe, communauteId });
+    // ✅ Convertir l'employé en AppUser
+    const user: AppUser = {
+      uid: employe.id || `local_${Date.now()}`,
+      email: employe.email || '',
+      firstName: employe.prenom || employe.firstName || '',
+      lastName: employe.nom || employe.lastName || '',
+      phone: employe.telephone || '',
+      userType: 'employee',
+      accountType: 'free',
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      emailVerified: false,
+      isCommunauteUser: true,
+      login: employe.login,
+      matricule: employe.matricule,
+      services: employe.services || [],
+      role: employe.role || 'Employé',
+      communauteId: communauteId,
+    };
+
     this.userSubject.next(user);
 
     const communaute = await this.fb.adminGet<Communaute>(`communautes/${communauteId}`);
@@ -206,20 +236,19 @@ export class AuthService {
 
     sessionStorage.setItem(EMPLOYEE_SESSION_KEY, JSON.stringify(sessionData));
     if (rememberMe) localStorage.setItem(EMPLOYEE_SESSION_KEY, JSON.stringify(sessionData));
-
   }
 
   // ── INSCRIPTION ────────────────────────────────────────────────────────────
 
   async register(userData: any): Promise<void> {
     const cred = await createUserWithEmailAndPassword(this.auth, userData.email, userData.password);
-    const user: any = {
+    const user: AppUser = {
       uid: cred.user.uid,
       email: userData.email,
       firstName: userData.firstName || '',
       lastName: userData.lastName || '',
       phone: userData.phone || '',
-      userType: userData.userType || 'individual',
+      userType: userData.userType === 'employee' ? 'employee' : (userData.userType === 'company' ? 'company' : 'individual'),
       accountType: 'free',
       status: userData.userType === 'employee' ? 'active' : 'pending',
       createdAt: new Date().toISOString(),
@@ -291,7 +320,6 @@ export class AuthService {
   // ── DÉCONNEXION ────────────────────────────────────────────────────────────
 
   async logout(): Promise<void> {
-    // Nettoyer toutes les sessions
     sessionStorage.removeItem(EMPLOYEE_SESSION_KEY);
     sessionStorage.removeItem(ADMIN_SESSION_KEY);
 
@@ -339,37 +367,6 @@ export class AuthService {
     return id;
   }
 
-  private buildEmployeeUser(session: any): EmployeeUser {
-    let firstName = session.prenom || '';
-    let lastName = session.nom || '';
-
-    if (!firstName && lastName && lastName.includes(' ')) {
-      const parts = lastName.trim().split(/\s+/);
-      firstName = parts[0];
-      lastName = parts.slice(1).join(' ');
-    }
-
-    return {
-      uid: session.uid || session.userId || `local_${Date.now()}`,
-      email: session.email || '',
-      firstName: firstName,
-      lastName: lastName,
-      phone: session.telephone || session.phone || '',
-      userType: 'employee',
-      accountType: 'free',
-      status: 'active',
-      createdAt: session.createdAt || new Date().toISOString(),
-      emailVerified: false,
-      isCommunauteUser: true,
-      login: session.login,
-      matricule: session.matricule || '',
-      services: session.services ?? [],
-      role: session.role || '',
-      communauteId: session.communauteId,
-      communauteNom: session.communauteNom || '',
-    };
-  }
-
   // ── GETTERS ────────────────────────────────────────────────────────────────
 
   get currentUser(): AppUser | null {
@@ -399,10 +396,7 @@ export class AuthService {
     const u = this.userSubject.value as any;
     if (!u) return false;
 
-    // Super admin SaaS
     if (u.userType === 'admin') return true;
-
-    // Admin communauté via rôle
     if (u.services === 'Tous') return true;
     if (Array.isArray(u.services) && u.services[0] === 'Tous') return true;
     if (u.role === 'Administrateur' || u.role === 'admin') return true;

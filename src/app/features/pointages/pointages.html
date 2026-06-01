@@ -1,5 +1,4 @@
-<!-- pointages.html  -->
-
+<!-- pointages.html - version avec toggle vue carte/tableau -->
 <div class="page-header">
   <div>
     <h1 class="page-title">Pointages</h1>
@@ -7,55 +6,84 @@
       {{ lignesFiltrees().length }} employé{{ lignesFiltrees().length > 1 ? 's' : '' }}
     </p>
   </div>
-</div>
-<!-- Stats -->
-<div class="grid-stats" style="margin-bottom: 20px">
-  <div class="stat-card clickable" (click)="filtreStatut.set('')">
-    <div class="stat-icon-wrap blue">
-      <i class="fas fa-users"></i>
-    </div>
-    <div>
-      <p class="stat-label">Total</p>
-      <p class="stat-value">{{ stats().total }}</p>
-    </div>
-  </div>
-  <div class="stat-card clickable" (click)="filtreStatut.set('present')">
-    <div class="stat-icon-wrap green">
-      <i class="fas fa-check-circle"></i>
-    </div>
-    <div>
-      <p class="stat-label">Présents</p>
-      <p class="stat-value">{{ stats().presents }}</p>
-    </div>
-  </div>
-  <div class="stat-card clickable" (click)="filtreStatut.set('retard')">
-    <div class="stat-icon-wrap yellow">
-      <i class="fas fa-clock"></i>
-    </div>
-    <div>
-      <p class="stat-label">Retards</p>
-      <p class="stat-value">{{ stats().retards }}</p>
-    </div>
-  </div>
-  <div class="stat-card clickable" (click)="filtreStatut.set('absent')">
-    <div class="stat-icon-wrap red">
-      <i class="fas fa-user-slash"></i>
-    </div>
-    <div>
-      <p class="stat-label">Absents</p>
-      <p class="stat-value">{{ stats().absents }}</p>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon-wrap purple">
-      <i class="fas fa-chart-line"></i>
-    </div>
-    <div>
-      <p class="stat-label">Taux présence</p>
-      <p class="stat-value">{{ stats().taux }}%</p>
+  <div class="header-actions">
+    <!-- Toggle vue -->
+    <div class="view-toggle">
+      <button
+        class="view-btn"
+        [class.active]="vue() === 'table'"
+        (click)="setVue('table')"
+        title="Vue tableau"
+      >
+        <i class="fas fa-table"></i>
+      </button>
+      <button
+        class="view-btn"
+        [class.active]="vue() === 'cards'"
+        (click)="setVue('cards')"
+        title="Vue cartes"
+      >
+        <i class="fas fa-th-large"></i>
+      </button>
     </div>
   </div>
 </div>
+
+<!-- pointages.html - modifier la section des stats -->
+
+<!-- Stats - afficher seulement après chargement -->
+@if (!loadingPointages()) {
+  <div class="grid-stats" style="margin-bottom: 20px">
+    <div class="stat-card clickable" (click)="filtreStatut.set('')">
+      <div class="stat-icon-wrap blue"><i class="fas fa-users"></i></div>
+      <div>
+        <p class="stat-label">Total</p>
+        <p class="stat-value">{{ stats().total }}</p>
+      </div>
+    </div>
+    <div class="stat-card clickable" (click)="filtreStatut.set('present')">
+      <div class="stat-icon-wrap green"><i class="fas fa-check-circle"></i></div>
+      <div>
+        <p class="stat-label">Présents</p>
+        <p class="stat-value">{{ stats().presents }}</p>
+      </div>
+    </div>
+    <div class="stat-card clickable" (click)="filtreStatut.set('retard')">
+      <div class="stat-icon-wrap yellow"><i class="fas fa-clock"></i></div>
+      <div>
+        <p class="stat-label">Retards</p>
+        <p class="stat-value">{{ stats().retards }}</p>
+      </div>
+    </div>
+    <div class="stat-card clickable" (click)="filtreStatut.set('absent')">
+      <div class="stat-icon-wrap red"><i class="fas fa-user-slash"></i></div>
+      <div>
+        <p class="stat-label">Absents</p>
+        <p class="stat-value">{{ stats().absents }}</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-wrap purple"><i class="fas fa-chart-line"></i></div>
+      <div>
+        <p class="stat-label">Taux présence</p>
+        <p class="stat-value">{{ stats().taux }}%</p>
+      </div>
+    </div>
+  </div>
+} @else {
+  <!-- Skeleton pour les stats pendant le chargement -->
+  <div class="grid-stats skeleton-stats" style="margin-bottom: 20px">
+    @for (i of [1, 2, 3, 4, 5]; track i) {
+      <div class="stat-card skeleton-stat">
+        <div class="stat-icon-wrap skeleton-icon"></div>
+        <div>
+          <p class="stat-label skeleton-text"></p>
+          <p class="stat-value skeleton-text skeleton-value"></p>
+        </div>
+      </div>
+    }
+  </div>
+}
 
 <!-- Modal Aperçu / Export -->
 <div class="modal-overlay" *ngIf="showPrintPreview" (click)="closePrintPreview()">
@@ -63,9 +91,15 @@
     <div class="modal-header">
       <h3><i class="fas fa-eye"></i> Aperçu avant impression</h3>
       <div class="modal-actions">
-        <button class="btn-print" (click)="printFromPreview()"><i class="fas fa-print"></i> Imprimer</button>
-        <button class="btn-save" (click)="saveAsPDF()"><i class="fas fa-save"></i> Sauvegarder PDF</button>
-        <button class="btn-close" (click)="closePrintPreview()"><i class="fas fa-times"></i></button>
+        <button class="btn-print" (click)="printFromPreview()">
+          <i class="fas fa-print"></i> Imprimer
+        </button>
+        <button class="btn-save" (click)="saveAsPDF()">
+          <i class="fas fa-save"></i> Sauvegarder PDF
+        </button>
+        <button class="btn-close" (click)="closePrintPreview()">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
     </div>
     <div class="modal-body">
@@ -81,7 +115,6 @@
 
 <!-- Filtres -->
 <div class="filters-container">
-  <!-- Première ligne : Périodes et date -->
   <div class="filters-row" style="margin-top: 12px; background: var(--bg-secondary)">
     <div class="period-export">
       <span class="export-label"><i class="fas fa-file-pdf"></i> Export PDF :</span>
@@ -123,48 +156,40 @@
         </div>
       }
     </div>
-    <div class="header-actions">
+    <div class="export-actions">
       <button
         class="btn btn--ghost btn--sm"
         (click)="openPrintPreview()"
         [disabled]="lignesFiltrees().length === 0"
-        title="Aperçu avant impression"
+        title="Aperçu"
       >
-        <i class="fas fa-eye"></i>
-        Aperçu
+        <i class="fas fa-eye"></i> Aperçu
       </button>
-
       <button
         class="btn btn--secondary btn--sm"
         (click)="printDirect()"
         [disabled]="lignesFiltrees().length === 0"
         title="Impression directe"
       >
-        <i class="fas fa-print"></i>
-        Imprimer
+        <i class="fas fa-print"></i> Imprimer
       </button>
-
       <button
         class="btn btn--primary btn--sm"
         (click)="openExportModal()"
         [disabled]="lignesFiltrees().length === 0"
       >
-        <i class="fas fa-file-pdf"></i>
-        Export PDF
+        <i class="fas fa-file-pdf"></i> Export PDF
       </button>
-
       <button
         class="btn btn--secondary btn--sm"
         (click)="exportCSV()"
         [disabled]="lignesFiltrees().length === 0"
       >
-        <i class="fas fa-file-csv"></i>
-        CSV
+        <i class="fas fa-file-csv"></i> CSV
       </button>
     </div>
   </div>
 
-  <!-- Deuxième ligne : Filtres service et statut -->
   <div class="filters-bar">
     <select
       class="filter-select"
@@ -176,7 +201,6 @@
         <option [value]="s">{{ s }}</option>
       }
     </select>
-
     <select
       class="filter-select"
       [value]="filtreStatut()"
@@ -190,70 +214,195 @@
   </div>
 </div>
 
-<!-- Table -->
-<div class="card table-wrapper">
-  @if (lignesFiltrees().length === 0) {
-    <div class="empty-state">
-      <i class="fas fa-clock" style="font-size: 32px;"></i>
-      <p>Aucun pointage pour cette sélection</p>
+<!-- Loader des pointages -->
+@if (loadingPointages()) {
+  @if (vue() === 'cards') {
+    <div class="skeleton-pointages-cards">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="skeleton-pointage-card"></div>
+      }
+    </div>
+  } @else {
+    <div class="loading-pointages">
+      <div class="loader-spinner"></div>
+      <p>Chargement des pointages...</p>
     </div>
   }
-  @if (lignesFiltrees().length > 0) {
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Employé</th>
-          <th>Service</th>
-          <th>Arrivée</th>
-          <th>Départ</th>
-          <th>Heures</th>
-          <th>Retard</th>
-          <th>Statut</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (l of lignesFiltrees(); track l.matricule) {
-          <tr class="clickable-row" (click)="voirHistorique(l.matricule)" style="cursor: pointer">
-            <td data-label="Employé">
-              <div class="cell-employe">
-                <div class="emp-avatar-sm">{{ initiales(l) }}</div>
-                <div>
-                  <span class="emp-name">{{ fullName(l) }}</span>
-                  <span class="emp-mat">{{ l.matricule }}</span>
-                </div>
-              </div>
-            </td>
-            <td data-label="Service">
-              <span class="service-chip">{{ l.service }}</span>
-            </td>
-            <td data-label="Arrivée">
-              <span [class.time-late]="l.retard > 0">{{
+}
+
+<!-- Afficher les données seulement quand le chargement est terminé -->
+@if (!loadingPointages()) {
+  <!-- ── VUE TABLEAU ────────────────────────────────────────────────────────── -->
+  @if (vue() === 'table') {
+    <div class="card table-wrapper">
+      @if (lignesFiltrees().length === 0) {
+        <div class="empty-state">
+          <i class="fas fa-clock" style="font-size: 32px"></i>
+          <p>Aucun pointage pour cette sélection</p>
+        </div>
+      }
+      @if (lignesFiltrees().length > 0) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Employé</th>
+              <th>Service</th>
+              <th>Arrivée</th>
+              <th>Départ</th>
+              <th>Heures</th>
+              <th>Retard</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of lignesPaginees(); track l.id) {
+              <tr
+                class="clickable-row"
+                (click)="voirHistorique(l.matricule)"
+                style="cursor: pointer"
+              >
+                <td data-label="Employé">
+                  <div class="cell-employe">
+                    <div class="emp-avatar-sm">{{ initiales(l) }}</div>
+                    <div>
+                      <span class="emp-name">{{ fullName(l) }}</span
+                      ><span class="emp-mat">{{ l.matricule }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td data-label="Service">
+                  <span class="service-chip">{{ l.service }}</span>
+                </td>
+                <td data-label="Arrivée">
+                  <span [class.time-late]="l.retard > 0">{{
+                    l.arrive ? formatHeure(l.arrive) : '—'
+                  }}</span>
+                </td>
+                <td data-label="Départ">{{ l.descente ? formatHeure(l.descente) : '—' }}</td>
+                <td data-label="Heures">
+                  @if (l.heures > 0) {
+                    <span class="hours-badge">{{ l.heures }}h</span>
+                  } @else {
+                    <span>—</span>
+                  }
+                </td>
+                <td data-label="Retard">
+                  @if (l.retard > 0) {
+                    <span class="retard-badge"
+                      ><i class="fas fa-exclamation-triangle"></i> +{{ l.retard }} min</span
+                    >
+                  } @else {
+                    <span>—</span>
+                  }
+                </td>
+                <td data-label="Statut">
+                  <span class="badge badge--{{ statutClass(l.statut) }}">{{
+                    statutLabel(l.statut)
+                  }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  }
+
+  <!-- ── VUE CARTES ──────────────────────────────────────────────────────────── -->
+  @if (vue() === 'cards') {
+    @if (lignesFiltrees().length === 0) {
+      <div class="empty-state-cards">
+        <i class="fas fa-clock"></i>
+        <p>Aucun pointage pour cette sélection</p>
+      </div>
+    }
+
+    <div class="cards-grid-pointages">
+      @for (l of lignesPaginees(); track l.id) {
+        <div class="pointage-card" (click)="voirHistorique(l.matricule)">
+          <div class="card-header">
+            <div class="card-avatar" [style.background]="getAvatarColor(l.matricule)">
+              {{ initiales(l) }}
+            </div>
+            <div class="card-info">
+              <h3>{{ fullName(l) }}</h3>
+              <span class="card-matricule"><i class="fas fa-id-card"></i> {{ l.matricule }}</span>
+            </div>
+            <div class="card-status-badge" [class]="l.statut">
+              <i
+                class="fas"
+                [class.fa-check-circle]="l.statut === 'present'"
+                [class.fa-clock]="l.statut === 'retard'"
+                [class.fa-user-slash]="l.statut === 'absent'"
+              ></i>
+              {{ l.statut === 'present' ? 'Présent' : l.statut === 'retard' ? 'Retard' : 'Absent' }}
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="info-row">
+              <span class="info-label"><i class="fas fa-building"></i> Service</span>
+              <span class="info-value">{{ l.service }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label"><i class="fas fa-clock"></i> Arrivée</span>
+              <span class="info-value" [class.time-late]="l.retard > 0">{{
                 l.arrive ? formatHeure(l.arrive) : '—'
               }}</span>
-            </td>
-            <td data-label="Départ">{{ l.descente ? formatHeure(l.descente) : '—' }}</td>
-            <td data-label="Heures">
-              @if (l.heures > 0) {
-                <span class="hours-badge">{{ l.heures }}h</span>
-              } @else {
-                <span style="color: var(--text-muted)">—</span>
-              }
-            </td>
-            <td data-label="Retard">
-              @if (l.retard > 0) {
-                <span class="retard-badge"><i class="fas fa-exclamation-triangle"></i> +{{ l.retard }} min</span>
-              } @else {
-                <span style="color: var(--text-muted)">—</span>
-              }
-            </td>
-            <td data-label="Statut">
-              <span class="badge badge--{{ statutClass(l.statut) }}">{{
-                statutLabel(l.statut)
-              }}</span>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+            </div>
+            <div class="info-row">
+              <span class="info-label"><i class="fas fa-sign-out-alt"></i> Départ</span>
+              <span class="info-value">{{ l.descente ? formatHeure(l.descente) : '—' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label"><i class="fas fa-hourglass-half"></i> Heures</span>
+              <span class="info-value"
+                ><strong>{{ l.heures > 0 ? l.heures + 'h' : '—' }}</strong></span
+              >
+            </div>
+            @if (l.retard > 0) {
+              <div class="retard-alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                Retard de {{ l.retard }} minutes
+              </div>
+            }
+          </div>
+
+          <div class="card-footer">
+            <button
+              class="card-btn"
+              (click)="$event.stopPropagation(); voirHistorique(l.matricule)"
+            >
+              <i class="fas fa-history"></i> Voir historique
+            </button>
+          </div>
+        </div>
+      }
+    </div>
   }
-</div>
+
+  <!-- Pagination - inchangée mais maintenant elle fonctionne car lignesPaginees() change -->
+  @if (totalPages() > 1) {
+    <div class="pagination">
+      <button class="pg-btn" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      @for (p of pages(); track $index) {
+        @if (p === '...') {
+          <span class="pg-dots">…</span>
+        } @else {
+          <button class="pg-btn pg-num" [class.active]="currentPage() === p" (click)="goToPage(p)">
+            {{ p }}
+          </button>
+        }
+      }
+      <button
+        class="pg-btn"
+        (click)="goToPage(currentPage() + 1)"
+        [disabled]="currentPage() === totalPages()"
+      >
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  }
+}

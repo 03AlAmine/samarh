@@ -1,7 +1,7 @@
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 // Deux étapes : 1) Code communauté ou "ADMIN"  2) Login + mot de passe
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -18,6 +18,7 @@ const ADMIN_CODES = ['ADMIN', 'admin', 'superadmin'];
 @Component({
   selector: 'app-login',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './login.html',
   styleUrls: ['./login.scss'],

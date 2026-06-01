@@ -3,9 +3,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { Observable, shareReplay } from 'rxjs';
-import { FirebaseService } from './firebase.service';
-import { EmployeService } from './employe.service';
-import { Employe, Planning } from '../models/employe.model';
+
 import { filter, take, switchMap } from 'rxjs/operators';
 import {
   PresenceBrute,
@@ -17,7 +15,10 @@ import {
   StatistiquesService,
   StatistiquesEmploye,
   StatsMensuelle,
-} from '../models/pointage.model';
+} from '../../core/models/pointage.model';
+import { Employe, Planning } from '../models/employe.model';
+import { EmployeService } from './employe.service';
+import { FirebaseService } from './firebase.service';
 
 const RETARD_SEUIL_MINUTES = 10;
 
@@ -29,6 +30,7 @@ export class PointageService {
   // ── CACHE PAR DATE ────────────────────────────────────────────────────────
 
   private cacheParDate = new Map<string, Observable<PresenceBrute[]>>();
+  private cacheParPeriode = new Map<string, Observable<PresenceBrute[]>>();
 
   private resetCacheAMinuit(): void {
     const maintenant = new Date();
@@ -38,6 +40,7 @@ export class PointageService {
     const delai = demainMinuit.getTime() - maintenant.getTime();
     setTimeout(() => {
       this.cacheParDate.clear();
+      this.cacheParPeriode.clear();
       this.resetCacheAMinuit();
     }, delai);
   }
@@ -65,12 +68,20 @@ export class PointageService {
   }
 
   presencesPeriode$(dateDebut: string, dateFin: string): Observable<PresenceBrute[]> {
-    return this.fb.clientReady$.pipe(
+    const key = `${dateDebut}_${dateFin}`;
+    if (this.cacheParPeriode.has(key)) {
+      return this.cacheParPeriode.get(key)!;
+    }
+
+    const obs$ = this.fb.clientReady$.pipe(
       filter(ready => ready),
       take(1),
       switchMap(() => this.fb.clientListenByChild<PresenceBrute>('Login', 'date', dateDebut, dateFin)),
       shareReplay(1),
     );
+
+    this.cacheParPeriode.set(key, obs$);
+    return obs$;
   }
 
   jours_feries$: Observable<JourFerie[]> = this.fb.clientReady$.pipe(

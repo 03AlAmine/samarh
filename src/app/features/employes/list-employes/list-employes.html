@@ -1,4 +1,4 @@
-<!-- list-employes.html - version mise à jour avec Font Awesome -->
+<!-- list-employes.html - version avec toggle vue carte/tableau -->
 <div class="page-header">
   <div>
     <h1 class="page-title">Employés</h1>
@@ -11,16 +11,37 @@
       }
     </p>
   </div>
-  @if (canEdit) {
-    <button class="btn btn--primary btn--sm" (click)="openForm()">
-      <i class="fas fa-plus"></i>
-      Ajouter
-    </button>
-  }
+  <div class="header-actions">
+    <!-- Toggle vue -->
+    <div class="view-toggle">
+      <button
+        class="view-btn"
+        [class.active]="vue() === 'table'"
+        (click)="setVue('table')"
+        title="Vue tableau"
+      >
+        <i class="fas fa-table"></i>
+      </button>
+      <button
+        class="view-btn"
+        [class.active]="vue() === 'cards'"
+        (click)="setVue('cards')"
+        title="Vue cartes"
+      >
+        <i class="fas fa-th-large"></i>
+      </button>
+    </div>
+    @if (canEdit) {
+      <button class="btn btn--primary btn--sm" (click)="openForm()">
+        <i class="fas fa-plus"></i>
+        Ajouter
+      </button>
+    }
+  </div>
 </div>
 
 <!-- Filtres -->
-<div class="filters-bar card" style="margin-bottom: 20px; padding: 14px 16px">
+<div class="filters-bar card">
   <div class="filter-search">
     <i class="fas fa-search"></i>
     <input
@@ -55,50 +76,45 @@
 
 <!-- ── Skeleton loader ──────────────────────────────────────────────────────── -->
 @if (loading()) {
-  <div class="card table-wrapper">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Employé</th>
-          <th>Matricule</th>
-          <th>Poste</th>
-          <th>Service</th>
-          <th>Contrat</th>
-          <th>Statut</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
-          <tr class="skeleton-row">
-            <td>
-              <div class="cell-employe">
-                <div class="sk sk-avatar"></div>
-                <div class="sk-lines">
-                  <div class="sk sk-line w-70"></div>
-                  <div class="sk sk-line w-50 sm"></div>
-                </div>
-              </div>
-            </td>
-            <td><div class="sk sk-line w-50"></div></td>
-            <td><div class="sk sk-line w-70"></div></td>
-            <td><div class="sk sk-line w-60"></div></td>
-            <td><div class="sk sk-line w-40"></div></td>
-            <td><div class="sk sk-badge"></div></td>
-            <td></td>
+  @if (vue() === 'table') {
+    <div class="card table-wrapper">
+      <table class="data-table">
+        <!-- skeleton table -->
+        <thead>
+          <tr>
+            <th>Employé</th>
+            <th>Matricule</th>
+            <th>Poste</th>
+            <th>Service</th>
+            <th>Contrat</th>
+            <th>Statut</th>
+            <th></th>
           </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+            <tr class="skeleton-row">
+              <td colspan="7"><div class="sk sk-line w-100"></div></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="cards-grid skeleton-cards">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="card-skeleton-employe"></div>
+      }
+    </div>
+  }
 }
 
-<!-- ── Table desktop ────────────────────────────────────────────────────────── -->
-@if (!loading()) {
-  <div class="card table-wrapper desktop-table">
+<!-- ── VUE TABLEAU (Desktop) ───────────────────────────────────────────────── -->
+@if (!loading() && vue() === 'table') {
+  <div class="card table-wrapper">
     @if (employesPagines().length === 0) {
       <div class="empty-state">
-        <i class="fas fa-user-slash" style="font-size: 32px;"></i>
+        <i class="fas fa-user-slash" style="font-size: 32px"></i>
         <p>Aucun employé trouvé</p>
       </div>
     }
@@ -164,60 +180,87 @@
       </table>
     }
   </div>
+}
 
-  <!-- ── Cards mobile ─────────────────────────────────────────────────────── -->
-  @if (employesPagines().length > 0) {
-    <div class="mobile-cards">
-      @for (e of employesPagines(); track e.id) {
-        <a class="employe-card" [routerLink]="['/employes', e.id]">
-          <div class="ec-left">
-            <div class="emp-avatar">{{ initials(e) }}</div>
-            <div class="ec-info">
-              <span class="emp-name">{{ e.prenom }} {{ e.nom }}</span>
-              <span class="emp-email">{{ e.poste || nomService(e.service) || e.matricule }}</span>
-            </div>
-          </div>
-          <div class="ec-right">
-            <span class="badge badge--{{ statutClass(e.statut) }}">{{ e.statut || 'actif' }}</span>
-            @if (canEdit) {
-              <button
-                class="btn btn--ghost btn--icon btn--sm"
-                title="Modifier"
-                (click)="$event.preventDefault(); $event.stopPropagation(); openForm(e)"
-              >
-                <i class="fas fa-pen"></i>
-              </button>
-            }
-          </div>
-        </a>
-      }
+<!-- ── VUE CARTES (Moderne) ────────────────────────────────────────────────── -->
+@if (!loading() && vue() === 'cards') {
+  @if (employesPagines().length === 0) {
+    <div class="empty-state-cards">
+      <i class="fas fa-user-slash"></i>
+      <p>Aucun employé trouvé</p>
     </div>
   }
 
-  <!-- ── Pagination ──────────────────────────────────────────────────────── -->
-  @if (totalPages() > 1) {
-    <div class="pagination">
-      <button class="pg-btn" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">
-        <i class="fas fa-chevron-left"></i>
-      </button>
-      @for (p of pages(); track $index) {
-        @if (p === '...') {
-          <span class="pg-dots">…</span>
-        } @else {
-          <button class="pg-btn pg-num" [class.active]="currentPage() === p" (click)="goToPage(p)">
-            {{ p }}
+  <div class="cards-grid-employes">
+    @for (e of employesPagines(); track e.id) {
+      <div class="employe-card-modern" (click)="openDetail(e.id)">
+        <div class="card-header">
+          <!--  <div class="card-avatar" [style.background]="getAvatarColor(e.id)"> -->
+          <div class="card-avatar">
+            {{ initials(e) }}
+          </div>
+          <div class="card-status">
+            <span class="status-badge" [class.active]="e.statut === 'actif'">
+              {{ e.statut === 'actif' ? 'Actif' : 'Inactif' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <h3 class="card-name">{{ e.prenom }} {{ e.nom }}</h3>
+          <p class="card-poste"><i class="fas fa-briefcase"></i> {{ e.poste || 'Employé' }}</p>
+          <div class="card-info-row">
+            <i class="fas fa-id-card"></i>
+            <code>{{ e.matricule }}</code>
+          </div>
+          <div class="card-info-row">
+            <i class="fas fa-building"></i>
+            <span>{{ nomService(e.service) || '—' }}</span>
+          </div>
+          <div class="card-info-row">
+            <i class="fas fa-file-signature"></i>
+            <span>{{ e.typeContrat || 'CDI' }}</span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          @if (canEdit) {
+            <button class="card-btn edit" (click)="$event.stopPropagation(); openForm(e)">
+              <i class="fas fa-pen"></i> Modifier
+            </button>
+          }
+          <button class="card-btn view" (click)="$event.stopPropagation(); openDetail(e.id)">
+            <i class="fas fa-eye"></i> Voir
           </button>
-        }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- ── Pagination ──────────────────────────────────────────────────────── -->
+@if (totalPages() > 1) {
+  <div class="pagination">
+    <button class="pg-btn" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    @for (p of pages(); track $index) {
+      @if (p === '...') {
+        <span class="pg-dots">…</span>
+      } @else {
+        <button class="pg-btn pg-num" [class.active]="currentPage() === p" (click)="goToPage(p)">
+          {{ p }}
+        </button>
       }
-      <button
-        class="pg-btn"
-        (click)="goToPage(currentPage() + 1)"
-        [disabled]="currentPage() === totalPages()"
-      >
-        <i class="fas fa-chevron-right"></i>
-      </button>
-    </div>
-  }
+    }
+    <button
+      class="pg-btn"
+      (click)="goToPage(currentPage() + 1)"
+      [disabled]="currentPage() === totalPages()"
+    >
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
 }
 
 <!-- ── Modal ajout/modification ─────────────────────────────────────────────── -->
@@ -225,10 +268,11 @@
   <div class="modal-overlay" (click)="closeForm()">
     <div class="modal-container" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3><i class="fas fa-user"></i> {{ editingEmploye() ? "Modifier l'employé" : 'Ajouter un employé' }}</h3>
-        <button class="modal-close" (click)="closeForm()">
-          <i class="fas fa-times"></i>
-        </button>
+        <h3>
+          <i class="fas fa-user"></i>
+          {{ editingEmploye() ? "Modifier l'employé" : 'Ajouter un employé' }}
+        </h3>
+        <button class="modal-close" (click)="closeForm()"><i class="fas fa-times"></i></button>
       </div>
       @if (formError()) {
         <div class="form-alert"><i class="fas fa-exclamation-triangle"></i> {{ formError() }}</div>

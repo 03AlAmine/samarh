@@ -7,9 +7,10 @@ import {
   signal,
   HostListener,
   computed,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
+import { Router, NavigationEnd, NavigationStart, NavigationCancel, NavigationError, RouterOutlet } from '@angular/router';
 import { Subject, filter, takeUntil } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastComponent } from '../../features/shared/toast/toast.component';
@@ -20,6 +21,7 @@ import { SidebarComponent } from '../sidebar/sidebar';
 @Component({
   selector: 'app-shell',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     ToastComponent,
@@ -41,11 +43,22 @@ export class ShellComponent implements OnInit, OnDestroy {
   currentRoute = signal('');
   user = signal<any>(null);
   screenWidth = signal(window.innerWidth);
+  navigating = signal(false); // Loader de navigation
 
   isMobile = computed(() => this.screenWidth() < 1024);
 
   ngOnInit(): void {
     this.auth.user$.pipe(takeUntil(this.destroy$)).subscribe((u) => this.user.set(u));
+
+    this.router.events
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((e) => {
+        if (e instanceof NavigationStart) {
+          this.navigating.set(true);
+        } else if (e instanceof NavigationEnd || e instanceof NavigationCancel || e instanceof NavigationError) {
+          this.navigating.set(false);
+        }
+      });
 
     this.router.events
       .pipe(

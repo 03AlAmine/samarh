@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, adminGuard, publicGuard } from './core/guards';
 import { servicesGuard } from './core/guards/services.guard';
+import { employeGuard } from './core/guards/employe.guard';
 
 export const routes: Routes = [
   // ── Publiques ──────────────────────────────────────────────────────────────
@@ -123,6 +124,29 @@ export const routes: Routes = [
     canActivate: [authGuard],
     title: 'Mon profil',
   },
+
+  // app.routes.ts - ajouter
+{
+  path: 'login-employe',
+  loadComponent: () => import('./features/auth/login-employe/login-employe.component')
+    .then(m => m.LoginEmployeComponent),
+  title: 'Connexion employé'
+},
+{
+  path: 'espace-employe',
+  loadComponent: () => import('./features/espace-employe/dashboard-employe/dashboard-employe.component')
+    .then(m => m.DashboardEmployeComponent),
+  canActivate: [employeGuard],
+  children: [
+    { path: 'dashboard', loadComponent: () => import('./features/espace-employe/dashboard-employe/dashboard-employe.component').then(m => m.DashboardEmployeComponent) },
+   /* { path: 'pointages', loadComponent: () => import('./features/espace-employe/employe-pointages/employe-pointages.component').then(m => m.EmployePointagesComponent) },
+    { path: 'conges', loadComponent: () => import('./features/espace-employe/employe-conges/employe-conges.component').then(m => m.EmployeCongesComponent) },
+    { path: 'justificatifs', loadComponent: () => import('./features/espace-employe/employe-justificatifs/employe-justificatifs.component').then(m => m.EmployeJustificatifsComponent) },
+    { path: 'messagerie', loadComponent: () => import('./features/espace-employe/employe-messagerie/employe-messagerie.component').then(m => m.EmployeMessagerieComponent) },
+    { path: 'profil', loadComponent: () => import('./features/espace-employe/employe-profil/employe-profil.component').then(m => m.EmployeProfilComponent) },*/
+    { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+  ]
+},
 
   // ── Accueil & fallback ─────────────────────────────────────────────────────
   {

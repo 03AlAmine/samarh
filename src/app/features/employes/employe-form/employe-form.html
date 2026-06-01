@@ -24,6 +24,37 @@
 
   <!-- ── Tab Informations ────────────────────────────────────────────────── -->
   @if (activeTab() === 'infos') {
+    <!-- Photo de profil -->
+    <div class="photo-upload">
+      <div class="photo-preview">
+        @if (imagePreview()) {
+          <img [src]="imagePreview()" alt="Photo" class="photo-img" />
+          <button type="button" class="photo-remove" (click)="removeImage()" title="Supprimer la photo">
+            <i class="fas fa-times"></i>
+          </button>
+        } @else {
+          <div class="photo-placeholder">
+            <i class="fas fa-user"></i>
+          </div>
+        }
+      </div>
+      <label class="btn btn--ghost btn--sm photo-btn" [class.disabled]="compressingImage">
+        @if (compressingImage) {
+          <span class="spinner sm"></span> Compression…
+        } @else {
+          <i class="fas fa-camera"></i> {{ imagePreview() ? 'Changer la photo' : 'Ajouter une photo' }}
+        }
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          style="display:none"
+          (change)="onImageSelected($event)"
+          [disabled]="compressingImage"
+        />
+      </label>
+      <span class="photo-hint">JPG, PNG ou WebP · max 400×400px après compression</span>
+    </div>
+
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">Prénom *</label>

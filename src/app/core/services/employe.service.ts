@@ -40,10 +40,14 @@ export class EmployeService {
     return this.fb.clientGetList<Employe>('Employe');
   }
 
-  async getById(id: string): Promise<Employe | null> {
-    return this.fb.clientGet<Employe>(`Employe/${id}`);
-  }
 
+async getById(id: string): Promise<Employe | null> {
+  const result = await this.fb.clientGet<Employe>(`Employe/${id}`);
+  if (result && !result.id) {
+    result.id = id;
+  }
+  return result;
+}
   async create(data: Omit<Employe, 'id'>): Promise<string> {
     const now = new Date().toISOString();
     return this.fb.clientPush('Employe', { ...data, createdAt: now, updatedAt: now });

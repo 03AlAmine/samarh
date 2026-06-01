@@ -16,49 +16,7 @@ $gray-700: #334155;
 $gray-800: #1e293b;
 $gray-900: #0f172a;
 
-// ─── HEADER ────────────────────────────────────────────────────────────────────
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
-  gap: 16px;
 
-  .page-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: $gray-800;
-    letter-spacing: -0.3px;
-    margin: 0 0 4px;
-  }
-
-  .page-subtitle {
-    font-size: 13px;
-    color: $gray-500;
-    margin: 0;
-  }
-}
-
-.btn--primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: $blue;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: darken($blue, 8%);
-    transform: translateY(-1px);
-  }
-}
 
 // ─── STATS ROW ────────────────────────────────────────────────────────────────
 .stats-row {

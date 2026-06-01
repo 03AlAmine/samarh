@@ -1,6 +1,6 @@
 // ─── ADMIN UTILISATEURS ──────────────────────────────────────────────────────
 
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FirebaseService } from '../../../core/services/firebase.service';
@@ -8,6 +8,7 @@ import { FirebaseService } from '../../../core/services/firebase.service';
 @Component({
   selector: 'app-utilisateurs',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
     <div class="page-header">

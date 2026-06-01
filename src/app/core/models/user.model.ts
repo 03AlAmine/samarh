@@ -1,11 +1,11 @@
-// ─── USER MODELS ─────────────────────────────────────────────────────────────
-// Trois types d'utilisateurs : admin SaaS, gérant de communauté, employé communauté
+// user.model.ts - version finale corrigée
 
-export type UserType = 'individual' | 'company' | 'employee';
+export type UserType = 'individual' | 'company' | 'employee' | 'admin';
 export type AccountType = 'free' | 'basic' | 'premium' | 'enterprise';
 export type UserStatus = 'pending' | 'active' | 'suspended' | 'rejected';
+export type RoleType = 'Employé' | 'Chargé de compte' | 'Administrateur';
 
-/** Champs communs à tous les utilisateurs */
+// ─── UserBase (champs communs) ───────────────────────────────────────────────
 export interface UserBase {
   uid: string;
   email: string;
@@ -20,44 +20,44 @@ export interface UserBase {
   lastLogin?: string;
   avatar?: string;
   communauteId?: string;
-  /** Vrai pour les employés connectés via login communauté (sans Firebase Auth) */
   isCommunauteUser?: boolean;
 }
 
-/** Utilisateur individuel */
-export interface IndividualUser extends UserBase {
-  userType: 'individual';
-  dateOfBirth?: string;
-  cin?: string;
-  address?: string;
-  gender?: 'male' | 'female';
+// ─── AppUser (utilisé dans AuthService) ───────────────────────────────────────
+export interface AppUser {
+  uid: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  userType: 'admin' | 'company' | 'individual' | 'employee';
+  accountType: 'free' | 'basic' | 'premium' | 'enterprise';
+  status: 'active' | 'pending' | 'rejected' | 'suspended';
+  createdAt: string;
+  emailVerified: boolean;
+  communauteId?: string;
+  companyName?: string;
+  isCommunauteUser?: boolean;
+  login?: string;
+  matricule?: string;
+  services?: string[];
+  role?: RoleType;
+  pin?: string;
 }
 
-/** Utilisateur entreprise */
-export interface CompanyUser extends UserBase {
-  userType: 'company';
-  companyName: string;
-  companyType: 'sarl' | 'sa' | 'eurl' | 'sas' | 'other';
-  address: string;
-  industry: string;
-  employeesCount: number;
-}
-
-/** Employé connecté via login communauté */
-export interface EmployeeUser extends UserBase {
+// ─── EmployeeUser (pour les employés communauté) ──────────────────────────────
+export interface EmployeeUser extends AppUser {
   userType: 'employee';
-  role: string; // "Administrateur" ou "Employé"
   login?: string;
   matricule?: string;
   service?: string;
   poste?: string;
-  services?: string[]; // services autorisés (["Tous"] = admin communauté)
+  services?: string[];
   communauteNom?: string;
+  role?: RoleType;  // ✅ Type correct
 }
 
-export type AppUser = IndividualUser | CompanyUser | EmployeeUser;
-
-/** Communauté (espace de travail d'un gérant) */
+// ─── Communauté ───────────────────────────────────────────────────────────────
 export interface Communaute {
   id: string;
   uidAdmin: string;
@@ -78,4 +78,22 @@ export interface FirebaseClientConfig {
   messagingSenderId: string;
   appId: string;
   storageBucket?: string;
+}
+
+// ─── IndividualUser / CompanyUser (pour compatibilité) ────────────────────────
+export interface IndividualUser extends UserBase {
+  userType: 'individual';
+  dateOfBirth?: string;
+  cin?: string;
+  address?: string;
+  gender?: 'male' | 'female';
+}
+
+export interface CompanyUser extends UserBase {
+  userType: 'company';
+  companyName: string;
+  companyType: 'sarl' | 'sa' | 'eurl' | 'sas' | 'other';
+  address: string;
+  industry: string;
+  employeesCount: number;
 }

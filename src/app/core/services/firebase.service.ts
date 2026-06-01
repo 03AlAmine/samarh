@@ -130,14 +130,24 @@ export class FirebaseService implements OnDestroy {
     }
   }
 
-  get hasClientDatabase(): boolean { return this.clientDatabase !== null; }
+  get hasClientDatabase(): boolean {
+    return this.clientDatabase !== null;
+  }
 
   /** Promise qui résout quand la base client est prête */
   waitForClient(): Promise<void> {
     if (this.clientReady$.value) return Promise.resolve();
-    return this.clientReady$.pipe(filter(v => v), take(1)).toPromise().then(() => {});
+    return this.clientReady$
+      .pipe(
+        filter((v) => v),
+        take(1),
+      )
+      .toPromise()
+      .then(() => {});
   }
-  get communauteId(): string | null { return this.currentCommunauteId; }
+  get communauteId(): string | null {
+    return this.currentCommunauteId;
+  }
 
   private requireClientDb(): RtdbDatabase {
     if (!this.clientDatabase) {
@@ -146,9 +156,32 @@ export class FirebaseService implements OnDestroy {
     return this.clientDatabase;
   }
 
+  // firebase.service.ts - corriger la méthode clientGet
+
+  // firebase.service.ts - méthode clientGet améliorée
+
   async clientGet<T = any>(path: string): Promise<T | null> {
-    const snapshot = await get(ref(this.requireClientDb(), path));
-    return snapshot.exists() ? snapshot.val() : null;
+    const db = this.requireClientDb();
+    const snapshot = await get(ref(db, path));
+
+    if (!snapshot.exists()) {
+      return null;
+    }
+
+    const data = snapshot.val();
+
+    // ✅ Ajouter l'ID à l'objet retourné
+    if (data && typeof data === 'object') {
+      // Extraire l'ID depuis le chemin
+      const pathParts = path.split('/');
+      const key = pathParts[pathParts.length - 1];
+
+      if (key && !data.id) {
+        data.id = key;
+      }
+    }
+
+    return data;
   }
 
   async clientSet(path: string, data: any): Promise<void> {
@@ -188,9 +221,14 @@ export class FirebaseService implements OnDestroy {
       const unsubscribe = onValue(
         ref(db, path),
         (snapshot) => {
-          if (!snapshot.exists()) { observer.next([]); return; }
+          if (!snapshot.exists()) {
+            observer.next([]);
+            return;
+          }
           const items: T[] = [];
-          snapshot.forEach((child) => { items.push({ id: child.key, ...child.val() }); });
+          snapshot.forEach((child) => {
+            items.push({ id: child.key, ...child.val() });
+          });
           observer.next(items);
         },
         (error) => observer.error(error),
@@ -203,7 +241,9 @@ export class FirebaseService implements OnDestroy {
     const snapshot = await get(ref(this.requireClientDb(), path));
     if (!snapshot.exists()) return [];
     const items: T[] = [];
-    snapshot.forEach((child) => { items.push({ id: child.key, ...child.val() } as T); });
+    snapshot.forEach((child) => {
+      items.push({ id: child.key, ...child.val() } as T);
+    });
     return items;
   }
 
@@ -227,14 +267,17 @@ export class FirebaseService implements OnDestroy {
   ): Promise<T[]> {
     const db = this.requireClientDb();
     const baseRef = ref(db, path);
-    const q = end != null
-      ? query(baseRef, orderByChild(child), startAt(start), endAt(end))
-      : query(baseRef, orderByChild(child), equalTo(start));
+    const q =
+      end != null
+        ? query(baseRef, orderByChild(child), startAt(start), endAt(end))
+        : query(baseRef, orderByChild(child), equalTo(start));
 
     const snapshot = await get(q);
     if (!snapshot.exists()) return [];
     const items: T[] = [];
-    snapshot.forEach((child) => { items.push({ id: child.key, ...child.val() } as T); });
+    snapshot.forEach((child) => {
+      items.push({ id: child.key, ...child.val() } as T);
+    });
     return items;
   }
 
@@ -251,16 +294,22 @@ export class FirebaseService implements OnDestroy {
     return new Observable<T[]>((observer) => {
       const db = this.requireClientDb();
       const baseRef = ref(db, path);
-      const q = end != null
-        ? query(baseRef, orderByChild(child), startAt(start), endAt(end))
-        : query(baseRef, orderByChild(child), equalTo(start));
+      const q =
+        end != null
+          ? query(baseRef, orderByChild(child), startAt(start), endAt(end))
+          : query(baseRef, orderByChild(child), equalTo(start));
 
       const unsubscribe = onValue(
         q,
         (snapshot) => {
-          if (!snapshot.exists()) { observer.next([]); return; }
+          if (!snapshot.exists()) {
+            observer.next([]);
+            return;
+          }
           const items: T[] = [];
-          snapshot.forEach((child) => { items.push({ id: child.key, ...child.val() }); });
+          snapshot.forEach((child) => {
+            items.push({ id: child.key, ...child.val() });
+          });
           observer.next(items);
         },
         (error) => observer.error(error),

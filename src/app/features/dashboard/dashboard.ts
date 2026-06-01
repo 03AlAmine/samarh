@@ -562,34 +562,46 @@ export class DashboardComponent implements OnInit {
 
   private async loadSemaine(employes: Employe[]): Promise<void> {
     this.loadingSemaine.set(true);
-    // On charge toutes les présences brutes — le filtre se fait dans semaine (computed)
     const actifs = employes.filter((e) => e.statut !== 'archive' && e.statut !== 'inactif');
     const total = actifs.length;
     const today = new Date();
     const labels = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
-    const promises = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(today.getDate() - (6 - i));
-      const iso = d.toISOString().split('T')[0];
-      return firstValueFrom(
-        this.pointageService.presencesJour$(iso).pipe(catchError(() => of([])))
-      ).then(
-        (presences) =>
-          ({
-            label: labels[d.getDay()],
-            date: iso,
-            presents: presences.length,
-            total,
-            pct: total ? Math.round((presences.length / total) * 100) : 0,
-            isToday: iso === today.toISOString().split('T')[0],
-            matricules: presences.map((x) => x.matricule),
-          }) as JourSemaine
-      );
-    });
+    // ✅ Une seule requête Firebase pour les 7 jours au lieu de 7 listeners séparés
+    const dateDebut = new Date(today);
+    dateDebut.setDate(today.getDate() - 6);
+    const isoDebut = dateDebut.toISOString().split('T')[0];
+    const isoFin = today.toISOString().split('T')[0];
 
     try {
-      const result = await Promise.all(promises);
+      const allPresences = await firstValueFrom(
+        this.pointageService.presencesPeriode$(isoDebut, isoFin).pipe(catchError(() => of([])))
+      );
+
+      // Grouper les présences par date
+      const parDate = new Map<string, PresenceBrute[]>();
+      for (const p of allPresences) {
+        const d = (p as any).date as string;
+        if (!parDate.has(d)) parDate.set(d, []);
+        parDate.get(d)!.push(p);
+      }
+
+      const result = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - (6 - i));
+        const iso = d.toISOString().split('T')[0];
+        const presences = parDate.get(iso) ?? [];
+        return {
+          label: labels[d.getDay()],
+          date: iso,
+          presents: presences.length,
+          total,
+          pct: total ? Math.round((presences.length / total) * 100) : 0,
+          isToday: iso === isoFin,
+          matricules: presences.map((x) => x.matricule),
+        } as JourSemaine;
+      });
+
       this._semaineRaw.set(result);
     } catch {
       this._semaineRaw.set([]);

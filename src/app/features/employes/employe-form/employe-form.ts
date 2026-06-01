@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import * as bcrypt from 'bcryptjs';
 import { Employe, Service } from '../../../core/models/employe.model';
+import { ImageCompressService } from '../../../core/services/image-compress.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 type Tab = 'infos' | 'acces';
@@ -36,9 +37,12 @@ export class EmployeFormComponent implements OnInit {
 
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
+  private imageCompress = inject(ImageCompressService);
 
   activeTab = signal<Tab>('infos');
   hashing = false;
+  compressingImage = false;
+  imagePreview = signal<string>(''); // prévisualisation + valeur à sauvegarder
   showPin = signal(false);
 
   // ── Services sélectionnés pour les permissions ────────────────────────────
@@ -101,6 +105,11 @@ export class EmployeFormComponent implements OnInit {
         login: this.employe.login || '',
         pin: this.employe.pin || '',
       });
+
+      // Pré-remplir la photo existante
+      if (this.employe.image) {
+        this.imagePreview.set(this.employe.image);
+      }
 
       // ── Charger les permissions existantes ────────────────────────────────
       const emp = this.employe as any;
@@ -233,7 +242,29 @@ export class EmployeFormComponent implements OnInit {
       delete val.pin;
     }
 
-    this.saved.emit(val as Partial<Employe>);
+    this.saved.emit({ ...val as Partial<Employe>, image: this.imagePreview() || undefined });
+  }
+
+  /** Appelé quand l'utilisateur choisit un fichier image */
+  async onImageSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.compressingImage = true;
+    try {
+      const compressed = await this.imageCompress.compress(file);
+      this.imagePreview.set(compressed);
+    } catch {
+      // silencieux — l'image reste inchangée
+    } finally {
+      this.compressingImage = false;
+      input.value = ''; // reset pour permettre de re-sélectionner le même fichier
+    }
+  }
+
+  removeImage(): void {
+    this.imagePreview.set('');
   }
 
   cancel(): void {

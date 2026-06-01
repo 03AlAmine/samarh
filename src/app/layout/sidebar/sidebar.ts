@@ -1,5 +1,5 @@
 // sidebar/sidebar.ts
-import { Component, input, computed, output, HostListener, signal } from '@angular/core';
+import { Component, input, computed, output, HostListener, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AppUser } from '../../core/models/user.model';
@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
 @Component({
   selector: 'app-sidebar',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.scss',

@@ -1,6 +1,6 @@
 // ─── ADMIN DEMANDES D'INSCRIPTION ────────────────────────────────────────────
 
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FirebaseService } from '../../../core/services/firebase.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -9,6 +9,7 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-register-requests',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   templateUrl: './register-requests.html',
   styleUrls: ['./register-requests.scss'],

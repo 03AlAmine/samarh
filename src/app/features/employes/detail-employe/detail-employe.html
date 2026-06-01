@@ -13,7 +13,7 @@
 @if (!loading() && employe(); as e) {
   <div class="breadcrumb">
     <a routerLink="/employes">Employés</a>
-    <i class="fas fa-chevron-right" style="font-size: 12px;"></i>
+    <i class="fas fa-chevron-right" style="font-size: 12px"></i>
     <span>{{ e.prenom }} {{ e.nom }}</span>
   </div>
 
@@ -119,28 +119,34 @@
         <h2 class="section-title"><i class="fas fa-address-card"></i> Informations personnelles</h2>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-envelope"></i> Email</span><span>{{ e.email || '—' }}</span>
+            <span class="info-key"><i class="fas fa-envelope"></i> Email</span
+            ><span>{{ e.email || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-phone"></i> Téléphone</span><span>{{ e.telephone || '—' }}</span>
+            <span class="info-key"><i class="fas fa-phone"></i> Téléphone</span
+            ><span>{{ e.telephone || '—' }}</span>
           </div>
           @if (age) {
             <div class="info-row">
-              <span class="info-key"><i class="fas fa-birthday-cake"></i> Âge</span><span>{{ age }} ans</span>
+              <span class="info-key"><i class="fas fa-birthday-cake"></i> Âge</span
+              ><span>{{ age }} ans</span>
             </div>
           }
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-calendar"></i> Date de naissance</span><span>{{ e.dateNaissance || '—' }}</span>
+            <span class="info-key"><i class="fas fa-calendar"></i> Date de naissance</span
+            ><span>{{ e.dateNaissance || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-id-card"></i> CIN</span><span>{{ e.cin || '—' }}</span>
+            <span class="info-key"><i class="fas fa-id-card"></i> CIN</span
+            ><span>{{ e.cin || '—' }}</span>
           </div>
           <div class="info-row">
             <span class="info-key"><i class="fas fa-map-marker-alt"></i> Adresse</span
             ><span>{{ e.adresse || '—' }}{{ e.ville ? ', ' + e.ville : '' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-venus-mars"></i> Civilité</span><span>{{ e.civilite || '—' }}</span>
+            <span class="info-key"><i class="fas fa-venus-mars"></i> Civilité</span
+            ><span>{{ e.civilite || '—' }}</span>
           </div>
           <div class="info-row">
             <span class="info-key"><i class="fas fa-heart"></i> Situation familiale</span
@@ -150,27 +156,35 @@
       </div>
 
       <div class="card">
-        <h2 class="section-title"><i class="fas fa-briefcase"></i> Informations professionnelles</h2>
+        <h2 class="section-title">
+          <i class="fas fa-briefcase"></i> Informations professionnelles
+        </h2>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-tag"></i> Poste</span><span>{{ e.poste || '—' }}</span>
+            <span class="info-key"><i class="fas fa-tag"></i> Poste</span
+            ><span>{{ e.poste || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-building"></i> Service</span><span>{{ nomService(e.service) }}</span>
+            <span class="info-key"><i class="fas fa-building"></i> Service</span
+            ><span>{{ nomService(e.service) }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-file-signature"></i> Type de contrat</span><span>{{ e.typeContrat || '—' }}</span>
+            <span class="info-key"><i class="fas fa-file-signature"></i> Type de contrat</span
+            ><span>{{ e.typeContrat || '—' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-calendar-plus"></i> Date d'embauche</span><span>{{ e.dateEmbauche || '—' }}</span>
+            <span class="info-key"><i class="fas fa-calendar-plus"></i> Date d'embauche</span
+            ><span>{{ e.dateEmbauche || '—' }}</span>
           </div>
           @if (e.dateFinContrat) {
             <div class="info-row">
-              <span class="info-key"><i class="fas fa-calendar-times"></i> Fin de contrat</span><span>{{ e.dateFinContrat }}</span>
+              <span class="info-key"><i class="fas fa-calendar-times"></i> Fin de contrat</span
+              ><span>{{ e.dateFinContrat }}</span>
             </div>
           }
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-shield-alt"></i> N° CNSS</span><span>{{ e.numCNSS || '—' }}</span>
+            <span class="info-key"><i class="fas fa-shield-alt"></i> N° CNSS</span
+            ><span>{{ e.numCNSS || '—' }}</span>
           </div>
           @if (e.salaireBase) {
             <div class="info-row">
@@ -180,34 +194,28 @@
           }
 
           <div class="info-row">
-            <span class="info-key"><i class="fas fa-user-circle"></i> Login app</span><span>{{ e.login || '—' }}</span>
+            <span class="info-key"><i class="fas fa-user-circle"></i> Login app</span
+            ><span>{{ e.login || '—' }}</span>
           </div>
 
           <!-- Affichage du PIN (admin uniquement) -->
           @if (isAdmin) {
             <div class="info-row">
               <span class="info-key"><i class="fas fa-key"></i> Code PIN</span>
-              <span class="pin-value">
-                <code>{{ e.pin || 'Non défini' }}</code>
-                @if (e.pin) {
-                  <button
-                    class="btn-copy-pin"
-                    (click)="copyPinToClipboard(e.pin)"
-                    title="Copier le PIN"
-                  >
-                    <i class="fas fa-copy"></i>
-                  </button>
-                }
-                @if (!e.pin) {
-                  <button
-                    class="btn-generate-pin"
-                    (click)="generatePinForEmploye(e.id)"
-                    title="Générer un PIN"
-                  >
-                    🎲 Générer
-                  </button>
-                }
-              </span>
+<!-- detail-employe.html - modifier l'appel -->
+<div class="pin-value">
+  <code>{{ e.pin || 'Non défini' }}</code>
+  @if (e.pin) {
+    <button class="btn-copy-pin" (click)="copyPinToClipboard(e.pin)" title="Copier le PIN">
+      📋
+    </button>
+  }
+  @if (!e.pin) {
+    <button class="btn-generate-pin" (click)="generatePinForEmploye()" title="Générer un PIN">
+      🎲 Générer
+    </button>
+  }
+</div>
             </div>
           }
 
@@ -218,7 +226,9 @@
               @if (e.role === 'Administrateur') {
                 <span class="badge badge--admin"><i class="fas fa-crown"></i> Administrateur</span>
               } @else if (e.role === 'Chargé de compte' || e.estChargeCompte) {
-                <span class="badge badge--manager"><i class="fas fa-user-tie"></i> Chargé de compte</span>
+                <span class="badge badge--manager"
+                  ><i class="fas fa-user-tie"></i> Chargé de compte</span
+                >
               } @else {
                 <span class="badge badge--employee"><i class="fas fa-user"></i> Employé</span>
               }
@@ -252,7 +262,7 @@
 
         @if (servicesGeres().length === 0) {
           <div class="empty-responsable-state">
-            <i class="fas fa-star" style="font-size: 40px; opacity: 0.5;"></i>
+            <i class="fas fa-star" style="font-size: 40px; opacity: 0.5"></i>
             <p>{{ e.prenom }} {{ e.nom }} n'est responsable d'aucun service.</p>
             @if (canEdit) {
               <button class="btn btn--secondary btn--sm" (click)="openEdit()">
@@ -280,7 +290,8 @@
                 </div>
                 <div class="service-stats-mini">
                   <span class="stat-badge"
-                    ><i class="fas fa-users"></i> {{ getEffectifService(service.matricule) }} employés</span
+                    ><i class="fas fa-users"></i>
+                    {{ getEffectifService(service.matricule) }} employés</span
                   >
                 </div>
                 <i class="fas fa-chevron-right arrow-icon"></i>

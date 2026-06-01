@@ -21,6 +21,7 @@ import { Employe, Service } from '../../core/models/employe.model';
 import { PresenceBrute, DetailPointageExport } from '../../core/models/pointage.model';
 
 interface LignePointage {
+  id: string;
   matricule: string;
   nom: string;
   prenom: string;
@@ -69,6 +70,10 @@ export class PointagesComponent implements OnInit {
   toastMessage = '';
   toastType = '';
 
+  vue = signal<'table' | 'cards'>('table');
+  currentPage = signal(1);
+  PAGE_SIZE = 10;
+
   // Abonnement courant au stream de présences
   private presencesSub: Subscription | null = null;
 
@@ -96,7 +101,8 @@ export class PointagesComponent implements OnInit {
     const presenceMap = new Map<string, PresenceBrute>();
     presences.forEach((p) => presenceMap.set(p.matricule, p));
 
-    return employes.map((e) => {
+    // ✅ Générer les lignes
+    const lignesBrutes = employes.map((e) => {
       const p = presenceMap.get(e.matricule);
       const svc = services.find((s) => s.matricule === e.service);
       const arrive = p?.arrive || '';
@@ -109,6 +115,7 @@ export class PointagesComponent implements OnInit {
           ? 'retard'
           : 'present';
       return {
+        id: e.id,
         matricule: e.matricule,
         nom: e.nom || '',
         prenom: e.prenom || '',
@@ -120,6 +127,24 @@ export class PointagesComponent implements OnInit {
         retard,
         statut,
       };
+    });
+
+    // ✅ Trier les lignes
+    return lignesBrutes.sort((a, b) => {
+      // 1. D'abord par statut (présent, retard, absent)
+      const order = { present: 0, retard: 1, absent: 2 };
+      const statutDiff = order[a.statut] - order[b.statut];
+      if (statutDiff !== 0) return statutDiff;
+
+      // 2. Ensuite par heure d'arrivée (les plus tôt d'abord)
+      if (a.arrive && b.arrive) {
+        const arriveDiff = a.arrive.localeCompare(b.arrive);
+        if (arriveDiff !== 0) return arriveDiff;
+      } else if (a.arrive && !b.arrive) return -1;
+      else if (!a.arrive && b.arrive) return 1;
+
+      // 3. Enfin par nom alphabétique
+      return a.nom.localeCompare(b.nom);
     });
   });
 
@@ -169,6 +194,44 @@ export class PointagesComponent implements OnInit {
     this.abonnerPresences(this.dateSelectionnee());
   }
 
+  // Ajouter les méthodes
+  setVue(type: 'table' | 'cards'): void {
+    this.vue.set(type);
+  }
+
+  getAvatarColor(matricule: string): string {
+    const colors = ['#4f7df3', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+    const idx = matricule ? matricule.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : 0;
+    return colors[idx % colors.length];
+  }
+
+  goToPage(page: number): void {
+    this.currentPage.set(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  totalPages = computed(() => {
+    return Math.ceil(this.lignesFiltrees().length / this.PAGE_SIZE);
+  });
+
+  lignesPaginees = computed(() => {
+    const start = (this.currentPage() - 1) * this.PAGE_SIZE;
+    return this.lignesFiltrees().slice(start, start + this.PAGE_SIZE);
+  });
+
+  pages = computed(() => {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: (number | '...')[] = [1];
+    if (current > 3) pages.push('...');
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++)
+      pages.push(i);
+    if (current < total - 2) pages.push('...');
+    pages.push(total);
+    return pages;
+  });
+
   fullName(l: LignePointage): string {
     return l.prenom ? `${l.prenom} ${l.nom}` : l.nom;
   }
@@ -191,13 +254,27 @@ export class PointagesComponent implements OnInit {
     this.abonnerPresences(date);
   }
 
+  loadingPointages = signal(true);
+
+  // Modifier la méthode abonnerPresences
   private abonnerPresences(date: string): void {
+    this.loadingPointages.set(true); // ✅ Activer le loader
     this.presencesSub?.unsubscribe();
     this.presences.set([]);
     if (date) {
-      this.presencesSub = this.pointageService
-        .presencesJour$(date)
-        .subscribe((p) => this.presences.set(p));
+      this.presencesSub = this.pointageService.presencesJour$(date).subscribe({
+        next: (p) => {
+          this.presences.set(p);
+          setTimeout(() => {
+            this.loadingPointages.set(false);
+          }, 100);
+        },
+        error: () => {
+          this.loadingPointages.set(false);
+        },
+      });
+    } else {
+      this.loadingPointages.set(false);
     }
   }
 
@@ -602,6 +679,25 @@ export class PointagesComponent implements OnInit {
       this.showToast('Impression envoyée', 'success');
     }
   }
+  statsAvecChargement = computed(() => {
+    if (this.loadingPointages()) {
+      return {
+        presents: '--',
+        retards: '--',
+        absents: '--',
+        total: '--',
+        taux: '--',
+      };
+    }
+    const stats = this.stats();
+    return {
+      presents: stats.presents,
+      retards: stats.retards,
+      absents: stats.absents,
+      total: stats.total,
+      taux: stats.taux,
+    };
+  });
 
   saveAsPDF(): void {
     this.printFromPreview();
